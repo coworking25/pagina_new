@@ -18,6 +18,7 @@ import {
   Moon
 } from 'lucide-react';
 import { getCurrentUser } from '../../lib/supabase';
+import { useAdminBadges } from '../../contexts/AdminBadgeContext';
 
 interface MenuItem {
   id: string;
@@ -32,6 +33,7 @@ function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const { badges } = useAdminBadges();
   
   const currentUser = getCurrentUser();
 
@@ -47,14 +49,14 @@ function AdminLayout() {
       label: 'Citas',
       icon: Calendar,
       path: '/admin/appointments',
-      badge: 12
+      badge: badges.appointments
     },
     {
       id: 'clients',
       label: 'Clientes',
       icon: Users,
       path: '/admin/clients',
-      badge: 3
+      badge: badges.clients
     },
     {
       id: 'properties',
@@ -73,7 +75,7 @@ function AdminLayout() {
       label: 'Consultas',
       icon: MessageSquare,
       path: '/admin/inquiries',
-      badge: 5
+      badge: badges.inquiries
     },
     {
       id: 'documents',
@@ -132,13 +134,13 @@ function AdminLayout() {
           <span className="font-medium">{item.label}</span>
         </div>
         <div className="flex items-center space-x-2">
-          {item.badge && (
+          {item.badge && item.badge > 0 && (
             <span className={`px-2 py-1 text-xs rounded-full ${
               isActive 
                 ? 'bg-white/20 text-white' 
                 : 'bg-red-500 text-white'
             }`}>
-              {item.badge}
+              {item.badge > 99 ? '99+' : item.badge}
             </span>
           )}
           {isActive && <ChevronRight className="w-4 h-4" />}
@@ -277,9 +279,11 @@ function AdminLayout() {
                 className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <Bell className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  3
-                </span>
+                {badges.notifications > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {badges.notifications > 99 ? '99+' : badges.notifications}
+                  </span>
+                )}
               </motion.button>
             </div>
           </div>

@@ -27,6 +27,7 @@ import { ServiceInquiry } from '../types';
 import Modal from '../components/UI/Modal';
 import Dropdown, { DropdownItem, DropdownDivider } from '../components/UI/Dropdown';
 import FloatingCard from '../components/UI/FloatingCard';
+import { useMarkAsVisited } from '../hooks/useAdminBadges';
 
 interface InquiryWithStatus extends Omit<ServiceInquiry, 'status'> {
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'archived';
@@ -44,6 +45,9 @@ function AdminInquiries() {
   const [showModal, setShowModal] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
+
+  // Marcar la sección como visitada para limpiar badge
+  useMarkAsVisited('inquiries');
 
   useEffect(() => {
     fetchInquiries();

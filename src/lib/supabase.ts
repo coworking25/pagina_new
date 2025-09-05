@@ -1260,8 +1260,124 @@ export async function getDashboardStats(): Promise<{
 }
 
 // ==========================================
+// GESTIÓN DE IMÁGENES - STORAGE
+// ==========================================
+
+// Función para subir imagen a Supabase Storage
+export async function uploadPropertyImage(file: File): Promise<string> {
+  try {
+    console.log('📸 Subiendo imagen:', file.name);
+    
+    // Generar nombre único para el archivo
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `properties/${fileName}`;
+    
+    // Subir archivo a Supabase Storage
+    const { error } = await supabase.storage
+      .from('propiedades')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+    
+    if (error) {
+      console.error('❌ Error subiendo imagen:', error);
+      throw error;
+    }
+    
+    // Obtener URL pública
+    const { data: publicUrlData } = supabase.storage
+      .from('propiedades')
+      .getPublicUrl(filePath);
+    
+    console.log('✅ Imagen subida exitosamente:', publicUrlData.publicUrl);
+    return publicUrlData.publicUrl;
+  } catch (error) {
+    console.error('❌ Error en uploadPropertyImage:', error);
+    throw error;
+  }
+}
+
+// Función para eliminar imagen de Supabase Storage
+export async function deletePropertyImage(imageUrl: string): Promise<boolean> {
+  try {
+    // Extraer el path del archivo de la URL
+    const urlParts = imageUrl.split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    const filePath = `properties/${fileName}`;
+    
+    console.log('🗑️ Eliminando imagen:', filePath);
+    
+    const { error } = await supabase.storage
+      .from('propiedades')
+      .remove([filePath]);
+    
+    if (error) {
+      console.error('❌ Error eliminando imagen:', error);
+      throw error;
+    }
+    
+    console.log('✅ Imagen eliminada exitosamente');
+    return true;
+  } catch (error) {
+    console.error('❌ Error en deletePropertyImage:', error);
+    return false;
+  }
+}
+
+// ==========================================
 // GESTIÓN DE PROPIEDADES - ADMIN
 // ==========================================
+
+// Función para crear una nueva propiedad
+export async function createProperty(propertyData: Omit<Property, 'id' | 'created_at' | 'updated_at'>) {
+  try {
+    console.log('🏠 Creando nueva propiedad:', propertyData);
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .insert([propertyData])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Error al crear propiedad:', error);
+      throw error;
+    }
+    
+    console.log('✅ Propiedad creada exitosamente:', data);
+    return data as Property;
+  } catch (error) {
+    console.error('❌ Error en createProperty:', error);
+    throw error;
+  }
+}
+
+// Función para actualizar una propiedad
+export async function updateProperty(propertyId: string, propertyData: Partial<Property>) {
+  try {
+    console.log('📝 Actualizando propiedad:', propertyId, propertyData);
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .update(propertyData)
+      .eq('id', propertyId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Error al actualizar propiedad:', error);
+      throw error;
+    }
+    
+    console.log('✅ Propiedad actualizada exitosamente:', data);
+    return data as Property;
+  } catch (error) {
+    console.error('❌ Error en updateProperty:', error);
+    throw error;
+  }
+}
 
 // Función para eliminar una propiedad
 export async function deleteProperty(propertyId: string) {

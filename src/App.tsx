@@ -20,6 +20,7 @@ import AdminInquiries from './pages/AdminInquiries';
 import AdminSettings from './pages/AdminSettings';
 import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AdminBadgeProvider } from './contexts/AdminBadgeContext';
 
 // Componente para manejar el layout según la ruta
 const AppLayout = () => {
@@ -155,9 +156,11 @@ function App() {
 
   try {
     return (
-      <Router>
-        <AppLayout />
-      </Router>
+      <AdminBadgeProvider>
+        <Router>
+          <AppLayout />
+        </Router>
+      </AdminBadgeProvider>
     );
   } catch (error) {
     console.error('❌ Error crítico en App:', error);
