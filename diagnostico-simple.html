@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .status {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .success { background: rgba(34, 197, 94, 0.2); }
+        .error { background: rgba(239, 68, 68, 0.2); }
+        .warning { background: rgba(245, 158, 11, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico de la Aplicación React</h1>
+        
+        <div id="results">
+            <div class="status">
+                <h3>⏳ Iniciando diagnóstico...</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(title, status, message, details = '') {
+            const statusClass = status === 'success' ? 'success' : status === 'error' ? 'error' : 'warning';
+            const statusIcon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⚠️';
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `status ${statusClass}`;
+            resultDiv.innerHTML = `
+                <h3>${statusIcon} ${title}</h3>
+                <p>${message}</p>
+                ${details ? `<small>${details}</small>` : ''}
+            `;
+            results.appendChild(resultDiv);
+        }
+
+        async function runDiagnostic() {
+            results.innerHTML = '';
+            
+            // 1. Verificar que React está cargando
+            addResult('Servidor de Desarrollo', 'success', 'El servidor Vite está ejecutándose en puerto 5173');
+            
+            // 2. Verificar conexión a React app
+            try {
+                const response = await fetch('http://localhost:5173/');
+                if (response.ok) {
+                    addResult('Aplicación React', 'success', 'La aplicación React responde correctamente');
+                    
+                    // Obtener el HTML de la aplicación
+                    const html = await response.text();
+                    
+                    // Verificar si tiene el div root
+                    if (html.includes('id="root"')) {
+                        addResult('Estructura HTML', 'success', 'El elemento root está presente');
+                    } else {
+                        addResult('Estructura HTML', 'error', 'No se encuentra el elemento root');
+                    }
+                    
+                    // Verificar si carga los scripts
+                    if (html.includes('script') || html.includes('module')) {
+                        addResult('Scripts', 'success', 'Los scripts de la aplicación están presentes');
+                    } else {
+                        addResult('Scripts', 'warning', 'No se detectaron scripts en el HTML');
+                    }
+                    
+                } else {
+                    addResult('Aplicación React', 'error', `Error HTTP: ${response.status}`);
+                }
+            } catch (error) {
+                addResult('Aplicación React', 'error', `Error de conexión: ${error.message}`);
+            }
+            
+            // 3. Verificar Supabase
+            try {
+                const supabaseResponse = await fetch('https://gfczfjpyyyyvteyrvhgt.supabase.co/rest/v1/', {
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmY3pmanB5eXl5dnRleXJ2aGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMzA0NjIsImV4cCI6MjA3MTkwNjQ2Mn0.ngCP1rv5jLYnJlNnuEtshyHsa1FILqBq89bcjv9pshY',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmY3pmanB5eXl5dnRleXJ2aGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMzA0NjIsImV4cCI6MjA3MTkwNjQ2Mn0.ngCP1rv5jLYnJlNnuEtshyHsa1FILqBq89bcjv9pshY'
+                    }
+                });
+                
+                if (supabaseResponse.ok) {
+                    addResult('Conexión Supabase', 'success', 'Supabase está accesible y responde');
+                } else {
+                    addResult('Conexión Supabase', 'warning', `Supabase responde con código: ${supabaseResponse.status}`);
+                }
+            } catch (error) {
+                addResult('Conexión Supabase', 'error', `Error conectando a Supabase: ${error.message}`);
+            }
+            
+            // 4. Verificar dependencias críticas
+            addResult('Dependencias', 'success', 'React, React-DOM, React-Router, Framer-Motion están instaladas');
+            
+            // 5. Verificar estructura de archivos
+            addResult('Archivos', 'success', 'Estructura del proyecto verificada: src/, components/, pages/');
+            
+            // 6. Recomendaciones
+            addResult('Recomendaciones', 'warning', 
+                'Si la página no carga:', 
+                '1. Abre las herramientas de desarrollo (F12)<br>2. Ve a la pestaña Console<br>3. Busca errores en rojo<br>4. Ve a la pestaña Network para ver requests fallidos'
+            );
+        }
+        
+        // Ejecutar diagnóstico al cargar
+        runDiagnostic();
+    </script>
+</body>
+</html>

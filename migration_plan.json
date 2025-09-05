@@ -1,0 +1,1714 @@
+{
+  "source_bucket": "imagenes",
+  "destination_bucket": "property-images",
+  "migrations": [
+    {
+      "property_code": "CA-001",
+      "files": [
+        {
+          "source": "imagenes/CA-001/CA-001-(1).jpeg",
+          "destination": "CA-001/CA-001-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(1).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(2).jpeg",
+          "destination": "CA-001/CA-001-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(2).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(3).jpeg",
+          "destination": "CA-001/CA-001-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(3).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(4).jpeg",
+          "destination": "CA-001/CA-001-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(4).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(5).jpeg",
+          "destination": "CA-001/CA-001-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(5).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(6).jpeg",
+          "destination": "CA-001/CA-001-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(6).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(7).jpeg",
+          "destination": "CA-001/CA-001-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(7).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(8).jpeg",
+          "destination": "CA-001/CA-001-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(8).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(9).jpeg",
+          "destination": "CA-001/CA-001-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(9).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(10).jpeg",
+          "destination": "CA-001/CA-001-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(10).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(11).jpeg",
+          "destination": "CA-001/CA-001-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(11).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(12).jpeg",
+          "destination": "CA-001/CA-001-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(12).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(13).jpeg",
+          "destination": "CA-001/CA-001-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(13).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(14).jpeg",
+          "destination": "CA-001/CA-001-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(14).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(14).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(15).jpeg",
+          "destination": "CA-001/CA-001-(15).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(15).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(15).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(16).jpeg",
+          "destination": "CA-001/CA-001-(16).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(16).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(16).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(17).jpeg",
+          "destination": "CA-001/CA-001-(17).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(17).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(17).jpeg"
+        },
+        {
+          "source": "imagenes/CA-001/CA-001-(18).jpeg",
+          "destination": "CA-001/CA-001-(18).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-001/CA-001-(18).jpeg",
+          "destination_full_path": "property-images/CA-001/CA-001-(18).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-002",
+      "files": [
+        {
+          "source": "imagenes/CA-002/CA-002-(1).jpeg",
+          "destination": "CA-002/CA-002-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(1).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(2).jpeg",
+          "destination": "CA-002/CA-002-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(2).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(3).jpeg",
+          "destination": "CA-002/CA-002-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(3).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(4).jpeg",
+          "destination": "CA-002/CA-002-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(4).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(5).jpeg",
+          "destination": "CA-002/CA-002-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(5).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(6).jpeg",
+          "destination": "CA-002/CA-002-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(6).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(7).jpeg",
+          "destination": "CA-002/CA-002-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(7).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(8).jpeg",
+          "destination": "CA-002/CA-002-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(8).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(9).jpeg",
+          "destination": "CA-002/CA-002-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(9).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(10).jpeg",
+          "destination": "CA-002/CA-002-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(10).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(11).jpeg",
+          "destination": "CA-002/CA-002-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(11).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(12).jpeg",
+          "destination": "CA-002/CA-002-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(12).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(13).jpeg",
+          "destination": "CA-002/CA-002-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(13).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-002/CA-002-(14).jpeg",
+          "destination": "CA-002/CA-002-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-002/CA-002-(14).jpeg",
+          "destination_full_path": "property-images/CA-002/CA-002-(14).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-003",
+      "files": [
+        {
+          "source": "imagenes/CA-003/CA-003-(1).jpeg",
+          "destination": "CA-003/CA-003-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(1).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(2).jpeg",
+          "destination": "CA-003/CA-003-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(2).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(3).jpeg",
+          "destination": "CA-003/CA-003-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(3).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(4).jpeg",
+          "destination": "CA-003/CA-003-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(4).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(5).jpeg",
+          "destination": "CA-003/CA-003-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(5).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(6).jpeg",
+          "destination": "CA-003/CA-003-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(6).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(7).jpeg",
+          "destination": "CA-003/CA-003-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(7).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(8).jpeg",
+          "destination": "CA-003/CA-003-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(8).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(9).jpeg",
+          "destination": "CA-003/CA-003-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(9).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(10).jpeg",
+          "destination": "CA-003/CA-003-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(10).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(11).jpeg",
+          "destination": "CA-003/CA-003-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(11).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(12).jpeg",
+          "destination": "CA-003/CA-003-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(12).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(13).jpeg",
+          "destination": "CA-003/CA-003-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(13).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(14).jpeg",
+          "destination": "CA-003/CA-003-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(14).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(14).jpeg"
+        },
+        {
+          "source": "imagenes/CA-003/CA-003-(15).jpeg",
+          "destination": "CA-003/CA-003-(15).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-003/CA-003-(15).jpeg",
+          "destination_full_path": "property-images/CA-003/CA-003-(15).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-004",
+      "files": [
+        {
+          "source": "imagenes/CA-004/CA-004-(1).jpeg",
+          "destination": "CA-004/CA-004-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(1).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(2).jpeg",
+          "destination": "CA-004/CA-004-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(2).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(3).jpeg",
+          "destination": "CA-004/CA-004-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(3).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(4).jpeg",
+          "destination": "CA-004/CA-004-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(4).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(5).jpeg",
+          "destination": "CA-004/CA-004-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(5).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(6).jpeg",
+          "destination": "CA-004/CA-004-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(6).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(7).jpeg",
+          "destination": "CA-004/CA-004-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(7).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(8).jpeg",
+          "destination": "CA-004/CA-004-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(8).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(9).jpeg",
+          "destination": "CA-004/CA-004-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(9).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(10).jpeg",
+          "destination": "CA-004/CA-004-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(10).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(11).jpeg",
+          "destination": "CA-004/CA-004-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(11).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(12).jpeg",
+          "destination": "CA-004/CA-004-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(12).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-004/CA-004-(13).jpeg",
+          "destination": "CA-004/CA-004-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-004/CA-004-(13).jpeg",
+          "destination_full_path": "property-images/CA-004/CA-004-(13).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-005",
+      "files": [
+        {
+          "source": "imagenes/CA-005/CA-005-(1).jpeg",
+          "destination": "CA-005/CA-005-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(1).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(2).jpeg",
+          "destination": "CA-005/CA-005-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(2).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(3).jpeg",
+          "destination": "CA-005/CA-005-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(3).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(4).jpeg",
+          "destination": "CA-005/CA-005-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(4).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(5).jpeg",
+          "destination": "CA-005/CA-005-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(5).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(6).jpeg",
+          "destination": "CA-005/CA-005-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(6).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(7).jpeg",
+          "destination": "CA-005/CA-005-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(7).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(8).jpeg",
+          "destination": "CA-005/CA-005-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(8).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(9).jpeg",
+          "destination": "CA-005/CA-005-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(9).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(10).jpeg",
+          "destination": "CA-005/CA-005-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(10).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(11).jpeg",
+          "destination": "CA-005/CA-005-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(11).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(12).jpeg",
+          "destination": "CA-005/CA-005-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(12).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(13).jpeg",
+          "destination": "CA-005/CA-005-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(13).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-005/CA-005-(14).jpeg",
+          "destination": "CA-005/CA-005-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-005/CA-005-(14).jpeg",
+          "destination_full_path": "property-images/CA-005/CA-005-(14).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-006",
+      "files": [
+        {
+          "source": "imagenes/CA-006/CA-006-(1).jpeg",
+          "destination": "CA-006/CA-006-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(1).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(2).jpeg",
+          "destination": "CA-006/CA-006-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(2).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(3).jpeg",
+          "destination": "CA-006/CA-006-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(3).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(4).jpeg",
+          "destination": "CA-006/CA-006-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(4).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(5).jpeg",
+          "destination": "CA-006/CA-006-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(5).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(6).jpeg",
+          "destination": "CA-006/CA-006-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(6).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(7).jpeg",
+          "destination": "CA-006/CA-006-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(7).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(8).jpeg",
+          "destination": "CA-006/CA-006-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(8).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(9).jpeg",
+          "destination": "CA-006/CA-006-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(9).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(10).jpeg",
+          "destination": "CA-006/CA-006-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(10).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(11).jpeg",
+          "destination": "CA-006/CA-006-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(11).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(12).jpeg",
+          "destination": "CA-006/CA-006-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(12).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(13).jpeg",
+          "destination": "CA-006/CA-006-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(13).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-006/CA-006-(14).jpeg",
+          "destination": "CA-006/CA-006-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-006/CA-006-(14).jpeg",
+          "destination_full_path": "property-images/CA-006/CA-006-(14).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-007",
+      "files": [
+        {
+          "source": "imagenes/CA-007/CA-007-(1).jpeg",
+          "destination": "CA-007/CA-007-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(1).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(2).jpeg",
+          "destination": "CA-007/CA-007-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(2).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(3).jpeg",
+          "destination": "CA-007/CA-007-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(3).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(4).jpeg",
+          "destination": "CA-007/CA-007-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(4).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(5).jpeg",
+          "destination": "CA-007/CA-007-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(5).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(6).jpeg",
+          "destination": "CA-007/CA-007-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(6).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(7).jpeg",
+          "destination": "CA-007/CA-007-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(7).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(8).jpeg",
+          "destination": "CA-007/CA-007-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(8).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(9).jpeg",
+          "destination": "CA-007/CA-007-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(9).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-007/CA-007-(10).jpeg",
+          "destination": "CA-007/CA-007-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-007/CA-007-(10).jpeg",
+          "destination_full_path": "property-images/CA-007/CA-007-(10).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-008",
+      "files": [
+        {
+          "source": "imagenes/CA-008/CA-008-(1).jpeg",
+          "destination": "CA-008/CA-008-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(1).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(2).jpeg",
+          "destination": "CA-008/CA-008-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(2).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(3).jpeg",
+          "destination": "CA-008/CA-008-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(3).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(4).jpeg",
+          "destination": "CA-008/CA-008-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(4).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(5).jpeg",
+          "destination": "CA-008/CA-008-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(5).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(6).jpeg",
+          "destination": "CA-008/CA-008-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(6).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(7).jpeg",
+          "destination": "CA-008/CA-008-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(7).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(8).jpeg",
+          "destination": "CA-008/CA-008-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(8).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(9).jpeg",
+          "destination": "CA-008/CA-008-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(9).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(10).jpeg",
+          "destination": "CA-008/CA-008-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(10).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(11).jpeg",
+          "destination": "CA-008/CA-008-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(11).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(12).jpeg",
+          "destination": "CA-008/CA-008-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(12).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(13).jpeg",
+          "destination": "CA-008/CA-008-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(13).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(14).jpeg",
+          "destination": "CA-008/CA-008-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(14).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(14).jpeg"
+        },
+        {
+          "source": "imagenes/CA-008/CA-008-(15).jpeg",
+          "destination": "CA-008/CA-008-(15).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-008/CA-008-(15).jpeg",
+          "destination_full_path": "property-images/CA-008/CA-008-(15).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-009",
+      "files": [
+        {
+          "source": "imagenes/CA-009/CA-009-(1).jpeg",
+          "destination": "CA-009/CA-009-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(1).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(2).jpeg",
+          "destination": "CA-009/CA-009-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(2).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(3).jpeg",
+          "destination": "CA-009/CA-009-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(3).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(4).jpeg",
+          "destination": "CA-009/CA-009-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(4).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(5).jpeg",
+          "destination": "CA-009/CA-009-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(5).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(6).jpeg",
+          "destination": "CA-009/CA-009-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(6).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(7).jpeg",
+          "destination": "CA-009/CA-009-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(7).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(8).jpeg",
+          "destination": "CA-009/CA-009-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(8).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(9).jpeg",
+          "destination": "CA-009/CA-009-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(9).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(10).jpeg",
+          "destination": "CA-009/CA-009-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(10).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(11).jpeg",
+          "destination": "CA-009/CA-009-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(11).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(12).jpeg",
+          "destination": "CA-009/CA-009-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(12).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-009/CA-009-(13).jpeg",
+          "destination": "CA-009/CA-009-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-009/CA-009-(13).jpeg",
+          "destination_full_path": "property-images/CA-009/CA-009-(13).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-010",
+      "files": [
+        {
+          "source": "imagenes/CA-010/CA-010-(1).jpeg",
+          "destination": "CA-010/CA-010-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(1).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(2).jpeg",
+          "destination": "CA-010/CA-010-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(2).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(3).jpeg",
+          "destination": "CA-010/CA-010-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(3).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(4).jpeg",
+          "destination": "CA-010/CA-010-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(4).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(5).jpeg",
+          "destination": "CA-010/CA-010-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(5).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(6).jpeg",
+          "destination": "CA-010/CA-010-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(6).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(7).jpeg",
+          "destination": "CA-010/CA-010-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(7).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(8).jpeg",
+          "destination": "CA-010/CA-010-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(8).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(9).jpeg",
+          "destination": "CA-010/CA-010-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(9).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(10).jpeg",
+          "destination": "CA-010/CA-010-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(10).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-010/CA-010-(11).jpeg",
+          "destination": "CA-010/CA-010-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-010/CA-010-(11).jpeg",
+          "destination_full_path": "property-images/CA-010/CA-010-(11).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-011",
+      "files": [
+        {
+          "source": "imagenes/CA-011/CA-011-(1).jpeg",
+          "destination": "CA-011/CA-011-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(1).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(2).jpeg",
+          "destination": "CA-011/CA-011-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(2).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(3).jpeg",
+          "destination": "CA-011/CA-011-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(3).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(4).jpeg",
+          "destination": "CA-011/CA-011-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(4).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(5).jpeg",
+          "destination": "CA-011/CA-011-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(5).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(6).jpeg",
+          "destination": "CA-011/CA-011-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(6).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(7).jpeg",
+          "destination": "CA-011/CA-011-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(7).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(8).jpeg",
+          "destination": "CA-011/CA-011-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(8).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(9).jpeg",
+          "destination": "CA-011/CA-011-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(9).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(10).jpeg",
+          "destination": "CA-011/CA-011-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(10).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(11).jpeg",
+          "destination": "CA-011/CA-011-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(11).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(12).jpeg",
+          "destination": "CA-011/CA-011-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(12).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(13).jpeg",
+          "destination": "CA-011/CA-011-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(13).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-011/CA-011-(14).jpeg",
+          "destination": "CA-011/CA-011-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-011/CA-011-(14).jpeg",
+          "destination_full_path": "property-images/CA-011/CA-011-(14).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-012",
+      "files": [
+        {
+          "source": "imagenes/CA-012/CA-012-(1).jpeg",
+          "destination": "CA-012/CA-012-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(1).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(2).jpeg",
+          "destination": "CA-012/CA-012-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(2).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(3).jpeg",
+          "destination": "CA-012/CA-012-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(3).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(4).jpeg",
+          "destination": "CA-012/CA-012-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(4).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(5).jpeg",
+          "destination": "CA-012/CA-012-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(5).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(6).jpeg",
+          "destination": "CA-012/CA-012-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(6).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(7).jpeg",
+          "destination": "CA-012/CA-012-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(7).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(8).jpeg",
+          "destination": "CA-012/CA-012-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(8).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(9).jpeg",
+          "destination": "CA-012/CA-012-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(9).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(10).jpeg",
+          "destination": "CA-012/CA-012-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(10).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-012/CA-012-(11).jpeg",
+          "destination": "CA-012/CA-012-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-012/CA-012-(11).jpeg",
+          "destination_full_path": "property-images/CA-012/CA-012-(11).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-013",
+      "files": [
+        {
+          "source": "imagenes/CA-013/CA-013-(1).jpeg",
+          "destination": "CA-013/CA-013-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(1).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(2).jpeg",
+          "destination": "CA-013/CA-013-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(2).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(3).jpeg",
+          "destination": "CA-013/CA-013-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(3).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(4).jpeg",
+          "destination": "CA-013/CA-013-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(4).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(5).jpeg",
+          "destination": "CA-013/CA-013-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(5).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(6).jpeg",
+          "destination": "CA-013/CA-013-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(6).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(7).jpeg",
+          "destination": "CA-013/CA-013-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(7).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(8).jpeg",
+          "destination": "CA-013/CA-013-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(8).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(9).jpeg",
+          "destination": "CA-013/CA-013-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(9).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(10).jpeg",
+          "destination": "CA-013/CA-013-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(10).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(11).jpeg",
+          "destination": "CA-013/CA-013-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(11).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(12).jpeg",
+          "destination": "CA-013/CA-013-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(12).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-013/CA-013-(13).jpeg",
+          "destination": "CA-013/CA-013-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-013/CA-013-(13).jpeg",
+          "destination_full_path": "property-images/CA-013/CA-013-(13).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-014",
+      "files": [
+        {
+          "source": "imagenes/CA-014/CA-014-(1).jpeg",
+          "destination": "CA-014/CA-014-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(1).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(2).jpeg",
+          "destination": "CA-014/CA-014-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(2).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(3).jpeg",
+          "destination": "CA-014/CA-014-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(3).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(4).jpeg",
+          "destination": "CA-014/CA-014-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(4).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(5).jpeg",
+          "destination": "CA-014/CA-014-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(5).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(6).jpeg",
+          "destination": "CA-014/CA-014-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(6).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(7).jpeg",
+          "destination": "CA-014/CA-014-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(7).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(8).jpeg",
+          "destination": "CA-014/CA-014-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(8).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(9).jpeg",
+          "destination": "CA-014/CA-014-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(9).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-014/CA-014-(10).jpeg",
+          "destination": "CA-014/CA-014-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-014/CA-014-(10).jpeg",
+          "destination_full_path": "property-images/CA-014/CA-014-(10).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-015",
+      "files": [
+        {
+          "source": "imagenes/CA-015/CA-015-(1).jpeg",
+          "destination": "CA-015/CA-015-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(1).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(2).jpeg",
+          "destination": "CA-015/CA-015-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(2).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(3).jpeg",
+          "destination": "CA-015/CA-015-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(3).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(4).jpeg",
+          "destination": "CA-015/CA-015-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(4).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(5).jpeg",
+          "destination": "CA-015/CA-015-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(5).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(6).jpeg",
+          "destination": "CA-015/CA-015-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(6).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(7).jpeg",
+          "destination": "CA-015/CA-015-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(7).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(8).jpeg",
+          "destination": "CA-015/CA-015-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(8).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(9).jpeg",
+          "destination": "CA-015/CA-015-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(9).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-015/CA-015-(10).jpeg",
+          "destination": "CA-015/CA-015-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-015/CA-015-(10).jpeg",
+          "destination_full_path": "property-images/CA-015/CA-015-(10).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-016",
+      "files": [
+        {
+          "source": "imagenes/CA-016/CA-016-(1).jpeg",
+          "destination": "CA-016/CA-016-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(1).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(2).jpeg",
+          "destination": "CA-016/CA-016-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(2).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(3).jpeg",
+          "destination": "CA-016/CA-016-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(3).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(4).jpeg",
+          "destination": "CA-016/CA-016-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(4).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(5).jpeg",
+          "destination": "CA-016/CA-016-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(5).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(6).jpeg",
+          "destination": "CA-016/CA-016-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(6).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(7).jpeg",
+          "destination": "CA-016/CA-016-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(7).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(8).jpeg",
+          "destination": "CA-016/CA-016-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(8).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(9).jpeg",
+          "destination": "CA-016/CA-016-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(9).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(10).jpeg",
+          "destination": "CA-016/CA-016-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(10).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(11).jpeg",
+          "destination": "CA-016/CA-016-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(11).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(12).jpeg",
+          "destination": "CA-016/CA-016-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(12).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-016/CA-016-(13).jpeg",
+          "destination": "CA-016/CA-016-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-016/CA-016-(13).jpeg",
+          "destination_full_path": "property-images/CA-016/CA-016-(13).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-017",
+      "files": [
+        {
+          "source": "imagenes/CA-017/CA-017-(1).jpeg",
+          "destination": "CA-017/CA-017-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(1).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(2).jpeg",
+          "destination": "CA-017/CA-017-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(2).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(3).jpeg",
+          "destination": "CA-017/CA-017-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(3).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(4).jpeg",
+          "destination": "CA-017/CA-017-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(4).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(5).jpeg",
+          "destination": "CA-017/CA-017-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(5).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(6).jpeg",
+          "destination": "CA-017/CA-017-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(6).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(7).jpeg",
+          "destination": "CA-017/CA-017-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(7).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(8).jpeg",
+          "destination": "CA-017/CA-017-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(8).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(9).jpeg",
+          "destination": "CA-017/CA-017-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(9).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(10).jpeg",
+          "destination": "CA-017/CA-017-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(10).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(11).jpeg",
+          "destination": "CA-017/CA-017-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(11).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(12).jpeg",
+          "destination": "CA-017/CA-017-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(12).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(13).jpeg",
+          "destination": "CA-017/CA-017-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(13).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-017/CA-017-(14).jpeg",
+          "destination": "CA-017/CA-017-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-017/CA-017-(14).jpeg",
+          "destination_full_path": "property-images/CA-017/CA-017-(14).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-018",
+      "files": [
+        {
+          "source": "imagenes/CA-018/CA-018-(1).jpeg",
+          "destination": "CA-018/CA-018-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(1).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(2).jpeg",
+          "destination": "CA-018/CA-018-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(2).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(3).jpeg",
+          "destination": "CA-018/CA-018-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(3).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(4).jpeg",
+          "destination": "CA-018/CA-018-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(4).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(5).jpeg",
+          "destination": "CA-018/CA-018-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(5).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(6).jpeg",
+          "destination": "CA-018/CA-018-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(6).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(7).jpeg",
+          "destination": "CA-018/CA-018-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(7).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(8).jpeg",
+          "destination": "CA-018/CA-018-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(8).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(9).jpeg",
+          "destination": "CA-018/CA-018-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(9).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(10).jpeg",
+          "destination": "CA-018/CA-018-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(10).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(11).jpeg",
+          "destination": "CA-018/CA-018-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(11).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-018/CA-018-(12).jpeg",
+          "destination": "CA-018/CA-018-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-018/CA-018-(12).jpeg",
+          "destination_full_path": "property-images/CA-018/CA-018-(12).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-019",
+      "files": [
+        {
+          "source": "imagenes/CA-019/CA-019-(1).jpeg",
+          "destination": "CA-019/CA-019-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(1).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(2).jpeg",
+          "destination": "CA-019/CA-019-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(2).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(3).jpeg",
+          "destination": "CA-019/CA-019-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(3).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(4).jpeg",
+          "destination": "CA-019/CA-019-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(4).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(5).jpeg",
+          "destination": "CA-019/CA-019-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(5).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(6).jpeg",
+          "destination": "CA-019/CA-019-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(6).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(7).jpeg",
+          "destination": "CA-019/CA-019-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(7).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(8).jpeg",
+          "destination": "CA-019/CA-019-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(8).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(9).jpeg",
+          "destination": "CA-019/CA-019-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(9).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(10).jpeg",
+          "destination": "CA-019/CA-019-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(10).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(11).jpeg",
+          "destination": "CA-019/CA-019-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(11).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(12).jpeg",
+          "destination": "CA-019/CA-019-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(12).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(13).jpeg",
+          "destination": "CA-019/CA-019-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(13).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(14).jpeg",
+          "destination": "CA-019/CA-019-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(14).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(14).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(15).jpeg",
+          "destination": "CA-019/CA-019-(15).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(15).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(15).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(16).jpeg",
+          "destination": "CA-019/CA-019-(16).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(16).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(16).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(17).jpeg",
+          "destination": "CA-019/CA-019-(17).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(17).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(17).jpeg"
+        },
+        {
+          "source": "imagenes/CA-019/CA-019-(18).jpeg",
+          "destination": "CA-019/CA-019-(18).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-019/CA-019-(18).jpeg",
+          "destination_full_path": "property-images/CA-019/CA-019-(18).jpeg"
+        }
+      ]
+    },
+    {
+      "property_code": "CA-020",
+      "files": [
+        {
+          "source": "imagenes/CA-020/CA-020-(1).jpeg",
+          "destination": "CA-020/CA-020-(1).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(1).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(1).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(2).jpeg",
+          "destination": "CA-020/CA-020-(2).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(2).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(2).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(3).jpeg",
+          "destination": "CA-020/CA-020-(3).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(3).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(3).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(4).jpeg",
+          "destination": "CA-020/CA-020-(4).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(4).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(4).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(5).jpeg",
+          "destination": "CA-020/CA-020-(5).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(5).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(5).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(6).jpeg",
+          "destination": "CA-020/CA-020-(6).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(6).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(6).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(7).jpeg",
+          "destination": "CA-020/CA-020-(7).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(7).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(7).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(8).jpeg",
+          "destination": "CA-020/CA-020-(8).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(8).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(8).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(9).jpeg",
+          "destination": "CA-020/CA-020-(9).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(9).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(9).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(10).jpeg",
+          "destination": "CA-020/CA-020-(10).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(10).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(10).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(11).jpeg",
+          "destination": "CA-020/CA-020-(11).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(11).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(11).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(12).jpeg",
+          "destination": "CA-020/CA-020-(12).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(12).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(12).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(13).jpeg",
+          "destination": "CA-020/CA-020-(13).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(13).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(13).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(14).jpeg",
+          "destination": "CA-020/CA-020-(14).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(14).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(14).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(15).jpeg",
+          "destination": "CA-020/CA-020-(15).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(15).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(15).jpeg"
+        },
+        {
+          "source": "imagenes/CA-020/CA-020-(16).jpeg",
+          "destination": "CA-020/CA-020-(16).jpeg",
+          "source_full_path": "imagenes/imagenes/CA-020/CA-020-(16).jpeg",
+          "destination_full_path": "property-images/CA-020/CA-020-(16).jpeg"
+        }
+      ]
+    }
+  ]
+}

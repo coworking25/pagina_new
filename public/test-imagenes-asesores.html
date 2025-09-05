@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Imágenes de Asesores</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .image-test { margin: 10px; display: inline-block; text-align: center; }
+        .image-test img { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; }
+        .url-display { background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 4px; font-family: monospace; word-break: break-all; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>🖼️ Prueba de Imágenes de Asesores</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://gfczfjpyyyyvteyrvhgt.supabase.co';
+        
+        function testAdvisorImage(fileName, advisorName) {
+            const url = `${SUPABASE_URL}/storage/v1/object/public/property-images/Asesores/${fileName}`;
+            
+            const container = document.createElement('div');
+            container.className = 'test-container';
+            
+            container.innerHTML = `
+                <h3>${advisorName}</h3>
+                <div class="url-display">${url}</div>
+                <div class="image-test">
+                    <img src="${url}" alt="${advisorName}" 
+                         onload="this.parentNode.parentNode.querySelector('.status').innerHTML = '<span class=success>✅ Imagen cargada exitosamente</span>'"
+                         onerror="this.parentNode.parentNode.querySelector('.status').innerHTML = '<span class=error>❌ Error al cargar imagen</span>'">
+                    <div class="status">🔄 Cargando...</div>
+                </div>
+            `;
+            
+            document.getElementById('results').appendChild(container);
+        }
+        
+        // Probar las imágenes de los asesores con las rutas correctas
+        testAdvisorImage('1.jpeg', 'Santiago Sánchez');
+        testAdvisorImage('2.jpg', 'Andrés Metrio');
+        
+        // También probar si están en una subcarpeta
+        setTimeout(() => {
+            const altContainer = document.createElement('div');
+            altContainer.innerHTML = '<h2>🔍 Probando rutas alternativas:</h2>';
+            document.getElementById('results').appendChild(altContainer);
+            
+            testAdvisorImage('asesores/1.jpeg', 'Santiago Sánchez (carpeta asesores)');
+            testAdvisorImage('asesores/2.jpeg', 'Andrés Metrio (carpeta asesores)');
+        }, 1000);
+    </script>
+</body>
+</html>

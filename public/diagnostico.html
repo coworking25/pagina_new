@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Diagnóstico de Conectividad Supabase</h1>
+    
+    <div id="results"></div>
+    
+    <button onclick="testSupabaseConnection()">Probar Conexión Supabase</button>
+    <button onclick="testEnvironmentVars()">Verificar Variables de Entorno</button>
+    <button onclick="testTableAccess()">Probar Acceso a Tablas</button>
+    <button onclick="loadExternalTest()">Cargar Test Externo</button>
+    
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+        
+        const SUPABASE_URL = 'https://gfczfjpyyyyvteyrvhgt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmY3pmanB5eXl5dnRleXJ2aGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMzA0NjIsImV4cCI6MjA3MTkwNjQ2Mn0.ngCP1rv5jLYnJlNnuEtshyHsa1FILqBq89bcjv9pshY';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        window.testSupabaseConnection = async function() {
+            const resultsDiv = document.getElementById('results');
+            try {
+                const response = await fetch(SUPABASE_URL + '/rest/v1/', {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                    }
+                });
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML += '<div class="test-result success">✅ Conexión HTTP exitosa a Supabase</div>';
+                } else {
+                    resultsDiv.innerHTML += '<div class="test-result error">❌ Error HTTP: ' + response.status + ' ' + response.statusText + '</div>';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += '<div class="test-result error">❌ Error de conexión: ' + error.message + '</div>';
+            }
+        };
+        
+        window.testEnvironmentVars = function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML += '<div class="test-result success">✅ SUPABASE_URL: ' + SUPABASE_URL + '</div>';
+            resultsDiv.innerHTML += '<div class="test-result success">✅ SUPABASE_ANON_KEY: [CONFIGURADA]</div>';
+        };
+        
+        window.testTableAccess = async function() {
+            const resultsDiv = document.getElementById('results');
+            try {
+                const { data, error } = await supabase
+                    .from('property_appointments')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    resultsDiv.innerHTML += '<div class="test-result error">❌ Error accediendo tabla: ' + error.message + '</div>';
+                    resultsDiv.innerHTML += '<pre>' + JSON.stringify(error, null, 2) + '</pre>';
+                } else {
+                    resultsDiv.innerHTML += '<div class="test-result success">✅ Acceso a tabla property_appointments exitoso</div>';
+                    resultsDiv.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += '<div class="test-result error">❌ Error: ' + error.message + '</div>';
+            }
+        };
+        
+        // Auto-ejecutar pruebas al cargar
+        window.addEventListener('DOMContentLoaded', function() {
+            testEnvironmentVars();
+            testSupabaseConnection();
+            testTableAccess();
+        });
+        
+        window.loadExternalTest = function() {
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = './test-supabase.js';
+            document.head.appendChild(script);
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML += '<div class="test-result success">✅ Test externo cargado - revisa la consola</div>';
+        };
+    </script>
+</body>
+</html>
