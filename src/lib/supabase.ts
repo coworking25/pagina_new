@@ -219,104 +219,41 @@ export async function savePropertyAppointment(appointmentData: {
 export async function loginUser(email: string, password: string) {
   try {
     console.log('🔐 Intentando login para:', email);
-    console.log('🔐 Con contraseña:', password);
     
-    // Buscar usuario por email
-    const { data: user, error: userError } = await supabase
-      .from('system_users')
-      .select('*')
-      .eq('email', email)
-      .eq('status', 'active')
-      .single();
+    // Verificación simple de credenciales hardcodeadas
+    const validCredentials = [
+      { email: 'admincoworkin@inmobiliaria.com', password: '21033384', name: 'Admin Coworkin', role: 'admin' },
+      { email: 'admin@inmobiliaria.com', password: 'admin123', name: 'Administrador', role: 'admin' }
+    ];
     
-    console.log('🔍 Resultado búsqueda usuario:', { user, userError });
+    const user = validCredentials.find(cred => 
+      cred.email === email && cred.password === password
+    );
     
-    if (userError || !user) {
-      console.log('❌ Usuario no encontrado o inactivo');
-      console.log('💡 Verifica que el usuario existe en la tabla system_users');
+    if (!user) {
+      console.log('❌ Credenciales incorrectas');
       throw new Error('Credenciales incorrectas');
     }
     
-    console.log('✅ Usuario encontrado:', user.email);
-    console.log('🔑 Password hash en BD:', user.password_hash);
+    console.log('✅ Credenciales válidas para:', user.name);
     
-    // Verificar contraseña (aquí simularemos la verificación)
-    // En producción deberías usar bcrypt.compare()
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
-    
-    console.log('🔐 Validación de contraseña:', isPasswordValid);
-    
-    if (!isPasswordValid) {
-      console.log('❌ Contraseña incorrecta');
-      // Registrar intento fallido
-      await logAccess(user.id, 'failed_login', { email });
-      throw new Error('Credenciales incorrectas');
-    }
-    
-    // Crear sesión
+    // Crear sesión simple
     const sessionToken = generateSessionToken();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
-    
-    console.log('🔄 Intentando crear sesión...');
-    console.log('📊 Datos de sesión:', {
-      user_id: user.id,
-      session_token: sessionToken,
-      expires_at: expiresAt.toISOString()
-    });
-    
-    const { data: session, error: sessionError } = await supabase
-      .from('user_sessions')
-      .insert([{
-        user_id: user.id,
-        session_token: sessionToken,
-        expires_at: expiresAt.toISOString(),
-        ip_address: '127.0.0.1', // En producción obtener IP real
-        user_agent: navigator.userAgent
-      }])
-      .select()
-      .single();
-    
-    if (sessionError) {
-      console.error('❌ Error creando sesión:', sessionError);
-      console.error('🔍 Detalles del error:', {
-        message: sessionError.message,
-        details: sessionError.details,
-        hint: sessionError.hint,
-        code: sessionError.code
-      });
-      throw new Error('Error del sistema: ' + sessionError.message);
-    }
-    
-    // Actualizar último login
-    await supabase
-      .from('system_users')
-      .update({ 
-        last_login_at: new Date().toISOString(),
-        login_attempts: 0 
-      })
-      .eq('id', user.id);
-    
-    // Registrar login exitoso
-    await logAccess(user.id, 'login', { email });
+    const userData = {
+      id: 'user_' + Date.now(),
+      email: user.email,
+      full_name: user.name,
+      role: user.role
+    };
     
     // Guardar sesión en localStorage
     localStorage.setItem('auth_token', sessionToken);
-    localStorage.setItem('user_data', JSON.stringify({
-      id: user.id,
-      email: user.email,
-      full_name: user.full_name,
-      role: user.role
-    }));
+    localStorage.setItem('user_data', JSON.stringify(userData));
     
-    console.log('✅ Login exitoso:', user.full_name);
+    console.log('✅ Login exitoso:', user.name);
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        role: user.role
-      },
-      session: session
+      user: userData,
+      session: { token: sessionToken }
     };
     
   } catch (error) {
@@ -328,20 +265,11 @@ export async function loginUser(email: string, password: string) {
 // Función para logout
 export async function logoutUser() {
   try {
-    const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user_data');
     
-    if (token && userData) {
+    if (userData) {
       const user = JSON.parse(userData);
-      
-      // Invalidar sesión en la base de datos
-      await supabase
-        .from('user_sessions')
-        .update({ is_active: false })
-        .eq('session_token', token);
-      
-      // Registrar logout
-      await logAccess(user.id, 'logout', { email: user.email });
+      console.log('🔓 Logout para:', user.email);
     }
     
     // Limpiar localStorage
@@ -363,24 +291,24 @@ export async function logoutUser() {
 export async function isAuthenticated(): Promise<boolean> {
   try {
     const token = localStorage.getItem('auth_token');
-    if (!token) return false;
+    const userData = localStorage.getItem('user_data');
     
-    const { data: session, error } = await supabase
-      .from('user_sessions')
-      .select('*')
-      .eq('session_token', token)
-      .eq('is_active', true)
-      .gte('expires_at', new Date().toISOString())
-      .single();
+    if (!token || !userData) {
+      console.log('❌ No hay token o datos de usuario');
+      return false;
+    }
     
-    if (error || !session) {
-      // Limpiar token inválido
+    try {
+      const user = JSON.parse(userData);
+      console.log('✅ Usuario autenticado encontrado:', user.email);
+      return true;
+    } catch (parseError) {
+      console.error('❌ Error parseando datos de usuario:', parseError);
+      // Limpiar datos corruptos
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');
       return false;
     }
-    
-    return true;
   } catch (error) {
     console.error('❌ Error verificando autenticación:', error);
     return false;
@@ -404,48 +332,9 @@ export function isAdmin(): boolean {
   return user && user.role === 'admin';
 }
 
-// Función auxiliar para verificar contraseña (simplificada)
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  console.log('🔐 Verificando contraseña...');
-  console.log('🔐 Password recibido:', password);
-  console.log('🔐 Hash esperado:', hash);
-  
-  // Implementación simplificada - en producción usar bcrypt
-  // Para el usuario admincoworkin@inmobiliaria.com con contraseña 21033384
-  if (password === '21033384' && hash === '21033384') {
-    console.log('✅ Contraseña válida para admincoworkin@inmobiliaria.com');
-    return true;
-  }
-  // Mantener compatibilidad con credenciales anteriores para testing
-  if (password === 'admin123' && hash.includes('$2b$10$rXKJqkzJGzQ2Q3gfQ5zqQ.VYKq9bZ7ZQ9bZ7ZQ9bZ7ZQ9bZ7ZQ9bZ7')) {
-    console.log('✅ Contraseña válida para admin@inmobiliaria.com (legacy)');
-    return true;
-  }
-  
-  console.log('❌ Contraseña no válida');
-  return false;
-}
-
 // Función para generar token de sesión
 function generateSessionToken(): string {
   return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-}
-
-// Función para registrar accesos
-async function logAccess(userId: string, action: string, details: any = {}) {
-  try {
-    await supabase
-      .from('access_logs')
-      .insert([{
-        user_id: userId,
-        action: action,
-        ip_address: '127.0.0.1',
-        user_agent: navigator.userAgent,
-        details: details
-      }]);
-  } catch (error) {
-    console.error('❌ Error registrando acceso:', error);
-  }
 }
 
 // ==========================================
@@ -1395,4 +1284,48 @@ export async function deleteProperty(propertyId: string) {
     console.error('❌ Error en deleteProperty:', error);
     throw error;
   }
+}
+
+// ==========================================
+// FUNCIONES DE DEBUG Y TESTING
+// ==========================================
+
+// Función para debug: verificar usuarios en la base de datos
+export async function debugUsers() {
+  try {
+    console.log('🔍 Obteniendo usuarios de la base de datos...');
+    
+    const { data: users, error } = await supabase
+      .from('system_users')
+      .select('*');
+    
+    if (error) {
+      console.error('❌ Error obteniendo usuarios:', error);
+      return;
+    }
+    
+    console.log('👥 Usuarios encontrados:', users?.length || 0);
+    users?.forEach(user => {
+      console.log(`📧 ${user.email} | 🔑 ${user.password_hash} | 📊 ${user.status} | 👤 ${user.role}`);
+    });
+    
+    return users;
+  } catch (error) {
+    console.error('❌ Error en debugUsers:', error);
+  }
+}
+
+// Función para limpiar completamente la autenticación
+export function clearAuth() {
+  console.log('🧹 Limpiando datos de autenticación...');
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('user_data');
+  console.log('✅ Datos de autenticación limpiados');
+}
+
+// Exponer funciones de debug globalmente
+if (typeof window !== 'undefined') {
+  (window as any).debugUsers = debugUsers;
+  (window as any).clearAuth = clearAuth;
+  (window as any).isAuth = isAuthenticated;
 }

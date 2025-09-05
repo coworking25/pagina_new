@@ -17,21 +17,48 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Verificar si ya está autenticado al cargar
+  // Verificar si ya está autenticado al cargar - SOLO verificar token válido
   useEffect(() => {
     const checkAuth = async () => {
-      const authenticated = await isAuthenticated();
-      if (authenticated) {
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        } else {
-          navigate('/admin/dashboard');
+      try {
+        console.log('🔍 Login: Verificando autenticación existente...');
+        
+        // Primero limpiar cualquier dato inválido
+        const token = localStorage.getItem('auth_token');
+        const userData = localStorage.getItem('user_data');
+        
+        if (!token || !userData) {
+          console.log('❌ No hay datos de autenticación');
+          localStorage.clear(); // Limpiar todo por seguridad
+          return;
         }
+        
+        const authenticated = await isAuthenticated();
+        console.log('🔐 Resultado autenticación:', authenticated);
+        
+        if (authenticated) {
+          console.log('✅ Usuario ya autenticado, redirigiendo...');
+          if (onLoginSuccess) {
+            onLoginSuccess();
+          } else {
+            navigate('/admin/dashboard');
+          }
+        } else {
+          console.log('❌ No hay autenticación válida, limpiando datos');
+          // Limpiar cualquier dato inválido del localStorage
+          localStorage.clear();
+        }
+      } catch (error) {
+        console.error('❌ Error verificando autenticación:', error);
+        // Limpiar localStorage en caso de error
+        localStorage.clear();
       }
     };
+    
     checkAuth();
   }, [onLoginSuccess, navigate]);
 
@@ -164,6 +191,23 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               </div>
             </div>
 
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                  Recordarme
+                </label>
+              </div>
+            </div>
+
             {/* Submit Button */}
             <Button
               type="submit"
@@ -180,22 +224,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               )}
             </Button>
           </form>
-
-          {/* Demo Info */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
-          >
-            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">
-              Credenciales de Demo:
-            </h3>
-            <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
-              <div><strong>Email:</strong> admin@inmobiliaria.com</div>
-              <div><strong>Contraseña:</strong> admin123</div>
-            </div>
-          </motion.div>
         </Card>
 
         {/* Footer */}

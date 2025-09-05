@@ -20,18 +20,35 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   const checkAuthentication = async () => {
     try {
-      const authenticated = await isAuthenticated();
-      const currentUser = getCurrentUser();
+      console.log('🔒 ProtectedRoute: Verificando autenticación...');
       
-      if (authenticated && currentUser) {
-        if (requireAdmin && currentUser.role !== 'admin') {
-          setIsAuth(false);
-          return;
-        }
-        setIsAuth(true);
-      } else {
+      // Siempre verificar primero si hay token válido
+      const authenticated = await isAuthenticated();
+      console.log('🔐 Estado de autenticación:', authenticated);
+      
+      if (!authenticated) {
+        console.log('❌ Usuario no autenticado - redirigiendo a login');
         setIsAuth(false);
+        return;
       }
+      
+      const currentUser = getCurrentUser();
+      console.log('👤 Usuario actual:', currentUser);
+      
+      if (!currentUser) {
+        console.log('❌ No se pudo obtener datos del usuario');
+        setIsAuth(false);
+        return;
+      }
+      
+      if (requireAdmin && currentUser.role !== 'admin') {
+        console.log('❌ Usuario no tiene permisos de admin');
+        setIsAuth(false);
+        return;
+      }
+      
+      console.log('✅ Autenticación exitosa');
+      setIsAuth(true);
     } catch (error) {
       console.error('❌ Error verificando autenticación:', error);
       setIsAuth(false);
