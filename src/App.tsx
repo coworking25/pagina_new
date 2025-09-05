@@ -12,6 +12,12 @@ import Documentation from './pages/Documentation';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminAppointments from './pages/AdminAppointments';
+import AdminClients from './pages/AdminClients';
+import AdminProperties from './pages/AdminProperties';
+import AdminAdvisors from './pages/AdminAdvisors';
+import AdminInquiries from './pages/AdminInquiries';
+import AdminSettings from './pages/AdminSettings';
 import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -57,6 +63,14 @@ const AppLayout = () => {
               }
             >
               <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="appointments" element={<AdminAppointments />} />
+              <Route path="clients" element={<AdminClients />} />
+              <Route path="properties" element={<AdminProperties />} />
+              <Route path="advisors" element={<AdminAdvisors />} />
+              <Route path="inquiries" element={<AdminInquiries />} />
+              <Route path="documents" element={<div>Documentos - En desarrollo</div>} />
+              <Route path="reports" element={<div>Reportes - En desarrollo</div>} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
             
             {/* Ruta de fallback para 404 */}
