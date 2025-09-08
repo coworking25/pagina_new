@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail } from 'lucide-react';
-import { Property } from '../../types';
-import { getAdvisorById, getRandomAdvisor } from '../../data/advisors';
+import { Property, Advisor } from '../../types';
+import { getAdvisorById } from '../../lib/supabase';
 import Button from '../UI/Button';
 import ImageGallery from '../UI/ImageGallery';
 import MortgageCalculator from '../UI/MortgageCalculator';
@@ -27,13 +27,36 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'map' | 'mortgage' | 'history'>('overview');
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  
+  // Estados para el asesor
+  const [currentAdvisor, setCurrentAdvisor] = useState<Advisor | null>(null);
+  const [loadingAdvisor, setLoadingAdvisor] = useState(false);
+
+  // Cargar asesor cuando se abre el modal o cambia la propiedad
+  useEffect(() => {
+    if (property && property.advisor_id && isOpen) {
+      setLoadingAdvisor(true);
+      console.log('👥 Cargando asesor con ID:', property.advisor_id);
+      
+      getAdvisorById(property.advisor_id)
+        .then(advisor => {
+          console.log('✅ Asesor cargado:', advisor);
+          setCurrentAdvisor(advisor);
+        })
+        .catch(error => {
+          console.error('❌ Error cargando asesor:', error);
+          setCurrentAdvisor(null);
+        })
+        .finally(() => {
+          setLoadingAdvisor(false);
+        });
+    } else {
+      setCurrentAdvisor(null);
+      setLoadingAdvisor(false);
+    }
+  }, [property, isOpen]);
 
   if (!property) return null;
-
-  // Obtener asesor asignado o uno aleatorio
-  const assignedAdvisor = property.advisor_id 
-    ? getAdvisorById(property.advisor_id) 
-    : getRandomAdvisor();
 
   // Normalizar imágenes: extraer URLs del campo 'images'
   let imageUrls: string[] = [];
@@ -83,14 +106,6 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
     }
   };
 
-  const handleContactAdvisor = () => {
-    setIsContactModalOpen(true);
-  };
-
-  const handleScheduleAppointment = () => {
-    setIsScheduleModalOpen(true);
-  };
-
   const tabs = [
     { id: 'overview', label: 'Descripción', icon: MapPin },
     { id: 'map', label: 'Ubicación', icon: MapPin },
@@ -108,7 +123,8 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
             <p className="text-gray-600 dark:text-gray-400 mb-4">Vista del mapa interactivo</p>
             <button
               onClick={() => {
-                const url = `https://www.google.com/maps/search/${encodeURIComponent(property.location)}`;
+                const location = property.location || 'Ubicación no disponible';
+                const url = `https://www.google.com/maps/search/${encodeURIComponent(location)}`;
                 window.open(url, '_blank');
               }}
               className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
@@ -228,51 +244,94 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                       />
 
                       {/* Advisor Card */}
-                      {assignedAdvisor && (
+                      {loadingAdvisor ? (
+                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/20 dark:to-gray-700/20 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                            Cargando Asesor...
+                          </h4>
+                          <div className="flex items-center space-x-4">
+                            <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-full animate-pulse"></div>
+                            <div className="flex-1">
+                              <div className="h-5 bg-gray-200 dark:bg-gray-600 rounded mb-2 animate-pulse"></div>
+                              <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4 animate-pulse"></div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : currentAdvisor ? (
                         <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
                           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                             Tu Asesor Inmobiliario
                           </h4>
                           <div className="flex items-center space-x-4">
                             <img
-                              src={assignedAdvisor.photo}
-                              alt={assignedAdvisor.name}
+                              src={currentAdvisor.photo}
+                              alt={currentAdvisor.name}
                               className="w-16 h-16 rounded-full object-cover"
                             />
                             <div className="flex-1">
                               <h5 className="font-semibold text-gray-900 dark:text-white">
-                                {assignedAdvisor.name}
+                                {currentAdvisor.name}
                               </h5>
                               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                {assignedAdvisor.specialty}
+                                {currentAdvisor.specialty}
                               </p>
                               <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                                 <div className="flex items-center space-x-1">
                                   <Phone className="w-4 h-4" />
-                                  <span>{assignedAdvisor.phone}</span>
+                                  <span>{currentAdvisor.phone}</span>
                                 </div>
                                 <div className="flex items-center space-x-1">
                                   <Mail className="w-4 h-4" />
-                                  <span>{assignedAdvisor.email}</span>
+                                  <span>{currentAdvisor.email}</span>
                                 </div>
                               </div>
-                              {assignedAdvisor.experience_years && (
+                              {currentAdvisor.experience_years && (
                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                  {assignedAdvisor.experience_years} años de experiencia
+                                  {currentAdvisor.experience_years} años de experiencia
                                 </p>
                               )}
                             </div>
                           </div>
-                          <div className="mt-4">
-                            <Button
-                              variant="primary"
-                              onClick={handleContactAdvisor}
-                              className="w-full bg-green-600 hover:bg-green-700"
-                              icon={MessageCircle}
-                            >
-                              Contactar por WhatsApp
-                            </Button>
-                          </div>
+                        </div>
+                      ) : property.advisor_id ? (
+                        <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-xl p-6 border border-red-200 dark:border-red-800">
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Asesor No Disponible
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            No se pudo cargar la información del asesor asignado.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800">
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Sin Asesor Asignado
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Esta propiedad no tiene un asesor específico asignado.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      {currentAdvisor && (
+                        <div className="mt-4 space-y-3">
+                          <Button
+                            variant="primary"
+                            onClick={() => setIsContactModalOpen(true)}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            icon={MessageCircle}
+                          >
+                            Contactar Asesor
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setIsScheduleModalOpen(true)}
+                            className="w-full"
+                            icon={Calendar}
+                          >
+                            Agendar Cita
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -386,26 +445,6 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                           )}
                         </div>
                       </div>
-
-                      {/* Action Buttons */}
-                      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <Button
-                          variant="outline"
-                          icon={MessageCircle}
-                          onClick={handleContactAdvisor}
-                          className="w-full"
-                        >
-                          Contactar Asesor
-                        </Button>
-                        <Button
-                          variant="primary"
-                          icon={Calendar}
-                          onClick={handleScheduleAppointment}
-                          className="w-full"
-                        >
-                          Agendar Cita
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -416,20 +455,20 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
       </AnimatePresence>
 
       {/* Contact Form Modal */}
-      {assignedAdvisor && (
+      {currentAdvisor && (
         <ContactFormModal
           property={property}
-          advisor={assignedAdvisor}
+          advisor={currentAdvisor}
           isOpen={isContactModalOpen}
           onClose={() => setIsContactModalOpen(false)}
         />
       )}
 
       {/* Schedule Appointment Modal */}
-      {assignedAdvisor && (
+      {currentAdvisor && (
         <ScheduleAppointmentModal
           property={property}
-          advisor={assignedAdvisor}
+          advisor={currentAdvisor}
           isOpen={isScheduleModalOpen}
           onClose={() => setIsScheduleModalOpen(false)}
         />

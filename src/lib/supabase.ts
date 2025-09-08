@@ -6,80 +6,14 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Validar que las variables de entorno estén configuradas
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Variables de entorno de Supabase no configuradas:');
-  console.error('VITE_SUPABASE_URL:', supabaseUrl);
-  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[CONFIGURADA]' : '[NO CONFIGURADA]');
   throw new Error('Variables de entorno de Supabase no configuradas. Revisa tu archivo .env');
 }
 
-console.log('✅ Inicializando cliente Supabase...');
-console.log('URL:', supabaseUrl);
-console.log('Key:', supabaseAnonKey ? '[CONFIGURADA]' : '[NO CONFIGURADA]');
-
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Exponer supabase globalmente para debugging
-if (typeof window !== 'undefined') {
+// Exponer supabase globalmente solo para debugging en desarrollo
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).supabase = supabase;
-  (window as any).supabaseConfig = {
-    url: supabaseUrl,
-    key: supabaseAnonKey
-  };
-  (window as any).debugTables = debugTables;
-  (window as any).testAdvisorImages = () => {
-    console.log('🖼️ Probando URLs de imágenes de asesores...');
-    
-    const urls = [
-      { name: 'Santiago Sánchez', file: '1.jpeg' },
-      { name: 'Andrés Metrio', file: '2.jpg' }
-    ];
-    
-    urls.forEach(({ name, file }) => {
-      const url = getAdvisorImageUrl(file);
-      console.log(`📸 ${name}: ${url}`);
-      
-      // Probar si la imagen existe
-      fetch(url)
-        .then(response => {
-          if (response.ok) {
-            console.log(`✅ ${name}: Imagen disponible`);
-          } else {
-            console.log(`❌ ${name}: Error ${response.status} - ${response.statusText}`);
-          }
-        })
-        .catch(error => {
-          console.log(`❌ ${name}: Error de red - ${error.message}`);
-        });
-    });
-  };
-  (window as any).getAdvisorImageUrl = getAdvisorImageUrl;
-  (window as any).testAppointment = async () => {
-    const testData = {
-      client_name: 'Test Cliente',
-      client_email: 'test@example.com',
-      client_phone: '+57 300 123 4567',
-      property_id: 123, // Número en lugar de string
-      advisor_id: 'advisor-1',
-      appointment_date: new Date().toISOString(),
-      appointment_type: 'visita',
-      visit_type: 'presencial',
-      attendees: 1,
-      special_requests: 'Test desde consola',
-      contact_method: 'whatsapp',
-      marketing_consent: true
-    };
-    
-    try {
-      const result = await savePropertyAppointmentSimple(testData);
-      console.log('✅ Test exitoso:', result);
-      return result;
-    } catch (error) {
-      console.error('❌ Test falló:', error);
-      return error;
-    }
-  };
-  console.log('🔧 Supabase client expuesto globalmente como window.supabase');
-  console.log('🧪 Función de prueba disponible como window.testAppointment()');
 }
 
 // Función para guardar citas de propiedades
@@ -99,22 +33,6 @@ export async function savePropertyAppointmentSimple(appointmentData: {
   marketing_consent: boolean;
 }) {
   try {
-    console.log('💾 Guardando cita SIMPLE:', appointmentData);
-    
-    // Primero, probar la conectividad con Supabase
-    console.log('🔗 Probando conectividad con Supabase...');
-    const { error: testError } = await supabase
-      .from('property_appointments')
-      .select('count')
-      .limit(1);
-    
-    if (testError) {
-      console.error('❌ Error de conectividad con Supabase:', testError);
-      throw new Error(`Error de conexión con la base de datos: ${testError.message}`);
-    }
-    
-    console.log('✅ Conectividad con Supabase confirmada');
-    
     // Crear objeto que coincida exactamente con la tabla creada
     const simpleData = {
       client_name: appointmentData.client_name,
@@ -132,25 +50,16 @@ export async function savePropertyAppointmentSimple(appointmentData: {
       status: 'pending' // Campo obligatorio con default
     };
     
-    console.log('📝 Datos para insertar:', simpleData);
-    
     const { data, error } = await supabase
       .from('property_appointments')
       .insert([simpleData])
       .select();
     
     if (error) {
-      console.error('❌ Error al guardar la cita SIMPLE:', error);
-      console.error('❌ Detalle completo del error:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      console.error('❌ Error al guardar la cita:', error);
       throw error;
     }
     
-    console.log('✅ Cita SIMPLE guardada exitosamente:', data);
     return data[0];
   } catch (error) {
     console.error('❌ Error en savePropertyAppointmentSimple:', error);
@@ -179,14 +88,6 @@ export async function savePropertyAppointment(appointmentData: {
   marketing_consent: boolean;
 }) {
   try {
-    console.log('💾 Guardando cita de propiedad:', appointmentData);
-    console.log('🔧 Datos detallados:', {
-      ...appointmentData,
-      appointment_date_type: typeof appointmentData.appointment_date,
-      property_id_type: typeof appointmentData.property_id,
-      attendees_type: typeof appointmentData.attendees
-    });
-    
     const { data, error } = await supabase
       .from('property_appointments')
       .insert([appointmentData])
@@ -203,7 +104,6 @@ export async function savePropertyAppointment(appointmentData: {
       throw error;
     }
     
-    console.log('✅ Cita guardada exitosamente:', data);
     return data[0];
   } catch (error) {
     console.error('❌ Error en savePropertyAppointment:', error);
@@ -218,8 +118,6 @@ export async function savePropertyAppointment(appointmentData: {
 // Función para login de usuario
 export async function loginUser(email: string, password: string) {
   try {
-    console.log('🔐 Intentando login para:', email);
-    
     // Verificación simple de credenciales hardcodeadas
     const validCredentials = [
       { email: 'admincoworkin@inmobiliaria.com', password: '21033384', name: 'Admin Coworkin', role: 'admin' },
@@ -231,11 +129,8 @@ export async function loginUser(email: string, password: string) {
     );
     
     if (!user) {
-      console.log('❌ Credenciales incorrectas');
       throw new Error('Credenciales incorrectas');
     }
-    
-    console.log('✅ Credenciales válidas para:', user.name);
     
     // Crear sesión simple
     const sessionToken = generateSessionToken();
@@ -250,7 +145,6 @@ export async function loginUser(email: string, password: string) {
     localStorage.setItem('auth_token', sessionToken);
     localStorage.setItem('user_data', JSON.stringify(userData));
     
-    console.log('✅ Login exitoso:', user.name);
     return {
       user: userData,
       session: { token: sessionToken }
@@ -267,16 +161,10 @@ export async function logoutUser() {
   try {
     const userData = localStorage.getItem('user_data');
     
-    if (userData) {
-      const user = JSON.parse(userData);
-      console.log('🔓 Logout para:', user.email);
-    }
-    
     // Limpiar localStorage
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
     
-    console.log('✅ Logout exitoso');
     return true;
   } catch (error) {
     console.error('❌ Error en logout:', error);
@@ -294,13 +182,11 @@ export async function isAuthenticated(): Promise<boolean> {
     const userData = localStorage.getItem('user_data');
     
     if (!token || !userData) {
-      console.log('❌ No hay token o datos de usuario');
       return false;
     }
     
     try {
       const user = JSON.parse(userData);
-      console.log('✅ Usuario autenticado encontrado:', user.email);
       return true;
     } catch (parseError) {
       console.error('❌ Error parseando datos de usuario:', parseError);
@@ -341,23 +227,9 @@ function generateSessionToken(): string {
 // FUNCIONES EXISTENTES
 // ==========================================
 
-// Función para verificar si las tablas existen
+// Función para verificar si las tablas existen (solo para desarrollo)
 export async function debugTables() {
   try {
-    console.log('🔍 Verificando tablas disponibles...');
-    
-    // Intentar obtener información de las tablas
-    const { data: tables, error: tablesError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public');
-    
-    if (tablesError) {
-      console.log('❌ No se pudo obtener info de tablas:', tablesError);
-    } else {
-      console.log('📋 Tablas disponibles:', tables);
-    }
-    
     // Verificar específicamente la tabla property_appointments
     const { data: appointmentsTest, error: appointmentsError } = await supabase
       .from('property_appointments')
@@ -365,12 +237,11 @@ export async function debugTables() {
       .limit(1);
     
     if (appointmentsError) {
-      console.log('❌ Error con tabla property_appointments:', appointmentsError);
-    } else {
-      console.log('✅ Tabla property_appointments accesible:', appointmentsTest);
+      console.error('❌ Error con tabla property_appointments:', appointmentsError);
+      return null;
     }
     
-    return { tables, appointmentsTest };
+    return { appointmentsTest };
   } catch (error) {
     console.error('❌ Error en debugTables:', error);
     return null;
@@ -380,7 +251,6 @@ export async function debugTables() {
 // Función para obtener todas las citas (para debugging)
 export async function getAllPropertyAppointments() {
   try {
-    console.log('🔍 Obteniendo todas las citas...');
     const { data, error } = await supabase
       .from('property_appointments')
       .select('*')
@@ -391,7 +261,6 @@ export async function getAllPropertyAppointments() {
       throw error;
     }
     
-    console.log(`✅ Se encontraron ${data?.length || 0} citas:`, data);
     return data;
   } catch (error) {
     console.error('❌ Error en getAllPropertyAppointments:', error);
@@ -460,8 +329,6 @@ export function getAdvisorImageUrl(photoUrl: string | null): string {
 // Función para obtener todos los asesores activos
 export async function getAdvisors(): Promise<Advisor[]> {
   try {
-    console.log('🔍 Obteniendo asesores desde Supabase...');
-    
     const { data, error } = await supabase
       .from('advisors')
       .select('*')
@@ -493,7 +360,6 @@ export async function getAdvisors(): Promise<Advisor[]> {
       experience_years: advisor.experience_years || 0
     }));
     
-    console.log('✅ Asesores obtenidos exitosamente:', advisors.length);
     return advisors;
     
   } catch (error) {
@@ -543,8 +409,6 @@ export async function getAdvisors(): Promise<Advisor[]> {
 // Función para obtener un asesor específico por ID
 export async function getAdvisorById(id: string): Promise<Advisor | null> {
   try {
-    console.log('🔍 Obteniendo asesor por ID:', id);
-    
     const { data, error } = await supabase
       .from('advisors')
       .select('*')
@@ -581,7 +445,6 @@ export async function getAdvisorById(id: string): Promise<Advisor | null> {
       experience_years: data.experience_years || 0
     };
     
-    console.log('✅ Asesor obtenido exitosamente:', advisor.name);
     return advisor;
     
   } catch (error) {
@@ -594,25 +457,17 @@ export async function getAdvisorById(id: string): Promise<Advisor | null> {
 export function getPublicImageUrl(path: string) {
   // Validación básica
   if (!path || typeof path !== 'string' || path.trim() === '') {
-    console.log('⚠️ getPublicImageUrl: Path vacío o inválido:', path);
     return 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg';
   }
   
   // Si ya es una URL completa, devolverla
   if (path.startsWith('http')) {
-    console.log('🔗 getPublicImageUrl: URL completa detectada:', path);
     return path;
   }
   
   // Limpiar el path
   let cleanPath = path.trim();
   const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-  
-  console.log('🔧 getPublicImageUrl procesando:', {
-    originalPath: path,
-    cleanPath: cleanPath,
-    baseUrl: baseUrl
-  });
   
   // Para el nuevo bucket property-images
   // La estructura será: property-images/CA-XXX/imagen.jpg
@@ -623,35 +478,28 @@ export function getPublicImageUrl(path: string) {
     // Si viene del bucket anterior, extraer la parte relevante
     if (cleanPath.includes('imagenes/imagenes/')) {
       propertyPath = cleanPath.replace('imagenes/imagenes/', '');
-      console.log('📁 Detectado path del bucket anterior (imagenes/imagenes)');
     } else if (cleanPath.includes('imagenes/')) {
       propertyPath = cleanPath.replace('imagenes/', '');
-      console.log('📁 Detectado path del bucket anterior (imagenes)');
     }
     
     // Construir URL para el nuevo bucket
     const finalUrl = `${baseUrl}/storage/v1/object/public/property-images/${propertyPath}`;
-    console.log('✅ URL generada:', finalUrl);
     return finalUrl;
   }
   
   // Si después de limpiar queda vacío, usar imagen por defecto
   if (!cleanPath) {
-    console.log('⚠️ Path limpio vacío, usando imagen por defecto');
     return 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg';
   }
   
   // Para otros casos, usar bucket por defecto
   const finalUrl = `${baseUrl}/storage/v1/object/public/imagenes/${cleanPath}`;
-  console.log('✅ URL generada (bucket imagenes):', finalUrl);
   return finalUrl;
 }
 
 // Función principal para obtener propiedades
 export async function getProperties(): Promise<Property[]> {
   try {
-    console.log('🔍 Obteniendo propiedades desde Supabase...');
-    
     const { data, error } = await supabase
       .from('properties')
       .select('*')
@@ -662,16 +510,12 @@ export async function getProperties(): Promise<Property[]> {
       throw error;
     }
     
-    console.log('📦 Datos obtenidos de Supabase:', data?.length, 'propiedades');
-    
     if (!data || data.length === 0) {
-      console.log('📭 No se encontraron propiedades en la base de datos');
       return [];
     }
     
     // Transformar datos de Supabase a formato de la aplicación
     const properties: Property[] = data.map(prop => {
-      console.log('🔧 Procesando propiedad:', prop.title, 'con imágenes:', prop.images);
       
       // Procesar array de imágenes
       let processedImages: string[] = [];
@@ -679,7 +523,6 @@ export async function getProperties(): Promise<Property[]> {
       if (prop.images && Array.isArray(prop.images)) {
         processedImages = prop.images.map((img: string) => {
           const processedUrl = getPublicImageUrl(img);
-          console.log('🖼️ Imagen procesada:', img, '→', processedUrl);
           return processedUrl;
         });
       } else if (typeof prop.images === 'string') {
@@ -723,7 +566,6 @@ export async function getProperties(): Promise<Property[]> {
       };
     });
     
-    console.log('✅ Propiedades procesadas exitosamente:', properties.length);
     return properties;
     
   } catch (error) {
@@ -735,8 +577,6 @@ export async function getProperties(): Promise<Property[]> {
 // Función para obtener propiedades destacadas
 export async function getFeaturedProperties(): Promise<Property[]> {
   try {
-    console.log('🌟 Obteniendo propiedades destacadas desde Supabase...');
-    
     const { data, error } = await supabase
       .from('properties')
       .select('*')
@@ -749,10 +589,8 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       throw error;
     }
     
-    console.log('📦 Propiedades destacadas obtenidas:', data?.length || 0);
     
     if (!data || data.length === 0) {
-      console.log('📭 No se encontraron propiedades destacadas, obteniendo las más recientes...');
       // Si no hay propiedades destacadas, obtener las 6 más recientes
       const { data: recentData, error: recentError } = await supabase
         .from('properties')
@@ -769,7 +607,6 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       
       // Procesar las propiedades recientes
       const recentProperties: Property[] = recentData.map(prop => {
-        console.log('🔧 Procesando propiedad reciente:', prop.title);
         
         // Procesar array de imágenes
         let processedImages: string[] = [];
@@ -815,7 +652,6 @@ export async function getFeaturedProperties(): Promise<Property[]> {
         };
       });
       
-      console.log('✅ Propiedades recientes procesadas exitosamente:', recentProperties.length);
       return recentProperties;
     }
     
@@ -823,7 +659,6 @@ export async function getFeaturedProperties(): Promise<Property[]> {
     
     // Transformar datos usando la misma lógica que getProperties
     const properties: Property[] = data.map(prop => {
-      console.log('🔧 Procesando propiedad destacada:', prop.title);
       
       // Procesar array de imágenes
       let processedImages: string[] = [];
@@ -869,7 +704,6 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       };
     });
     
-    console.log('✅ Propiedades destacadas procesadas exitosamente:', properties.length);
     return properties;
     
   } catch (error) {
@@ -889,15 +723,12 @@ import type { ServiceInquiry } from '../types';
  */
 export async function createServiceInquiry(inquiry: Omit<ServiceInquiry, 'id' | 'created_at' | 'updated_at'>): Promise<ServiceInquiry | null> {
   try {
-    console.log('📝 [SUPABASE] Creando consulta de servicio...');
-    console.log('📊 [SUPABASE] Datos recibidos:', inquiry);
     
     // Verificar conexión a Supabase
     if (!supabase) {
       throw new Error('Supabase client no está inicializado');
     }
     
-    console.log('🔗 [SUPABASE] Cliente inicializado correctamente');
     
     const dataToInsert = {
       client_name: inquiry.client_name,
@@ -914,7 +745,6 @@ export async function createServiceInquiry(inquiry: Omit<ServiceInquiry, 'id' | 
       source: inquiry.source || 'website'
     };
     
-    console.log('📤 [SUPABASE] Datos a insertar:', dataToInsert);
     
     const { data, error } = await supabase
       .from('service_inquiries')
@@ -931,7 +761,6 @@ export async function createServiceInquiry(inquiry: Omit<ServiceInquiry, 'id' | 
       throw error;
     }
     
-    console.log('✅ [SUPABASE] Consulta creada exitosamente:', data);
     return data;
     
   } catch (error) {
@@ -956,7 +785,6 @@ export async function getServiceInquiries(filters?: {
   limit?: number;
 }): Promise<ServiceInquiry[]> {
   try {
-    console.log('🔍 Obteniendo consultas de servicios...', filters);
     
     let query = supabase
       .from('service_inquiries')
@@ -982,7 +810,6 @@ export async function getServiceInquiries(filters?: {
       throw error;
     }
     
-    console.log('✅ Consultas de servicios obtenidas exitosamente:', data?.length || 0);
     return data || [];
     
   } catch (error) {
@@ -999,7 +826,6 @@ export async function updateServiceInquiry(
   updates: Partial<ServiceInquiry>
 ): Promise<ServiceInquiry | null> {
   try {
-    console.log('📝 [SUPABASE] Actualizando consulta de servicio:', id, updates);
     
     const { data, error } = await supabase
       .from('service_inquiries')
@@ -1023,13 +849,11 @@ export async function updateServiceInquiry(
       if (checkError) {
         console.error('❌ [SUPABASE] El registro no existe:', checkError);
       } else {
-        console.log('✅ [SUPABASE] El registro existe:', existingRecord);
       }
       
       throw error;
     }
     
-    console.log('✅ [SUPABASE] Consulta actualizada exitosamente:', data);
     return data;
     
   } catch (error) {
@@ -1043,7 +867,6 @@ export async function updateServiceInquiry(
  */
 export async function markInquiryAsWhatsAppSent(id: string): Promise<boolean> {
   try {
-    console.log('📱 [SUPABASE] Marcando consulta como enviada por WhatsApp:', id);
     
     // Hacer la actualización sin intentar obtener el resultado
     const { error } = await supabase
@@ -1060,7 +883,6 @@ export async function markInquiryAsWhatsAppSent(id: string): Promise<boolean> {
       return false;
     }
     
-    console.log('✅ [SUPABASE] Consulta marcada como enviada por WhatsApp exitosamente');
     return true;
     
   } catch (error) {
@@ -1080,7 +902,6 @@ export async function getServiceInquiriesStats(): Promise<{
   this_month: number;
 }> {
   try {
-    console.log('📊 Obteniendo estadísticas de consultas de servicios...');
     
     const { data, error } = await supabase
       .from('service_inquiries')
@@ -1127,7 +948,6 @@ export async function getServiceInquiriesStats(): Promise<{
       this_month
     };
     
-    console.log('✅ Estadísticas obtenidas exitosamente:', stats);
     return stats;
     
   } catch (error) {
@@ -1176,7 +996,6 @@ export async function getDashboardStats(): Promise<{
   };
 }> {
   try {
-    console.log('📊 Obteniendo estadísticas completas del dashboard...');
     
     // Obtener datos en paralelo
     const [
@@ -1250,7 +1069,6 @@ export async function getDashboardStats(): Promise<{
       clients: clientsStats
     };
 
-    console.log('✅ Estadísticas del dashboard obtenidas:', dashboardStats);
     return dashboardStats;
     
   } catch (error) {
@@ -1266,7 +1084,6 @@ export async function getDashboardStats(): Promise<{
 // Función para subir imagen a Supabase Storage
 export async function uploadPropertyImage(file: File): Promise<string> {
   try {
-    console.log('📸 Subiendo imagen:', file.name);
     
     // Generar nombre único para el archivo
     const fileExt = file.name.split('.').pop();
@@ -1291,7 +1108,6 @@ export async function uploadPropertyImage(file: File): Promise<string> {
       .from('propiedades')
       .getPublicUrl(filePath);
     
-    console.log('✅ Imagen subida exitosamente:', publicUrlData.publicUrl);
     return publicUrlData.publicUrl;
   } catch (error) {
     console.error('❌ Error en uploadPropertyImage:', error);
@@ -1307,7 +1123,6 @@ export async function deletePropertyImage(imageUrl: string): Promise<boolean> {
     const fileName = urlParts[urlParts.length - 1];
     const filePath = `properties/${fileName}`;
     
-    console.log('🗑️ Eliminando imagen:', filePath);
     
     const { error } = await supabase.storage
       .from('propiedades')
@@ -1318,7 +1133,6 @@ export async function deletePropertyImage(imageUrl: string): Promise<boolean> {
       throw error;
     }
     
-    console.log('✅ Imagen eliminada exitosamente');
     return true;
   } catch (error) {
     console.error('❌ Error en deletePropertyImage:', error);
@@ -1333,7 +1147,6 @@ export async function deletePropertyImage(imageUrl: string): Promise<boolean> {
 // Función para crear una nueva propiedad
 export async function createProperty(propertyData: Omit<Property, 'id' | 'created_at' | 'updated_at'>) {
   try {
-    console.log('🏠 Creando nueva propiedad:', propertyData);
     
     const { data, error } = await supabase
       .from('properties')
@@ -1346,7 +1159,6 @@ export async function createProperty(propertyData: Omit<Property, 'id' | 'create
       throw error;
     }
     
-    console.log('✅ Propiedad creada exitosamente:', data);
     return data as Property;
   } catch (error) {
     console.error('❌ Error en createProperty:', error);
@@ -1357,7 +1169,6 @@ export async function createProperty(propertyData: Omit<Property, 'id' | 'create
 // Función para actualizar una propiedad
 export async function updateProperty(propertyId: string, propertyData: Partial<Property>) {
   try {
-    console.log('📝 Actualizando propiedad:', propertyId, propertyData);
     
     const { data, error } = await supabase
       .from('properties')
@@ -1371,7 +1182,6 @@ export async function updateProperty(propertyId: string, propertyData: Partial<P
       throw error;
     }
     
-    console.log('✅ Propiedad actualizada exitosamente:', data);
     return data as Property;
   } catch (error) {
     console.error('❌ Error en updateProperty:', error);
@@ -1382,7 +1192,6 @@ export async function updateProperty(propertyId: string, propertyData: Partial<P
 // Función para eliminar una propiedad
 export async function deleteProperty(propertyId: string) {
   try {
-    console.log('🗑️ Eliminando propiedad:', propertyId);
     
     const { error } = await supabase
       .from('properties')
@@ -1394,7 +1203,6 @@ export async function deleteProperty(propertyId: string) {
       throw error;
     }
     
-    console.log('✅ Propiedad eliminada exitosamente');
     return true;
   } catch (error) {
     console.error('❌ Error en deleteProperty:', error);
@@ -1409,7 +1217,6 @@ export async function deleteProperty(propertyId: string) {
 // Función para debug: verificar usuarios en la base de datos
 export async function debugUsers() {
   try {
-    console.log('🔍 Obteniendo usuarios de la base de datos...');
     
     const { data: users, error } = await supabase
       .from('system_users')
@@ -1420,9 +1227,7 @@ export async function debugUsers() {
       return;
     }
     
-    console.log('👥 Usuarios encontrados:', users?.length || 0);
     users?.forEach(user => {
-      console.log(`📧 ${user.email} | 🔑 ${user.password_hash} | 📊 ${user.status} | 👤 ${user.role}`);
     });
     
     return users;
@@ -1433,10 +1238,8 @@ export async function debugUsers() {
 
 // Función para limpiar completamente la autenticación
 export function clearAuth() {
-  console.log('🧹 Limpiando datos de autenticación...');
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user_data');
-  console.log('✅ Datos de autenticación limpiados');
 }
 
 // Exponer funciones de debug globalmente

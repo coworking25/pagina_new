@@ -18,8 +18,7 @@ import {
 } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import Button from '../UI/Button';
-import SupabaseDebug from '../UI/SupabaseDebug';
-import { savePropertyAppointmentSimple, debugTables } from '../../lib/supabase';
+import { savePropertyAppointmentSimple } from '../../lib/supabase';
 
 interface ScheduleAppointmentModalProps {
   property: Property;
@@ -189,10 +188,6 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Primero, ejecutar debug para ver qué tablas existen
-      console.log('🔧 Ejecutando debug de tablas...');
-      await debugTables();
-      
       // Formatear la fecha y hora para la base de datos
       const appointmentDateTime = new Date(`${formData.preferredDate}T${formData.preferredTime}:00`);
       
@@ -362,7 +357,7 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                   <img
                     src={advisor.photo}
                     alt={advisor.name}
-                    className="w-20 h-20 rounded-full object-cover object-center border-4 border-white shadow-lg modal-advisor-image"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       console.error(`❌ Error cargando imagen del asesor ${advisor.name} en modal:`, advisor.photo);
@@ -373,10 +368,10 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                     }}
                   />
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {advisor.name}
                     </h3>
-                    <p className="text-blue-600 dark:text-blue-400 font-medium">
+                    <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">
                       {advisor.specialty}
                     </p>
                     <div className="flex items-center space-x-1 mt-2">
@@ -730,9 +725,6 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
           </div>
         </div>
       </motion.div>
-      
-      {/* Componente de debug - solo para desarrollo */}
-      <SupabaseDebug isOpen={isOpen} />
     </div>
   );
 };

@@ -40,11 +40,13 @@ import {
   Phone,
   MessageCircle
 } from 'lucide-react';
-import { getProperties, createProperty, updateProperty, deleteProperty, uploadPropertyImage, deletePropertyImage } from '../lib/supabase';
-import { Property } from '../types';
+import { getProperties, createProperty, updateProperty, deleteProperty, uploadPropertyImage, deletePropertyImage, getAdvisorById } from '../lib/supabase';
+import { Property, Advisor } from '../types';
 import Modal from '../components/UI/Modal';
 import Dropdown, { DropdownItem, DropdownDivider } from '../components/UI/Dropdown';
 import FloatingCard from '../components/UI/FloatingCard';
+import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
+import ContactModal from '../components/Modals/ContactModal';
 
 function AdminProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -60,6 +62,14 @@ function AdminProperties() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
+  // Estados para asesores
+  const [currentAdvisor, setCurrentAdvisor] = useState<Advisor | null>(null);
+  const [loadingAdvisor, setLoadingAdvisor] = useState(false);
+  
+  // Estados para modales de contacto y citas
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  
   // Estados para formularios
   const [formData, setFormData] = useState({
     title: '',
@@ -72,6 +82,7 @@ function AdminProperties() {
     type: 'house',
     status: 'sale',
     amenities: '',
+    advisor_id: '',
     images: [] as string[]
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,6 +120,11 @@ function AdminProperties() {
       
       const propertiesData = await getProperties();
       console.log('✅ Propiedades obtenidas:', propertiesData);
+      
+      // Verificar advisor_id en cada propiedad
+      propertiesData.forEach((property, index) => {
+        console.log(`🏠 Propiedad ${index + 1}: "${property.title}" - advisor_id: ${property.advisor_id || 'SIN ASESOR'}`);
+      });
       
       setProperties(propertiesData);
       setLoading(false);
@@ -159,6 +175,7 @@ function AdminProperties() {
       type: 'house',
       status: 'sale',
       amenities: '',
+      advisor_id: '',
       images: []
     });
     setSelectedAmenities([]);
@@ -242,10 +259,34 @@ function AdminProperties() {
   };
 
   // Funciones para manejar modales
-  const handleViewProperty = (property: Property) => {
+  const handleViewProperty = async (property: Property) => {
+    console.log('🔍 Abriendo detalles de propiedad:', property);
+    console.log('📋 advisor_id encontrado:', property.advisor_id);
+    
     setSelectedProperty(property);
     setCurrentImageIndex(0); // Reiniciar al primer índice
     setShowDetailsModal(true);
+    
+    // Cargar información del asesor si tiene advisor_id
+    if (property.advisor_id) {
+      setLoadingAdvisor(true);
+      setCurrentAdvisor(null); // Limpiar asesor anterior
+      console.log('👥 Cargando asesor con ID:', property.advisor_id);
+      try {
+        const advisor = await getAdvisorById(property.advisor_id);
+        console.log('✅ Asesor cargado:', advisor);
+        setCurrentAdvisor(advisor);
+      } catch (error) {
+        console.error('❌ Error cargando asesor:', error);
+        setCurrentAdvisor(null);
+      } finally {
+        setLoadingAdvisor(false);
+      }
+    } else {
+      console.log('❌ No hay advisor_id en esta propiedad');
+      setCurrentAdvisor(null);
+      setLoadingAdvisor(false);
+    }
   };
 
   const handleEditProperty = (property: Property) => {
@@ -262,6 +303,7 @@ function AdminProperties() {
       type: property.type || 'house',
       status: property.status || 'sale',
       amenities: Array.isArray(property.amenities) ? property.amenities.join(', ') : '',
+      advisor_id: property.advisor_id || '',
       images: property.images || []
     });
     
@@ -1270,20 +1312,40 @@ function AdminProperties() {
                   
                   <div className="space-y-4">
                     {/* Agendar Cita */}
-                    <button className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    <button 
+                      onClick={() => {
+                        console.log('🗓️ Clicked Agendar Cita button');
+                        console.log('Current Advisor:', currentAdvisor);
+                        console.log('Selected Property:', selectedProperty);
+                        setShowAppointmentModal(true);
+                      }}
+                      className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
                       <Calendar className="h-5 w-5" />
                       <span>Agendar Cita</span>
                     </button>
                     
-                    {/* Contactar Cliente */}
-                    <button className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                    {/* Contactar Asesor */}
+                    <button 
+                      onClick={() => {
+                        console.log('📞 Clicked Contactar Asesor button');
+                        console.log('Current Advisor:', currentAdvisor);
+                        console.log('Selected Property:', selectedProperty);
+                        setShowContactModal(true);
+                      }}
+                      className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                    >
                       <Phone className="h-5 w-5" />
-                      <span>Contactar Cliente</span>
+                      <span>Contactar Asesor</span>
                     </button>
                     
-                    {/* WhatsApp */}
+                    {/* WhatsApp Directo */}
                     <button 
-                      onClick={() => window.open(`https://wa.me/573148860404?text=Consulta sobre la propiedad: ${selectedProperty.title}`, '_blank')}
+                      onClick={() => {
+                        const phone = currentAdvisor?.whatsapp || '573148860404';
+                        const message = `Consulta sobre la propiedad: ${selectedProperty.title}`;
+                        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                      }}
                       className="w-full flex items-center justify-center space-x-2 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors"
                     >
                       <MessageCircle className="h-5 w-5" />
@@ -1307,16 +1369,79 @@ function AdminProperties() {
                   <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Asesor Asignado</h4>
                     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                          <Users className="w-6 h-6 text-blue-600" />
+                      {loadingAdvisor ? (
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full animate-pulse"></div>
+                          <div>
+                            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-24 mb-2 animate-pulse"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-32 animate-pulse"></div>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">Juan Pérez</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Asesor Inmobiliario</p>
-                          <p className="text-sm text-blue-600">+57 314 886 0404</p>
+                      ) : currentAdvisor ? (
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center overflow-hidden">
+                            {currentAdvisor.photo ? (
+                              <img 
+                                src={currentAdvisor.photo} 
+                                alt={currentAdvisor.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.log('❌ Error cargando foto del asesor:', currentAdvisor.photo);
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <Users className="w-6 h-6 text-blue-600" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 dark:text-white">{currentAdvisor.name}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{currentAdvisor.specialty}</p>
+                            <p className="text-sm text-blue-600">{currentAdvisor.phone}</p>
+                            {currentAdvisor.experience_years && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {currentAdvisor.experience_years} años de experiencia
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col space-y-2">
+                            <button
+                              onClick={() => window.open(`tel:${currentAdvisor.phone}`, '_self')}
+                              className="flex items-center justify-center w-8 h-8 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-full transition-colors"
+                              title="Llamar"
+                            >
+                              <Phone className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </button>
+                            {currentAdvisor.whatsapp && (
+                              <button
+                                onClick={() => window.open(`https://wa.me/${currentAdvisor.whatsapp}`, '_blank')}
+                                className="flex items-center justify-center w-8 h-8 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 rounded-full transition-colors"
+                                title="WhatsApp"
+                              >
+                                <MessageCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                            <Users className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-500 dark:text-gray-400">Sin asesor asignado</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500">No hay asesor asignado a esta propiedad</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Debug Info */}
+                    <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-xs">
+                      <p><strong>Debug:</strong></p>
+                      <p>Loading Advisor: {loadingAdvisor ? 'Sí' : 'No'}</p>
+                      <p>Current Advisor: {currentAdvisor ? currentAdvisor.name : 'Ninguno'}</p>
+                      <p>Property advisor_id: {selectedProperty?.advisor_id || 'No asignado'}</p>
                     </div>
                   </div>
 
@@ -1539,6 +1664,40 @@ function AdminProperties() {
           </div>
         </form>
       </Modal>
+
+      {/* Modal para Agendar Cita */}
+      {(() => {
+        console.log('🔍 Modal Agendar Cita - Debug:');
+        console.log('showAppointmentModal:', showAppointmentModal);
+        console.log('selectedProperty:', !!selectedProperty);
+        console.log('currentAdvisor:', !!currentAdvisor);
+        console.log('Rendering modal:', !!(selectedProperty && currentAdvisor));
+        return null;
+      })()}
+      {selectedProperty && currentAdvisor && (
+        <ScheduleAppointmentModal
+          isOpen={showAppointmentModal}
+          onClose={() => setShowAppointmentModal(false)}
+          property={selectedProperty}
+          advisor={currentAdvisor}
+        />
+      )}
+
+      {/* Modal para Contactar Asesor */}
+      {(() => {
+        console.log('🔍 Modal Contactar - Debug:');
+        console.log('showContactModal:', showContactModal);
+        console.log('selectedProperty:', !!selectedProperty);
+        console.log('Rendering modal:', !!selectedProperty);
+        return null;
+      })()}
+      {selectedProperty && (
+        <ContactModal
+          isOpen={showContactModal}
+          onClose={() => setShowContactModal(false)}
+          property={selectedProperty}
+        />
+      )}
     </div>
   );
 }
