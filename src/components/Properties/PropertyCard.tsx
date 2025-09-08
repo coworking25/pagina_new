@@ -24,17 +24,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Función para navegar a la página de detalles
-  const handleImageClick = () => {
-    navigate(`/property/${property.id}`);
+  // Función para abrir el modal de detalles
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onViewDetails(property);
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Solo navegar si no se hizo clic en botones de acción
+    // Solo abrir modal si no se hizo clic en botones de acción
     if ((e.target as HTMLElement).closest('button')) {
       return;
     }
-    navigate(`/property/${property.id}`);
+    onViewDetails(property);
   };
 
   // Procesar imágenes del campo 'images' que viene como array de objetos con url
