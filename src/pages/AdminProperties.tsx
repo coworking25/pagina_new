@@ -1435,14 +1435,6 @@ function AdminProperties() {
                         </div>
                       )}
                     </div>
-                    
-                    {/* Debug Info */}
-                    <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-xs">
-                      <p><strong>Debug:</strong></p>
-                      <p>Loading Advisor: {loadingAdvisor ? 'Sí' : 'No'}</p>
-                      <p>Current Advisor: {currentAdvisor ? currentAdvisor.name : 'Ninguno'}</p>
-                      <p>Property advisor_id: {selectedProperty?.advisor_id || 'No asignado'}</p>
-                    </div>
                   </div>
 
                   {/* Estadísticas de la Propiedad */}
@@ -1666,14 +1658,6 @@ function AdminProperties() {
       </Modal>
 
       {/* Modal para Agendar Cita */}
-      {(() => {
-        console.log('🔍 Modal Agendar Cita - Debug:');
-        console.log('showAppointmentModal:', showAppointmentModal);
-        console.log('selectedProperty:', !!selectedProperty);
-        console.log('currentAdvisor:', !!currentAdvisor);
-        console.log('Rendering modal:', !!(selectedProperty && currentAdvisor));
-        return null;
-      })()}
       {selectedProperty && currentAdvisor && (
         <ScheduleAppointmentModal
           isOpen={showAppointmentModal}
@@ -1684,13 +1668,6 @@ function AdminProperties() {
       )}
 
       {/* Modal para Contactar Asesor */}
-      {(() => {
-        console.log('🔍 Modal Contactar - Debug:');
-        console.log('showContactModal:', showContactModal);
-        console.log('selectedProperty:', !!selectedProperty);
-        console.log('Rendering modal:', !!selectedProperty);
-        return null;
-      })()}
       {selectedProperty && (
         <ContactModal
           isOpen={showContactModal}
