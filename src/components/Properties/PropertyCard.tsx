@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar } from 'lucide-react';
 import { Property } from '../../types';
@@ -19,8 +20,22 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   onContact,
   onSchedule,
 }) => {
+  const navigate = useNavigate();
   const [isFavorite, setIsFavorite] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Función para navegar a la página de detalles
+  const handleImageClick = () => {
+    navigate(`/property/${property.id}`);
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Solo navegar si no se hizo clic en botones de acción
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    navigate(`/property/${property.id}`);
+  };
 
   // Procesar imágenes del campo 'images' que viene como array de objetos con url
   let imageUrls: string[] = [];
@@ -81,9 +96,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   };
 
   return (
-    <Card className="overflow-hidden group">
-      {/* Image Section */}
-      <div className="relative h-48 overflow-hidden">
+    <div onClick={handleCardClick}>
+      <Card className="overflow-hidden group cursor-pointer">
+        {/* Image Section - Clicable */}
+        <div 
+          className="relative h-48 overflow-hidden cursor-pointer"
+          onClick={handleImageClick}
+        >
         <motion.img
           key={currentImageIndex}
           initial={{ opacity: 0 }}
@@ -93,6 +112,27 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           alt={property.title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
+
+        {/* Overlay con efecto hover */}
+        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-center">
+            <div className="bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+              <span className="text-sm font-medium">Ver detalles</span>
+              {publicImageUrls.length > 1 && (
+                <div className="text-xs mt-1">
+                  +{publicImageUrls.length - 1} fotos más
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Badge de imágenes */}
+        {publicImageUrls.length > 1 && (
+          <div className="absolute top-3 right-3 bg-black bg-opacity-60 text-white px-2 py-1 rounded-lg text-sm">
+            📸 {publicImageUrls.length}
+          </div>
+        )}
 
         {/* Featured Badge */}
         {property.featured && (
@@ -108,7 +148,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         )}
 
         {/* Status Badge */}
-        <div className="absolute top-3 right-3">
+        <div className={`absolute bottom-3 left-3 ${publicImageUrls.length > 1 ? 'bottom-12' : 'bottom-3'}`}>
           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(property.status)}`}>
             {getStatusText(property.status)}
           </span>
@@ -148,7 +188,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       <div className="p-6">
         {/* Title and Location */}
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+          <h3 
+            className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            onClick={handleImageClick}
+          >
             {property.title}
           </h3>
           <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
@@ -184,7 +227,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="outline"
             size="sm"
@@ -215,6 +258,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </div>
       </div>
     </Card>
+    </div>
   );
 };
 

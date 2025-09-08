@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Home,
@@ -44,6 +45,7 @@ import Dropdown, { DropdownItem, DropdownDivider } from '../components/UI/Dropdo
 import FloatingCard from '../components/UI/FloatingCard';
 
 function AdminProperties() {
+  const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -240,8 +242,8 @@ function AdminProperties() {
 
   // Funciones para manejar modales
   const handleViewProperty = (property: Property) => {
-    setSelectedProperty(property);
-    setShowDetailsModal(true);
+    // Navegar a la página de detalles de la propiedad
+    navigate(`/property/${property.id}`);
   };
 
   const handleEditProperty = (property: Property) => {
@@ -552,14 +554,17 @@ function AdminProperties() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <FloatingCard hover glowEffect elevation="high" className="overflow-hidden">
-              {/* Property Image */}
-              <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800">
+            <FloatingCard hover glowEffect elevation="high" className="overflow-hidden group">
+              {/* Property Image - Clicable */}
+              <div 
+                className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 cursor-pointer"
+                onClick={() => handleViewProperty(property)}
+              >
                 {property.images && property.images.length > 0 ? (
                   <img
                     src={property.images[0]}
                     alt={property.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -567,6 +572,27 @@ function AdminProperties() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <ImageIcon className="w-16 h-16 text-gray-400" />
+                  </div>
+                )}
+                
+                {/* Overlay con efecto hover */}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-center">
+                    <div className="bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                      <span className="text-sm font-medium">Ver detalles</span>
+                      {property.images && property.images.length > 1 && (
+                        <div className="text-xs mt-1">
+                          +{property.images.length - 1} fotos más
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badge de imágenes */}
+                {property.images && property.images.length > 1 && (
+                  <div className="absolute top-3 right-3 bg-black bg-opacity-60 text-white px-2 py-1 rounded-lg text-sm">
+                    📸 {property.images.length}
                   </div>
                 )}
                 
@@ -582,7 +608,7 @@ function AdminProperties() {
 
                 {/* Featured Badge */}
                 {property.featured && (
-                  <div className="absolute top-4 right-4">
+                  <div className={`absolute top-4 ${property.images && property.images.length > 1 ? 'right-20' : 'right-4'}`}>
                     <div className="p-2 bg-yellow-500 rounded-full shadow-lg">
                       <Star className="w-4 h-4 text-white fill-current" />
                     </div>
@@ -597,6 +623,7 @@ function AdminProperties() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         className="p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                       </motion.button>
@@ -630,7 +657,10 @@ function AdminProperties() {
 
               {/* Property Info */}
               <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                <h3 
+                  className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  onClick={() => handleViewProperty(property)}
+                >
                   {property.title}
                 </h3>
                 

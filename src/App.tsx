@@ -7,6 +7,7 @@ import AdminLayout from './components/Layout/AdminLayout';
 import WhatsAppChatbot from './components/UI/WhatsAppChatbot';
 import Home from './pages/Home';
 import Properties from './pages/Properties';
+import PropertyDetail from './pages/PropertyDetail';
 import Advisors from './pages/Advisors';
 import Documentation from './pages/Documentation';
 import Contact from './pages/Contact';
@@ -49,6 +50,7 @@ const AppLayout = () => {
             <Route path="/" element={<Home />} />
             <Route path="/test" element={<TestPage />} />
             <Route path="/properties" element={<Properties />} />
+            <Route path="/property/:id" element={<PropertyDetail />} />
             <Route path="/advisors" element={<Advisors />} />
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/contact" element={<Contact />} />
