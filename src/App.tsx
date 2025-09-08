@@ -22,6 +22,7 @@ import AdminSettings from './pages/AdminSettings';
 import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AdminBadgeProvider } from './contexts/AdminBadgeContext';
+import './utils/debug'; // Importar funciones de debug
 
 // Componente para manejar el layout según la ruta
 const AppLayout = () => {

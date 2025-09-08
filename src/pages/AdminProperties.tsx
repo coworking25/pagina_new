@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Home,
@@ -19,7 +18,6 @@ import {
   MoreVertical,
   Calendar,
   Users,
-  TrendingUp,
   Upload,
   X,
   Check,
@@ -36,7 +34,11 @@ import {
   Wind,
   Sun,
   Camera,
-  FileText
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Phone,
+  MessageCircle
 } from 'lucide-react';
 import { getProperties, createProperty, updateProperty, deleteProperty, uploadPropertyImage, deletePropertyImage } from '../lib/supabase';
 import { Property } from '../types';
@@ -45,7 +47,6 @@ import Dropdown, { DropdownItem, DropdownDivider } from '../components/UI/Dropdo
 import FloatingCard from '../components/UI/FloatingCard';
 
 function AdminProperties() {
-  const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,7 +58,7 @@ function AdminProperties() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   // Estados para formularios
   const [formData, setFormData] = useState({
@@ -242,8 +243,9 @@ function AdminProperties() {
 
   // Funciones para manejar modales
   const handleViewProperty = (property: Property) => {
-    // Navegar a la página de detalles de la propiedad
-    navigate(`/property/${property.id}`);
+    setSelectedProperty(property);
+    setCurrentImageIndex(0); // Reiniciar al primer índice
+    setShowDetailsModal(true);
   };
 
   const handleEditProperty = (property: Property) => {
@@ -1081,71 +1083,261 @@ function AdminProperties() {
         isOpen={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         title={selectedProperty?.title}
-        size="xl"
+        size="full"
       >
         {selectedProperty && (
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="aspect-video bg-gray-200 dark:bg-gray-700 rounded-xl mb-4">
-                  {selectedProperty.images && selectedProperty.images.length > 0 ? (
-                    <img
-                      src={selectedProperty.images[0]}
-                      alt={selectedProperty.title}
-                      className="w-full h-full object-cover rounded-xl"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-16 h-16 text-gray-400" />
+          <div className="p-6 max-h-[80vh] overflow-y-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Galería de Imágenes - Columna Principal */}
+              <div className="lg:col-span-2">
+                <div className="mb-6">
+                  {/* Imagen Principal */}
+                  <div className="relative h-96 bg-gray-200 dark:bg-gray-700 rounded-xl mb-4 overflow-hidden">
+                    {selectedProperty.images && selectedProperty.images.length > 0 ? (
+                      <>
+                        <img
+                          src={selectedProperty.images[currentImageIndex]}
+                          alt={selectedProperty.title}
+                          className="w-full h-full object-cover"
+                        />
+                        
+                        {/* Navegación de Imágenes */}
+                        {selectedProperty.images.length > 1 && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentImageIndex(prev => 
+                                  prev === 0 ? selectedProperty.images.length - 1 : prev - 1
+                                );
+                              }}
+                              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                            >
+                              <ChevronLeft className="h-6 w-6" />
+                            </button>
+                            
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentImageIndex(prev => 
+                                  prev === selectedProperty.images.length - 1 ? 0 : prev + 1
+                                );
+                              }}
+                              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                            >
+                              <ChevronRight className="h-6 w-6" />
+                            </button>
+                          </>
+                        )}
+
+                        {/* Contador de Imágenes */}
+                        <div className="absolute top-4 right-4 bg-black bg-opacity-60 text-white px-3 py-1 rounded-lg text-sm">
+                          {currentImageIndex + 1} / {selectedProperty.images.length}
+                        </div>
+
+                        {/* Badge de Estado */}
+                        <div className="absolute top-4 left-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(selectedProperty.status)}`}>
+                            {selectedProperty.status === 'sale' && 'En Venta'}
+                            {selectedProperty.status === 'rent' && 'En Arriendo'}
+                            {selectedProperty.status === 'sold' && 'Vendido'}
+                            {selectedProperty.status === 'rented' && 'Arrendado'}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-16 h-16 text-gray-400" />
+                        <span className="ml-2 text-gray-500">Sin imágenes disponibles</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thumbnails */}
+                  {selectedProperty.images && selectedProperty.images.length > 1 && (
+                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                      {selectedProperty.images.map((image, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                            index === currentImageIndex 
+                              ? 'border-blue-500 ring-2 ring-blue-200' 
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                        >
+                          <img
+                            src={image}
+                            alt={`${selectedProperty.title} ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Información Detallada */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                    Información de la Propiedad
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="text-center p-4 bg-white dark:bg-gray-700 rounded-lg">
+                      <Bed className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Habitaciones</span>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">{selectedProperty.bedrooms}</p>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-gray-700 rounded-lg">
+                      <Bath className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Baños</span>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">{selectedProperty.bathrooms}</p>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-gray-700 rounded-lg">
+                      <Square className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Área</span>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">{selectedProperty.area}m²</p>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-gray-700 rounded-lg">
+                      <Home className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Tipo</span>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white capitalize">{selectedProperty.type}</p>
+                    </div>
+                  </div>
+
+                  {/* Ubicación */}
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                      <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+                      Ubicación
+                    </h4>
+                    <p className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 p-3 rounded-lg">
+                      {selectedProperty.location || 'Ubicación no disponible'}
+                    </p>
+                  </div>
+
+                  {/* Precio */}
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                      <DollarSign className="w-5 h-5 mr-2 text-green-600" />
+                      Precio
+                    </h4>
+                    <p className="text-3xl font-bold text-green-600 bg-white dark:bg-gray-700 p-3 rounded-lg">
+                      {formatPrice(selectedProperty.price)}
+                    </p>
+                  </div>
+
+                  {/* Amenidades */}
+                  {selectedProperty.amenities && selectedProperty.amenities.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                        <Star className="w-5 h-5 mr-2 text-yellow-500" />
+                        Amenidades
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {selectedProperty.amenities.map((amenity, index) => (
+                          <div key={index} className="flex items-center bg-white dark:bg-gray-700 p-2 rounded-lg">
+                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{amenity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Descripción */}
+                  {selectedProperty.description && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                        <FileText className="w-5 h-5 mr-2 text-indigo-600" />
+                        Descripción
+                      </h4>
+                      <p className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 p-4 rounded-lg leading-relaxed">
+                        {selectedProperty.description}
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
-              
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  {selectedProperty.title}
-                </h3>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <MapPin className="w-5 h-5 text-gray-500 mr-2" />
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {selectedProperty.location || 'Ubicación no disponible'}
-                    </span>
-                  </div>
+
+              {/* Sidebar de Acciones */}
+              <div className="lg:col-span-1">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg sticky top-6">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                    Acciones Disponibles
+                  </h3>
                   
-                  <div className="flex items-center">
-                    <DollarSign className="w-5 h-5 text-gray-500 mr-2" />
-                    <span className="text-2xl font-bold text-blue-600">
-                      {formatPrice(selectedProperty.price)}
-                    </span>
+                  <div className="space-y-4">
+                    {/* Agendar Cita */}
+                    <button className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                      <Calendar className="h-5 w-5" />
+                      <span>Agendar Cita</span>
+                    </button>
+                    
+                    {/* Contactar Cliente */}
+                    <button className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                      <Phone className="h-5 w-5" />
+                      <span>Contactar Cliente</span>
+                    </button>
+                    
+                    {/* WhatsApp */}
+                    <button 
+                      onClick={() => window.open(`https://wa.me/573148860404?text=Consulta sobre la propiedad: ${selectedProperty.title}`, '_blank')}
+                      className="w-full flex items-center justify-center space-x-2 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      <span>WhatsApp</span>
+                    </button>
+                    
+                    {/* Editar Propiedad */}
+                    <button 
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        handleEditProperty(selectedProperty);
+                      }}
+                      className="w-full flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Edit className="h-5 w-5" />
+                      <span>Editar Propiedad</span>
+                    </button>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 py-4">
-                    <div className="text-center">
-                      <Bed className="w-6 h-6 text-gray-500 mx-auto mb-1" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Habitaciones</span>
-                      <p className="font-semibold">{selectedProperty.bedrooms}</p>
-                    </div>
-                    <div className="text-center">
-                      <Bath className="w-6 h-6 text-gray-500 mx-auto mb-1" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Baños</span>
-                      <p className="font-semibold">{selectedProperty.bathrooms}</p>
-                    </div>
-                    <div className="text-center">
-                      <Square className="w-6 h-6 text-gray-500 mx-auto mb-1" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Área</span>
-                      <p className="font-semibold">{selectedProperty.area}m²</p>
+
+                  {/* Información del Asesor */}
+                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Asesor Asignado</h4>
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                          <Users className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">Juan Pérez</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Asesor Inmobiliario</p>
+                          <p className="text-sm text-blue-600">+57 314 886 0404</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  
-                  {selectedProperty.description && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Descripción</h4>
-                      <p className="text-gray-700 dark:text-gray-300">{selectedProperty.description}</p>
+
+                  {/* Estadísticas de la Propiedad */}
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Estadísticas</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Vistas</span>
+                        <span className="font-medium text-gray-900 dark:text-white">24</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Consultas</span>
+                        <span className="font-medium text-gray-900 dark:text-white">8</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Citas</span>
+                        <span className="font-medium text-gray-900 dark:text-white">3</span>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
