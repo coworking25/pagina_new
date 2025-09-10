@@ -15,7 +15,6 @@ import {
   MapPin,
   Star,
   Image as ImageIcon,
-  MoreVertical,
   Calendar,
   Users,
   Upload,
@@ -38,16 +37,52 @@ import {
   ChevronLeft,
   ChevronRight,
   Phone,
-  MessageCircle
+  MessageCircle,
+  Home as HomeIcon,
+  Building,
+  Gamepad2,
+  Baby,
+  Building2,
+  ArrowUp,
+  Flame,
+  Droplets,
+  Tv,
+  WashingMachine,
+  Refrigerator,
+  ChefHat,
+  Sofa,
+  Coffee,
+  Activity,
+  TreePine,
+  Flower,
+  Fence,
+  Users as UsersIcon,
+  Music,
+  Volume2,
+  Cctv,
+  Lock,
+  Lightbulb,
+  Thermometer,
+  Fan,
+  Shirt,
+  Dog,
+  Heart,
+  Briefcase,
+  School,
+  CrossIcon,
+  Bus,
+  Train,
+  Plane,
+  ShoppingBag,
+  Mountain,
+  Sparkles
 } from 'lucide-react';
-import { getProperties, createProperty, updateProperty, deleteProperty, uploadPropertyImage, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode } from '../lib/supabase';
+import { getProperties, createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode } from '../lib/supabase';
 import { Property, Advisor } from '../types';
 import Modal from '../components/UI/Modal';
-import Dropdown, { DropdownItem, DropdownDivider } from '../components/UI/Dropdown';
 import FloatingCard from '../components/UI/FloatingCard';
 import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
 import ContactModal from '../components/Modals/ContactModal';
-import PropertyDetailsModal from '../components/Modals/PropertyDetailsModal';
 
 function AdminProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -93,7 +128,6 @@ function AdminProperties() {
     area: '',
     type: 'house',
     status: 'sale',
-    amenities: '',
     advisor_id: '',
     images: [] as string[]
   });
@@ -108,19 +142,100 @@ function AdminProperties() {
 
   // Lista de amenidades predefinidas con iconos
   const amenitiesList = [
-    { id: 'wifi', name: 'WiFi', icon: Wifi },
-    { id: 'parking', name: 'Estacionamiento', icon: Car },
-    { id: 'security', name: 'Seguridad 24h', icon: Shield },
-    { id: 'garden', name: 'Jardín', icon: Trees },
-    { id: 'gym', name: 'Gimnasio', icon: Dumbbell },
-    { id: 'pool', name: 'Piscina', icon: Waves },
-    { id: 'supermarket', name: 'Supermercado cercano', icon: ShoppingCart },
-    { id: 'schools', name: 'Colegios cercanos', icon: GraduationCap },
-    { id: 'restaurants', name: 'Restaurantes', icon: Utensils },
-    { id: 'electricity', name: 'Electricidad incluida', icon: Zap },
-    { id: 'aircon', name: 'Aire acondicionado', icon: Wind },
-    { id: 'balcony', name: 'Balcón', icon: Sun }
+    // Conectividad y Tecnología
+    { id: 'wifi', name: 'WiFi', icon: Wifi, category: 'Tecnología' },
+    { id: 'cable_tv', name: 'TV por cable', icon: Tv, category: 'Tecnología' },
+    { id: 'internet_fiber', name: 'Internet fibra óptica', icon: Zap, category: 'Tecnología' },
+    
+    // Estacionamiento y Transporte
+    { id: 'parking', name: 'Estacionamiento', icon: Car, category: 'Estacionamiento' },
+    { id: 'covered_parking', name: 'Parqueadero cubierto', icon: Building, category: 'Estacionamiento' },
+    { id: 'visitor_parking', name: 'Parqueadero visitantes', icon: Users, category: 'Estacionamiento' },
+    { id: 'garage', name: 'Garaje privado', icon: HomeIcon, category: 'Estacionamiento' },
+    
+    // Seguridad
+    { id: 'security', name: 'Seguridad 24h', icon: Shield, category: 'Seguridad' },
+    { id: 'cctv', name: 'Cámaras de seguridad', icon: Cctv, category: 'Seguridad' },
+    { id: 'access_control', name: 'Control de acceso', icon: Lock, category: 'Seguridad' },
+    { id: 'doorman', name: 'Portería', icon: UsersIcon, category: 'Seguridad' },
+    
+    // Recreación y Deportes
+    { id: 'gym', name: 'Gimnasio', icon: Dumbbell, category: 'Recreación' },
+    { id: 'pool', name: 'Piscina', icon: Waves, category: 'Recreación' },
+    { id: 'kids_pool', name: 'Piscina para niños', icon: Baby, category: 'Recreación' },
+    { id: 'tennis_court', name: 'Cancha de tenis', icon: Activity, category: 'Recreación' },
+    { id: 'soccer_field', name: 'Cancha de fútbol', icon: Gamepad2, category: 'Recreación' },
+    { id: 'basketball_court', name: 'Cancha de baloncesto', icon: Activity, category: 'Recreación' },
+    { id: 'playground', name: 'Zona de juegos infantiles', icon: Baby, category: 'Recreación' },
+    { id: 'kids_area', name: 'Área para niños', icon: Baby, category: 'Recreación' },
+    { id: 'game_room', name: 'Salón de juegos', icon: Gamepad2, category: 'Recreación' },
+    { id: 'party_room', name: 'Salón de fiestas', icon: Music, category: 'Recreación' },
+    { id: 'bbq_area', name: 'Zona de asados', icon: Flame, category: 'Recreación' },
+    
+    // Zonas Verdes y Exteriores
+    { id: 'garden', name: 'Jardín', icon: Trees, category: 'Zonas Verdes' },
+    { id: 'green_areas', name: 'Zonas verdes', icon: TreePine, category: 'Zonas Verdes' },
+    { id: 'terrace', name: 'Terraza', icon: Building2, category: 'Zonas Verdes' },
+    { id: 'balcony', name: 'Balcón', icon: Sun, category: 'Zonas Verdes' },
+    { id: 'roof_garden', name: 'Jardín en azotea', icon: Flower, category: 'Zonas Verdes' },
+    { id: 'patio', name: 'Patio', icon: Fence, category: 'Zonas Verdes' },
+    
+    // Servicios del Edificio
+    { id: 'elevator', name: 'Ascensor', icon: ArrowUp, category: 'Servicios' },
+    { id: 'laundry', name: 'Lavandería', icon: WashingMachine, category: 'Servicios' },
+    { id: 'cleaning', name: 'Servicio de limpieza', icon: Sparkles, category: 'Servicios' },
+    { id: 'maintenance', name: 'Mantenimiento', icon: Briefcase, category: 'Servicios' },
+    { id: 'concierge', name: 'Conserjería', icon: Users, category: 'Servicios' },
+    
+    // Electrodomésticos y Cocina
+    { id: 'furnished', name: 'Amoblado', icon: Sofa, category: 'Mobiliario' },
+    { id: 'kitchen_equipped', name: 'Cocina equipada', icon: ChefHat, category: 'Mobiliario' },
+    { id: 'refrigerator', name: 'Nevera', icon: Refrigerator, category: 'Mobiliario' },
+    { id: 'washer', name: 'Lavadora', icon: WashingMachine, category: 'Mobiliario' },
+    { id: 'dryer', name: 'Secadora', icon: Shirt, category: 'Mobiliario' },
+    { id: 'dishwasher', name: 'Lavavajillas', icon: Droplets, category: 'Mobiliario' },
+    
+    // Clima y Confort
+    { id: 'aircon', name: 'Aire acondicionado', icon: Wind, category: 'Clima' },
+    { id: 'heating', name: 'Calefacción', icon: Thermometer, category: 'Clima' },
+    { id: 'ceiling_fan', name: 'Ventilador de techo', icon: Fan, category: 'Clima' },
+    { id: 'natural_light', name: 'Iluminación natural', icon: Lightbulb, category: 'Clima' },
+    
+    // Servicios Públicos
+    { id: 'electricity', name: 'Electricidad incluida', icon: Zap, category: 'Servicios Públicos' },
+    { id: 'water', name: 'Agua incluida', icon: Droplets, category: 'Servicios Públicos' },
+    { id: 'gas', name: 'Gas incluido', icon: Flame, category: 'Servicios Públicos' },
+    { id: 'administration', name: 'Administración incluida', icon: FileText, category: 'Servicios Públicos' },
+    
+    // Mascotas
+    { id: 'pet_friendly', name: 'Acepta mascotas', icon: Dog, category: 'Mascotas' },
+    { id: 'dog_area', name: 'Área para perros', icon: Dog, category: 'Mascotas' },
+    { id: 'pet_grooming', name: 'Guardería de mascotas', icon: Heart, category: 'Mascotas' },
+    
+    // Ubicación y Cercanías
+    { id: 'supermarket', name: 'Supermercado cercano', icon: ShoppingCart, category: 'Cercanías' },
+    { id: 'shopping_center', name: 'Centro comercial', icon: ShoppingBag, category: 'Cercanías' },
+    { id: 'schools', name: 'Colegios cercanos', icon: GraduationCap, category: 'Cercanías' },
+    { id: 'universities', name: 'Universidades', icon: School, category: 'Cercanías' },
+    { id: 'hospitals', name: 'Hospitales cercanos', icon: CrossIcon, category: 'Cercanías' },
+    { id: 'restaurants', name: 'Restaurantes', icon: Utensils, category: 'Cercanías' },
+    { id: 'cafes', name: 'Cafeterías', icon: Coffee, category: 'Cercanías' },
+    { id: 'public_transport', name: 'Transporte público', icon: Bus, category: 'Cercanías' },
+    { id: 'metro', name: 'Metro cercano', icon: Train, category: 'Cercanías' },
+    { id: 'airport', name: 'Aeropuerto cercano', icon: Plane, category: 'Cercanías' },
+    
+    // Vistas y Características Especiales
+    { id: 'city_view', name: 'Vista a la ciudad', icon: Building2, category: 'Vistas' },
+    { id: 'mountain_view', name: 'Vista a las montañas', icon: Mountain, category: 'Vistas' },
+    { id: 'park_view', name: 'Vista al parque', icon: Trees, category: 'Vistas' },
+    { id: 'quiet_area', name: 'Zona tranquila', icon: Volume2, category: 'Características' },
+    { id: 'new_construction', name: 'Construcción nueva', icon: Sparkles, category: 'Características' },
+    { id: 'luxury_finishes', name: 'Acabados de lujo', icon: Star, category: 'Características' }
   ];
+
+  // Estado para amenidades personalizadas
+  const [customAmenities, setCustomAmenities] = useState<string[]>([]);
+  const [newCustomAmenity, setNewCustomAmenity] = useState('');
 
   useEffect(() => {
     loadProperties();
@@ -200,11 +315,12 @@ function AdminProperties() {
       area: '',
       type: 'house',
       status: 'sale',
-      amenities: '',
       advisor_id: '',
       images: []
     });
     setSelectedAmenities([]);
+    setCustomAmenities([]);
+    setNewCustomAmenity('');
     setPreviewImages([]);
   };
 
@@ -273,22 +389,32 @@ function AdminProperties() {
   };
 
   // Función para manejar selección de amenidades
-  const toggleAmenity = (amenityId: string) => {
-    const amenityName = amenitiesList.find(a => a.id === amenityId)?.name || amenityId;
-    
+  const toggleAmenity = (amenityName: string) => {
     setSelectedAmenities(prev => {
       const newSelected = prev.includes(amenityName)
         ? prev.filter(a => a !== amenityName)
         : [...prev, amenityName];
       
-      // Actualizar formData
-      setFormData(prevForm => ({
-        ...prevForm,
-        amenities: newSelected.join(', ')
-      }));
-      
+      console.log('🏷️ Amenidades seleccionadas:', newSelected);
       return newSelected;
     });
+  };
+
+  // Función para agregar amenidad personalizada
+  const addCustomAmenity = () => {
+    if (newCustomAmenity.trim() && !selectedAmenities.includes(newCustomAmenity.trim())) {
+      const customAmenity = newCustomAmenity.trim();
+      setSelectedAmenities(prev => [...prev, customAmenity]);
+      setCustomAmenities(prev => [...prev, customAmenity]);
+      setNewCustomAmenity('');
+      console.log('✅ Amenidad personalizada agregada:', customAmenity);
+    }
+  };
+
+  // Función para remover amenidad personalizada
+  const removeCustomAmenity = (amenityName: string) => {
+    setSelectedAmenities(prev => prev.filter(a => a !== amenityName));
+    setCustomAmenities(prev => prev.filter(a => a !== amenityName));
   };
 
   // Función para manejar cambios en el formulario
@@ -368,13 +494,20 @@ function AdminProperties() {
       area: property.area?.toString() || '',
       type: property.type || 'house',
       status: property.status || 'sale',
-      amenities: Array.isArray(property.amenities) ? property.amenities.join(', ') : '',
       advisor_id: property.advisor_id || '',
       images: property.images || []
     });
     
     // Cargar amenidades seleccionadas
-    setSelectedAmenities(property.amenities || []);
+    const propertyAmenities = property.amenities || [];
+    setSelectedAmenities(propertyAmenities);
+    
+    // Separar amenidades predefinidas de personalizadas
+    const predefinedAmenityNames = amenitiesList.map(a => a.name);
+    const customAmenitiesFromProperty = propertyAmenities.filter(
+      amenity => !predefinedAmenityNames.includes(amenity)
+    );
+    setCustomAmenities(customAmenitiesFromProperty);
     
     // Cargar imágenes para preview
     setPreviewImages(property.images || []);
@@ -415,7 +548,7 @@ function AdminProperties() {
         amenities: selectedAmenities, // Usar amenidades seleccionadas
         images: previewImages, // Usar imágenes de preview
         featured: false,
-        advisor_id: formData.advisor_id || null
+        advisor_id: formData.advisor_id || undefined
       };
       
       const newProperty = await createProperty(propertyData);
@@ -454,7 +587,7 @@ function AdminProperties() {
         status: formData.status as 'sale' | 'rent' | 'sold' | 'rented',
         amenities: selectedAmenities, // Usar amenidades seleccionadas
         images: previewImages, // Usar imágenes de preview
-        advisor_id: formData.advisor_id || null
+        advisor_id: formData.advisor_id || undefined
       };
       
       const updatedProperty = await updateProperty(selectedProperty.id, propertyData);
@@ -1107,36 +1240,126 @@ function AdminProperties() {
               <Star className="w-5 h-5 mr-2 text-yellow-500" />
               Amenidades
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {amenitiesList.map((amenity, index) => (
-                <div
-                  key={index}
-                  onClick={() => toggleAmenity(amenity.name)}
-                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:scale-105 ${
-                    selectedAmenities.includes(amenity.name)
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <amenity.icon className={`w-8 h-8 mb-2 ${
-                      selectedAmenities.includes(amenity.name)
-                        ? 'text-blue-600'
-                        : 'text-gray-600 dark:text-gray-400'
-                    }`} />
-                    <span className={`text-sm font-medium ${
-                      selectedAmenities.includes(amenity.name)
-                        ? 'text-blue-900 dark:text-blue-100'
-                        : 'text-gray-900 dark:text-white'
-                    }`}>
-                      {amenity.name}
+            
+            {/* Amenidades Seleccionadas */}
+            {selectedAmenities.length > 0 && (
+              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-3">Amenidades Seleccionadas ({selectedAmenities.length})</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAmenities.map((amenity, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+                    >
+                      {amenity}
+                      <button
+                        type="button"
+                        onClick={() => toggleAmenity(amenity)}
+                        className="ml-2 text-blue-600 hover:text-blue-800"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </span>
-                    {selectedAmenities.includes(amenity.name) && (
-                      <Check className="w-4 h-4 text-blue-600 mt-1" />
-                    )}
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Amenidades por Categorías */}
+            {Object.entries(
+              amenitiesList.reduce((acc, amenity) => {
+                const category = amenity.category || 'Otros';
+                if (!acc[category]) acc[category] = [];
+                acc[category].push(amenity);
+                return acc;
+              }, {} as Record<string, typeof amenitiesList>)
+            ).map(([category, amenities]) => (
+              <div key={category} className="mb-6">
+                <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3 px-2 border-l-4 border-blue-500">
+                  {category}
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {amenities.map((amenity, index) => (
+                    <div
+                      key={`${category}-${index}`}
+                      onClick={() => toggleAmenity(amenity.name)}
+                      className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 ${
+                        selectedAmenities.includes(amenity.name)
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <amenity.icon className={`w-6 h-6 mb-2 ${
+                          selectedAmenities.includes(amenity.name)
+                            ? 'text-blue-600'
+                            : 'text-gray-600 dark:text-gray-400'
+                        }`} />
+                        <span className={`text-xs font-medium leading-tight ${
+                          selectedAmenities.includes(amenity.name)
+                            ? 'text-blue-900 dark:text-blue-100'
+                            : 'text-gray-900 dark:text-white'
+                        }`}>
+                          {amenity.name}
+                        </span>
+                        {selectedAmenities.includes(amenity.name) && (
+                          <Check className="w-4 h-4 text-blue-600 mt-1" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Amenidades Personalizadas */}
+            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+              <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3 flex items-center">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Amenidad Personalizada
+              </h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCustomAmenity}
+                  onChange={(e) => setNewCustomAmenity(e.target.value)}
+                  placeholder="Ej: Zona BBQ, Salón comunal, etc."
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  onKeyPress={(e) => e.key === 'Enter' && addCustomAmenity()}
+                />
+                <button
+                  type="button"
+                  onClick={addCustomAmenity}
+                  disabled={!newCustomAmenity.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              
+              {/* Amenidades Personalizadas Agregadas */}
+              {customAmenities.length > 0 && (
+                <div className="mt-4">
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Amenidades Personalizadas:</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {customAmenities.map((amenity, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                      >
+                        {amenity}
+                        <button
+                          type="button"
+                          onClick={() => removeCustomAmenity(amenity)}
+                          className="ml-2 text-green-600 hover:text-green-800"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -1807,21 +2030,6 @@ function AdminProperties() {
               </select>
             </div>
 
-            {/* Amenidades */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Amenidades
-              </label>
-              <input
-                type="text"
-                name="amenities"
-                value={formData.amenities}
-                onChange={handleFormChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                placeholder="Ej: Piscina, Gimnasio, Seguridad 24h (separar con comas)"
-              />
-            </div>
-
             {/* Descripción */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1835,6 +2043,110 @@ function AdminProperties() {
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 placeholder="Descripción detallada de la propiedad..."
               />
+            </div>
+
+            {/* Amenidades - Modal de Edición */}
+            <div className="md:col-span-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <Star className="w-5 h-5 mr-2 text-yellow-500" />
+                Amenidades
+              </h3>
+              
+              {/* Amenidades Seleccionadas */}
+              {selectedAmenities.length > 0 && (
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Seleccionadas ({selectedAmenities.length})</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAmenities.map((amenity, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100"
+                      >
+                        {amenity}
+                        <button
+                          type="button"
+                          onClick={() => toggleAmenity(amenity)}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Amenidades por Categorías - Compacto para modal */}
+              <div className="max-h-60 overflow-y-auto">
+                {Object.entries(
+                  amenitiesList.reduce((acc, amenity) => {
+                    const category = amenity.category || 'Otros';
+                    if (!acc[category]) acc[category] = [];
+                    acc[category].push(amenity);
+                    return acc;
+                  }, {} as Record<string, typeof amenitiesList>)
+                ).map(([category, amenities]) => (
+                  <div key={category} className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2 px-1 border-l-2 border-blue-500">
+                      {category}
+                    </h4>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                      {amenities.map((amenity, index) => (
+                        <div
+                          key={`${category}-${index}`}
+                          onClick={() => toggleAmenity(amenity.name)}
+                          className={`p-2 border rounded-md cursor-pointer transition-all duration-200 ${
+                            selectedAmenities.includes(amenity.name)
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center text-center">
+                            <amenity.icon className={`w-4 h-4 mb-1 ${
+                              selectedAmenities.includes(amenity.name)
+                                ? 'text-blue-600'
+                                : 'text-gray-600 dark:text-gray-400'
+                            }`} />
+                            <span className={`text-xs font-medium leading-tight ${
+                              selectedAmenities.includes(amenity.name)
+                                ? 'text-blue-900 dark:text-blue-100'
+                                : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {amenity.name}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Amenidades Personalizadas - Modal */}
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2 flex items-center">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Agregar Personalizada
+                </h4>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCustomAmenity}
+                    onChange={(e) => setNewCustomAmenity(e.target.value)}
+                    placeholder="Nueva amenidad..."
+                    className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:ring-1 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    onKeyPress={(e) => e.key === 'Enter' && addCustomAmenity()}
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomAmenity}
+                    disabled={!newCustomAmenity.trim()}
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
