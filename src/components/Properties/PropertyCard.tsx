@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar } from 'lucide-react';
+import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Property } from '../../types';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
+import Dropdown, { DropdownItem, DropdownDivider } from '../UI/Dropdown';
 import { getPublicImageUrl } from '../../lib/supabase';
 
 interface PropertyCardProps {
@@ -12,6 +12,9 @@ interface PropertyCardProps {
   onViewDetails: (property: Property) => void;
   onContact: (property: Property) => void;
   onSchedule: (property: Property) => void;
+  onEdit?: (property: Property) => void;
+  onDelete?: (property: Property) => void;
+  showAdminActions?: boolean;
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -19,8 +22,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   onViewDetails,
   onContact,
   onSchedule,
+  onEdit,
+  onDelete,
+  showAdminActions = false,
 }) => {
-  const navigate = useNavigate();
   const [isFavorite, setIsFavorite] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -157,7 +162,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Favorite Button */}
         <button
-          onClick={() => setIsFavorite(!isFavorite)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFavorite(!isFavorite);
+          }}
           className="absolute bottom-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
         >
           <Heart 
@@ -166,6 +174,51 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             }`} 
           />
         </button>
+
+        {/* Admin Actions Dropdown */}
+        {showAdminActions && (
+          <div className="absolute top-3 right-3">
+            <Dropdown
+              trigger={
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                </motion.button>
+              }
+              align="right"
+              dropdownClassName="w-48"
+            >
+              <DropdownItem
+                onClick={() => onViewDetails(property)}
+                icon={<Eye className="w-4 h-4" />}
+              >
+                Ver Detalles
+              </DropdownItem>
+              {onEdit && (
+                <DropdownItem
+                  onClick={() => onEdit(property)}
+                  icon={<Edit className="w-4 h-4" />}
+                >
+                  Editar
+                </DropdownItem>
+              )}
+              <DropdownDivider />
+              {onDelete && (
+                <DropdownItem
+                  onClick={() => onDelete(property)}
+                  icon={<Trash2 className="w-4 h-4" />}
+                  className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  Eliminar
+                </DropdownItem>
+              )}
+            </Dropdown>
+          </div>
+        )}
 
         {/* Image Navigation */}
         {publicImageUrls.length > 1 && (

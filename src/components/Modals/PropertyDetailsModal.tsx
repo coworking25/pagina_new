@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail, Edit, Trash2, Settings } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import { getAdvisorById } from '../../lib/supabase';
 import Button from '../UI/Button';
@@ -15,12 +15,18 @@ interface PropertyDetailsModalProps {
   property: Property | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (property: Property) => void;
+  onDelete?: (property: Property) => void;
+  showAdminActions?: boolean;
 }
 
 const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
   property,
   isOpen,
   onClose,
+  onEdit,
+  onDelete,
+  showAdminActions = false,
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -314,7 +320,7 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                       )}
 
                       {/* Action Buttons */}
-                      {currentAdvisor && (
+                      {currentAdvisor && !showAdminActions && (
                         <div className="mt-4 space-y-3">
                           <Button
                             variant="primary"
@@ -332,6 +338,37 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                           >
                             Agendar Cita
                           </Button>
+                        </div>
+                      )}
+
+                      {/* Admin Action Buttons */}
+                      {showAdminActions && (
+                        <div className="mt-4 space-y-3">
+                          {onEdit && (
+                            <Button
+                              variant="primary"
+                              onClick={() => onEdit(property)}
+                              className="w-full bg-blue-600 hover:bg-blue-700"
+                              icon={Edit}
+                            >
+                              Editar Propiedad
+                            </Button>
+                          )}
+                          {onDelete && (
+                            <Button
+                              variant="outline"
+                              onClick={() => onDelete(property)}
+                              className="w-full text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              icon={Trash2}
+                            >
+                              Eliminar Propiedad
+                            </Button>
+                          )}
+                          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                              Acciones administrativas
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>

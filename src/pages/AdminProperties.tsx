@@ -40,13 +40,14 @@ import {
   Phone,
   MessageCircle
 } from 'lucide-react';
-import { getProperties, createProperty, updateProperty, deleteProperty, uploadPropertyImage, deletePropertyImage, getAdvisorById } from '../lib/supabase';
+import { getProperties, createProperty, updateProperty, deleteProperty, uploadPropertyImage, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode } from '../lib/supabase';
 import { Property, Advisor } from '../types';
 import Modal from '../components/UI/Modal';
 import Dropdown, { DropdownItem, DropdownDivider } from '../components/UI/Dropdown';
 import FloatingCard from '../components/UI/FloatingCard';
 import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
 import ContactModal from '../components/Modals/ContactModal';
+import PropertyDetailsModal from '../components/Modals/PropertyDetailsModal';
 
 function AdminProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -64,7 +65,17 @@ function AdminProperties() {
   
   // Estados para asesores
   const [currentAdvisor, setCurrentAdvisor] = useState<Advisor | null>(null);
+  const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [loadingAdvisor, setLoadingAdvisor] = useState(false);
+  
+  // Estados para estadísticas y actividades
+  const [propertyStats, setPropertyStats] = useState({
+    views: 0,
+    inquiries: 0,
+    appointments: 0
+  });
+  const [propertyActivities, setPropertyActivities] = useState<any[]>([]);
+  const [loadingStats, setLoadingStats] = useState(false);
   
   // Estados para modales de contacto y citas
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
@@ -72,6 +83,7 @@ function AdminProperties() {
   
   // Estados para formularios
   const [formData, setFormData] = useState({
+    code: '',
     title: '',
     description: '',
     price: '',
@@ -112,7 +124,20 @@ function AdminProperties() {
 
   useEffect(() => {
     loadProperties();
+    loadAdvisors();
   }, []);
+
+  const loadAdvisors = async () => {
+    try {
+      console.log('👨‍💼 Cargando asesores...');
+      const advisorsData = await getAdvisors();
+      setAdvisors(advisorsData);
+      console.log('✅ Asesores cargados:', advisorsData.length);
+    } catch (error) {
+      console.error('❌ Error cargando asesores:', error);
+      setAdvisors([]);
+    }
+  };
 
   const loadProperties = async () => {
     try {
@@ -165,6 +190,7 @@ function AdminProperties() {
   // Función para limpiar el formulario
   const resetForm = () => {
     setFormData({
+      code: '',
       title: '',
       description: '',
       price: '',
@@ -182,15 +208,31 @@ function AdminProperties() {
     setPreviewImages([]);
   };
 
-  // Función para manejar subida de imágenes
+  // Función para manejar subida de imágenes (mejorada con código)
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     
+    // Verificar que hay un código de propiedad
+    let propertyCode = formData.code;
+    if (!propertyCode) {
+      // Generar código automáticamente si no existe
+      propertyCode = await generatePropertyCode();
+      setFormData(prev => ({ ...prev, code: propertyCode }));
+      console.log(`🏷️ Código generado automáticamente: ${propertyCode}`);
+    }
+    
     setUploadingImages(true);
     try {
-      const uploadPromises = Array.from(files).map(file => uploadPropertyImage(file));
-      const uploadedUrls = await Promise.all(uploadPromises);
+      console.log(`📤 Subiendo ${files.length} imágenes para ${propertyCode}...`);
+      
+      const uploadedUrls = await bulkUploadPropertyImages(
+        Array.from(files), 
+        propertyCode,
+        (current, total) => {
+          console.log(`📊 Progreso: ${current}/${total}`);
+        }
+      );
       
       // Agregar URLs a las imágenes del formulario
       setFormData(prev => ({
@@ -201,7 +243,7 @@ function AdminProperties() {
       // Agregar a preview
       setPreviewImages(prev => [...prev, ...uploadedUrls]);
       
-      console.log('✅ Imágenes subidas exitosamente');
+      console.log(`✅ ${uploadedUrls.length} imágenes subidas exitosamente`);
     } catch (error) {
       console.error('❌ Error subiendo imágenes:', error);
       alert('Error al subir las imágenes. Por favor, inténtalo de nuevo.');
@@ -267,6 +309,27 @@ function AdminProperties() {
     setCurrentImageIndex(0); // Reiniciar al primer índice
     setShowDetailsModal(true);
     
+    // Cargar estadísticas de la propiedad
+    setLoadingStats(true);
+    try {
+      const stats = await getPropertyStats(property.id);
+      setPropertyStats({
+        views: stats?.views || 0,
+        inquiries: stats?.inquiries || 0,
+        appointments: stats?.appointments || 0
+      });
+
+      // Cargar actividades recientes de la propiedad
+      const activities = await getPropertyActivity(property.id);
+      setPropertyActivities(activities || []);
+    } catch (error) {
+      console.error('❌ Error cargando estadísticas:', error);
+      setPropertyStats({ views: 0, inquiries: 0, appointments: 0 });
+      setPropertyActivities([]);
+    } finally {
+      setLoadingStats(false);
+    }
+    
     // Cargar información del asesor si tiene advisor_id
     if (property.advisor_id) {
       setLoadingAdvisor(true);
@@ -290,9 +353,12 @@ function AdminProperties() {
   };
 
   const handleEditProperty = (property: Property) => {
+    console.log('🖍️ EDITANDO PROPIEDAD:', property.title);
+    alert(`Editando propiedad: ${property.title}`);
     setSelectedProperty(property);
     // Llenar el formulario con los datos de la propiedad
     setFormData({
+      code: property.code || '',
       title: property.title || '',
       description: property.description || '',
       price: property.price?.toString() || '',
@@ -329,7 +395,14 @@ function AdminProperties() {
     
     setIsSubmitting(true);
     try {
+      // Generar código si no existe
+      let propertyCode = formData.code;
+      if (!propertyCode) {
+        propertyCode = await generatePropertyCode();
+      }
+      
       const propertyData = {
+        code: propertyCode,
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
@@ -341,7 +414,8 @@ function AdminProperties() {
         status: formData.status as 'sale' | 'rent' | 'sold' | 'rented',
         amenities: selectedAmenities, // Usar amenidades seleccionadas
         images: previewImages, // Usar imágenes de preview
-        featured: false
+        featured: false,
+        advisor_id: formData.advisor_id || null
       };
       
       const newProperty = await createProperty(propertyData);
@@ -350,10 +424,11 @@ function AdminProperties() {
       resetForm();
       
       console.log('✅ Propiedad creada exitosamente');
-      alert('Propiedad creada exitosamente');
-    } catch (error) {
+      showNotification('Propiedad creada exitosamente', 'success');
+    } catch (error: any) {
       console.error('❌ Error creando propiedad:', error);
-      alert('Error al crear la propiedad. Por favor, inténtalo de nuevo.');
+      const errorMessage = error.message || 'Error al crear la propiedad. Por favor, inténtalo de nuevo.';
+      showNotification(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -367,6 +442,7 @@ function AdminProperties() {
     setIsSubmitting(true);
     try {
       const propertyData = {
+        code: formData.code,
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
@@ -376,8 +452,9 @@ function AdminProperties() {
         area: Number(formData.area),
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: formData.status as 'sale' | 'rent' | 'sold' | 'rented',
-        amenities: formData.amenities.split(',').map(item => item.trim()).filter(item => item),
-        images: formData.images
+        amenities: selectedAmenities, // Usar amenidades seleccionadas
+        images: previewImages, // Usar imágenes de preview
+        advisor_id: formData.advisor_id || null
       };
       
       const updatedProperty = await updateProperty(selectedProperty.id, propertyData);
@@ -387,16 +464,19 @@ function AdminProperties() {
       resetForm();
       
       console.log('✅ Propiedad actualizada exitosamente');
-      alert('Propiedad actualizada exitosamente');
-    } catch (error) {
+      showNotification('Propiedad actualizada exitosamente', 'success');
+    } catch (error: any) {
       console.error('❌ Error actualizando propiedad:', error);
-      alert('Error al actualizar la propiedad. Por favor, inténtalo de nuevo.');
+      const errorMessage = error.message || 'Error al actualizar la propiedad. Por favor, inténtalo de nuevo.';
+      showNotification(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteProperty = async (propertyId: string) => {
+    console.log('🗑️ ELIMINANDO PROPIEDAD:', propertyId);
+    alert(`Eliminando propiedad con ID: ${propertyId}`);
     if (window.confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {
       try {
         console.log('🗑️ Eliminando propiedad:', propertyId);
@@ -406,11 +486,25 @@ function AdminProperties() {
         setProperties(prev => prev.filter(p => p.id !== propertyId));
         
         console.log('✅ Propiedad eliminada exitosamente');
-        alert('Propiedad eliminada exitosamente');
-      } catch (error) {
+        // Usar una notificación más elegante en lugar de alert
+        showNotification('Propiedad eliminada exitosamente', 'success');
+      } catch (error: any) {
         console.error('❌ Error eliminando propiedad:', error);
-        alert('Error al eliminar la propiedad. Por favor, inténtalo de nuevo.');
+        const errorMessage = error.message || 'Error al eliminar la propiedad. Por favor, inténtalo de nuevo.';
+        showNotification(errorMessage, 'error');
       }
+    }
+  };
+
+  // Función para mostrar notificaciones elegantes
+  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    // Por ahora usamos alert, pero podríamos implementar un sistema de notificaciones más elegante
+    if (type === 'error') {
+      alert(`❌ ${message}`);
+    } else if (type === 'success') {
+      alert(`✅ ${message}`);
+    } else {
+      alert(`ℹ️ ${message}`);
     }
   };
 
@@ -652,51 +746,12 @@ function AdminProperties() {
 
                 {/* Featured Badge */}
                 {property.featured && (
-                  <div className={`absolute top-4 ${property.images && property.images.length > 1 ? 'right-20' : 'right-4'}`}>
+                  <div className="absolute top-4 right-4">
                     <div className="p-2 bg-yellow-500 rounded-full shadow-lg">
                       <Star className="w-4 h-4 text-white fill-current" />
                     </div>
                   </div>
                 )}
-
-                {/* Actions Dropdown */}
-                <div className="absolute bottom-4 right-4">
-                  <Dropdown
-                    trigger={
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                      </motion.button>
-                    }
-                    align="right"
-                    dropdownClassName="w-48"
-                  >
-                    <DropdownItem
-                      onClick={() => handleViewProperty(property)}
-                      icon={<Eye className="w-4 h-4" />}
-                    >
-                      Ver Detalles
-                    </DropdownItem>
-                    <DropdownItem
-                      onClick={() => handleEditProperty(property)}
-                      icon={<Edit className="w-4 h-4" />}
-                    >
-                      Editar
-                    </DropdownItem>
-                    <DropdownDivider />
-                    <DropdownItem
-                      onClick={() => handleDeleteProperty(property.id)}
-                      icon={<Trash2 className="w-4 h-4" />}
-                      className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      Eliminar
-                    </DropdownItem>
-                  </Dropdown>
-                </div>
               </div>
 
               {/* Property Info */}
@@ -744,15 +799,45 @@ function AdminProperties() {
                     {property.type === 'commercial' && 'Local'}
                   </span>
                   
-                  <div className="flex items-center space-x-2">
+                  {/* Action Icons - Elegantes y funcionales */}
+                  <div className="flex items-center space-x-1">
                     <motion.button
-                      whileHover={{ scale: 1.1 }}
+                      whileHover={{ scale: 1.15 }}
                       whileTap={{ scale: 0.9 }}
-                      onClick={() => handleViewProperty(property)}
-                      className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewProperty(property);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200 hover:shadow-md"
                       title="Ver detalles"
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-5 h-5" />
+                    </motion.button>
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditProperty(property);
+                      }}
+                      className="p-2 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-all duration-200 hover:shadow-md"
+                      title="Editar propiedad"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </motion.button>
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProperty(property.id);
+                      }}
+                      className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200 hover:shadow-md"
+                      title="Eliminar propiedad"
+                    >
+                      <Trash2 className="w-5 h-5" />
                     </motion.button>
                   </div>
                 </div>
@@ -792,6 +877,43 @@ function AdminProperties() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Título */}
+              {/* Código de Propiedad */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  🏷️ Código de Propiedad
+                </label>
+                <input
+                  type="text"
+                  name="code"
+                  value={formData.code}
+                  onChange={handleFormChange}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                  placeholder="Ej: CA-001 (se genera automáticamente)"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Se genera automáticamente si está vacío
+                </p>
+              </div>
+
+              {/* Código de la Propiedad */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  🏷️ Código de la Propiedad
+                </label>
+                <input
+                  type="text"
+                  name="code"
+                  value={formData.code}
+                  onChange={handleFormChange}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                  placeholder="Ej: CA-001 (se genera automáticamente si se deja vacío)"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Si no especificas un código, se generará automáticamente al subir imágenes
+                </p>
+              </div>
+
+              {/* Título de la Propiedad */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Título de la Propiedad *
@@ -956,6 +1078,26 @@ function AdminProperties() {
                   </label>
                 ))}
               </div>
+            </div>
+
+            {/* Asesor Asignado */}
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                👨‍💼 Asesor Asignado
+              </label>
+              <select
+                name="advisor_id"
+                value={formData.advisor_id}
+                onChange={handleFormChange}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+              >
+                <option value="">Seleccionar asesor (opcional)</option>
+                {advisors.map((advisor) => (
+                  <option key={advisor.id} value={advisor.id}>
+                    {advisor.name} - {advisor.specialty}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -1440,21 +1582,60 @@ function AdminProperties() {
                   {/* Estadísticas de la Propiedad */}
                   <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Estadísticas</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Vistas</span>
-                        <span className="font-medium text-gray-900 dark:text-white">24</span>
+                    {loadingStats ? (
+                      <div className="flex justify-center items-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Consultas</span>
-                        <span className="font-medium text-gray-900 dark:text-white">8</span>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Vistas</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{propertyStats.views}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Consultas</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{propertyStats.inquiries}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Citas</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{propertyStats.appointments}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Citas</span>
-                        <span className="font-medium text-gray-900 dark:text-white">3</span>
+                    )}
+                  </div>
+
+                  {/* Actividades Recientes */}
+                  {propertyActivities.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Actividades Recientes</h4>
+                      <div className="space-y-3 max-h-40 overflow-y-auto">
+                        {propertyActivities.slice(0, 5).map((activity, index) => (
+                          <div key={index} className="flex justify-between items-start text-sm">
+                            <div className="flex-1">
+                              <span className="text-gray-600 dark:text-gray-400">
+                                {activity.activity_type === 'created' && '📝 Propiedad creada'}
+                                {activity.activity_type === 'updated' && '✏️ Propiedad actualizada'}
+                                {activity.activity_type === 'deleted' && '🗑️ Propiedad eliminada'}
+                                {activity.activity_type === 'status_changed' && '🔄 Estado cambiado'}
+                                {activity.activity_type === 'viewed' && '👁️ Vista registrada'}
+                                {activity.activity_type === 'inquiry' && '💬 Consulta recibida'}
+                                {activity.activity_type === 'appointment' && '📅 Cita programada'}
+                              </span>
+                              <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                {new Date(activity.created_at).toLocaleDateString('es-ES', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1603,6 +1784,26 @@ function AdminProperties() {
                 <option value="rent">En Alquiler</option>
                 <option value="sold">Vendida</option>
                 <option value="rented">Alquilada</option>
+              </select>
+            </div>
+
+            {/* Asesor Asignado */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                👨‍💼 Asesor Asignado
+              </label>
+              <select
+                name="advisor_id"
+                value={formData.advisor_id}
+                onChange={handleFormChange}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">Sin asesor asignado</option>
+                {advisors.map((advisor) => (
+                  <option key={advisor.id} value={advisor.id}>
+                    {advisor.name} - {advisor.specialty}
+                  </option>
+                ))}
               </select>
             </div>
 

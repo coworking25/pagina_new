@@ -1,5 +1,6 @@
 export interface Property {
   id: string;
+  code?: string;  // Código único de la propiedad (ej: CA-001)
   title: string;
   price: number;
   bedrooms: number;

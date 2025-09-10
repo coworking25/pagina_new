@@ -159,8 +159,6 @@ export async function loginUser(email: string, password: string) {
 // Función para logout
 export async function logoutUser() {
   try {
-    const userData = localStorage.getItem('user_data');
-    
     // Limpiar localStorage
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
@@ -186,7 +184,7 @@ export async function isAuthenticated(): Promise<boolean> {
     }
     
     try {
-      const user = JSON.parse(userData);
+      JSON.parse(userData); // Validar que los datos sean válidos JSON
       return true;
     } catch (parseError) {
       console.error('❌ Error parseando datos de usuario:', parseError);
@@ -840,7 +838,7 @@ export async function updateServiceInquiry(
       console.error('❌ [SUPABASE] Updates a aplicar:', updates);
       
       // Si no encuentra el registro, intentemos verificar si existe
-      const { data: existingRecord, error: checkError } = await supabase
+      const { error: checkError } = await supabase
         .from('service_inquiries')
         .select('id')
         .eq('id', id)
@@ -848,7 +846,6 @@ export async function updateServiceInquiry(
         
       if (checkError) {
         console.error('❌ [SUPABASE] El registro no existe:', checkError);
-      } else {
       }
       
       throw error;
@@ -1081,18 +1078,39 @@ export async function getDashboardStats(): Promise<{
 // GESTIÓN DE IMÁGENES - STORAGE
 // ==========================================
 
-// Función para subir imagen a Supabase Storage
-export async function uploadPropertyImage(file: File): Promise<string> {
+// Función para subir imagen a Supabase Storage (mejorada con código de propiedad)
+export async function uploadPropertyImage(file: File, propertyCode?: string): Promise<string> {
   try {
+    console.log(`📤 Subiendo imagen${propertyCode ? ` para ${propertyCode}` : ''}...`);
+    
+    // Validar archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    if (!validTypes.includes(file.type)) {
+      throw new Error('Formato de archivo no válido. Solo JPG, PNG y WebP permitidos.');
+    }
+    
+    if (file.size > maxSize) {
+      throw new Error('Archivo muy grande. Máximo 5MB por imagen.');
+    }
     
     // Generar nombre único para el archivo
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `properties/${fileName}`;
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2);
+    const fileName = `${timestamp}-${randomId}.${fileExt}`;
+    
+    // Organizar por código de propiedad si está disponible
+    const filePath = propertyCode 
+      ? `${propertyCode}/${fileName}` 
+      : `properties/${fileName}`;
+    
+    console.log(`📁 Ruta de archivo: ${filePath}`);
     
     // Subir archivo a Supabase Storage
     const { error } = await supabase.storage
-      .from('propiedades')
+      .from('property-images')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
@@ -1105,9 +1123,10 @@ export async function uploadPropertyImage(file: File): Promise<string> {
     
     // Obtener URL pública
     const { data: publicUrlData } = supabase.storage
-      .from('propiedades')
+      .from('property-images')
       .getPublicUrl(filePath);
     
+    console.log('✅ Imagen subida exitosamente');
     return publicUrlData.publicUrl;
   } catch (error) {
     console.error('❌ Error en uploadPropertyImage:', error);
@@ -1125,7 +1144,7 @@ export async function deletePropertyImage(imageUrl: string): Promise<boolean> {
     
     
     const { error } = await supabase.storage
-      .from('propiedades')
+      .from('property-images')
       .remove([filePath]);
     
     if (error) {
@@ -1140,6 +1159,148 @@ export async function deletePropertyImage(imageUrl: string): Promise<boolean> {
   }
 }
 
+// ==================== PROPERTY STATISTICS ====================
+
+// Función para obtener estadísticas de una propiedad
+export async function getPropertyStats(propertyId: string) {
+  try {
+    console.log('📊 Obteniendo estadísticas para propiedad:', propertyId);
+    
+    // Por ahora retornamos estadísticas por defecto hasta que se cree la tabla property_stats
+    const defaultStats = {
+      property_id: propertyId,
+      views: Math.floor(Math.random() * 50) + 1, // Datos simulados
+      inquiries: Math.floor(Math.random() * 10),
+      appointments: Math.floor(Math.random() * 5),
+      last_viewed: new Date().toISOString()
+    };
+
+    console.log('✅ Estadísticas obtenidas:', defaultStats);
+    return defaultStats;
+
+    /* Comentado hasta que se cree la tabla
+    const { data, error } = await supabase
+      .from('property_stats')
+      .select('*')
+      .eq('property_id', propertyId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 es "no rows found"
+      throw error;
+    }
+
+    return data || defaultStats;
+    */
+  } catch (error) {
+    console.error('❌ Error obteniendo estadísticas de propiedad:', error);
+    return {
+      property_id: propertyId,
+      views: 0,
+      inquiries: 0,
+      appointments: 0,
+      last_viewed: null
+    };
+  }
+}
+
+// Función para incrementar vistas de propiedad
+export async function incrementPropertyViews(propertyId: string, userInfo: any = {}) {
+  try {
+    const { error } = await supabase.rpc('increment_property_views', {
+      prop_id: propertyId,
+      user_info: userInfo
+    });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('❌ Error incrementando vistas:', error);
+    return false;
+  }
+}
+
+// Función para incrementar consultas de propiedad
+export async function incrementPropertyInquiries(propertyId: string, inquiryDetails: any = {}) {
+  try {
+    const { error } = await supabase.rpc('increment_property_inquiries', {
+      prop_id: propertyId,
+      inquiry_details: inquiryDetails
+    });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('❌ Error incrementando consultas:', error);
+    return false;
+  }
+}
+
+// Función para incrementar citas de propiedad
+export async function incrementPropertyAppointments(propertyId: string, appointmentDetails: any = {}) {
+  try {
+    const { error } = await supabase.rpc('increment_property_appointments', {
+      prop_id: propertyId,
+      appointment_details: appointmentDetails
+    });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('❌ Error incrementando citas:', error);
+    return false;
+  }
+}
+
+// Función para obtener actividad reciente de una propiedad (usando property_appointments como alternativa)
+export async function getPropertyActivity(propertyId: string, limit: number = 10) {
+  try {
+    // Usamos property_appointments como tabla de actividad alternativa
+    const { data, error } = await supabase
+      .from('property_appointments')
+      .select('*')
+      .eq('property_id', propertyId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error obteniendo actividad de propiedad:', error);
+    return [];
+  }
+}
+
+// Función para registrar actividad personalizada
+export async function logPropertyActivity(
+  propertyId: string, 
+  activityType: string, 
+  details: any = {}, 
+  userInfo: any = {}
+) {
+  try {
+    // TEMPORAL: Tabla property_activity no existe aún
+    console.log('📝 Actividad registrada (modo temporal):', { propertyId, activityType, details });
+    return true;
+    
+    /* 
+    const { error } = await supabase
+      .from('property_activity')
+      .insert({
+        property_id: propertyId,
+        activity_type: activityType,
+        details,
+        user_info: userInfo
+      });
+
+    if (error) throw error;
+    return true;
+    */
+  } catch (error) {
+    console.error('❌ Error registrando actividad:', error);
+    return false;
+  }
+}
+
 // ==========================================
 // GESTIÓN DE PROPIEDADES - ADMIN
 // ==========================================
@@ -1147,16 +1308,57 @@ export async function deletePropertyImage(imageUrl: string): Promise<boolean> {
 // Función para crear una nueva propiedad
 export async function createProperty(propertyData: Omit<Property, 'id' | 'created_at' | 'updated_at'>) {
   try {
-    
+    // Validar datos requeridos
+    if (!propertyData.title || !propertyData.price || !propertyData.location) {
+      throw new Error('Título, precio y ubicación son campos obligatorios');
+    }
+
+    // Validar que el precio sea un número positivo
+    if (propertyData.price <= 0) {
+      throw new Error('El precio debe ser mayor a 0');
+    }
+
+    // Validar que bedrooms, bathrooms y area sean números positivos
+    if (propertyData.bedrooms < 0) {
+      throw new Error('El número de habitaciones no puede ser negativo');
+    }
+
+    if (propertyData.bathrooms < 0) {
+      throw new Error('El número de baños no puede ser negativo');
+    }
+
+    if (propertyData.area <= 0) {
+      throw new Error('El área debe ser mayor a 0');
+    }
+
+    // Preparar los datos sin created_at y updated_at (son automáticos)
+    const processedData = {
+      ...propertyData,
+      amenities: propertyData.amenities || [],
+      images: propertyData.images || [],
+      featured: propertyData.featured || false
+    };
+
+    console.log('📝 Creando propiedad con datos:', processedData);
+
     const { data, error } = await supabase
       .from('properties')
-      .insert([propertyData])
+      .insert([processedData])
       .select()
       .single();
     
     if (error) {
       console.error('❌ Error al crear propiedad:', error);
-      throw error;
+      if (error.code === '23505') {
+        throw new Error('Ya existe una propiedad con ese título');
+      }
+      throw new Error(`Error al crear la propiedad: ${error.message}`);
+    }
+
+    // Registrar actividad
+    if (data) {
+      await logPropertyActivity(data.id, 'created', { property: processedData });
+      console.log('✅ Propiedad creada exitosamente:', data.id);
     }
     
     return data as Property;
@@ -1169,17 +1371,83 @@ export async function createProperty(propertyData: Omit<Property, 'id' | 'create
 // Función para actualizar una propiedad
 export async function updateProperty(propertyId: string, propertyData: Partial<Property>) {
   try {
+    // Validar que exista al menos un campo para actualizar
+    const updateFields = Object.keys(propertyData).filter(key => 
+      key !== 'id' && 
+      key !== 'created_at' && 
+      key !== 'updated_at' && // Este campo no existe en la tabla
+      propertyData[key as keyof Property] !== undefined && 
+      propertyData[key as keyof Property] !== null
+    );
+    
+    if (updateFields.length === 0) {
+      throw new Error('No hay campos válidos para actualizar');
+    }
+
+    // Validaciones específicas
+    if (propertyData.price !== undefined && propertyData.price <= 0) {
+      throw new Error('El precio debe ser mayor a 0');
+    }
+
+    if (propertyData.bedrooms !== undefined && propertyData.bedrooms < 0) {
+      throw new Error('El número de habitaciones no puede ser negativo');
+    }
+
+    if (propertyData.bathrooms !== undefined && propertyData.bathrooms < 0) {
+      throw new Error('El número de baños no puede ser negativo');
+    }
+
+    if (propertyData.area !== undefined && propertyData.area <= 0) {
+      throw new Error('El área debe ser mayor a 0');
+    }
+
+    // Preparar datos para actualización, mapeando campos correctamente
+    const updateData: any = { ...propertyData };
+    
+    // Limpiar campos que no deben ser actualizados o no existen
+    delete updateData.id;
+    delete updateData.created_at;
+    delete updateData.updated_at; // No existe en la tabla
+    delete updateData.neighborhood_info; // No existe en la tabla
+    delete updateData.price_history; // No existe en la tabla
+    delete updateData.virtual_tour_url; // No existe en la tabla
+    
+    // Mapear coordenadas si existen
+    if (propertyData.latitude !== undefined) {
+      updateData.lat = propertyData.latitude;
+      delete updateData.latitude;
+    }
+    
+    if (propertyData.longitude !== undefined) {
+      updateData.lng = propertyData.longitude;
+      delete updateData.longitude;
+    }
+
+    console.log(`📝 Actualizando propiedad ${propertyId} con datos:`, updateData);
     
     const { data, error } = await supabase
       .from('properties')
-      .update(propertyData)
+      .update(updateData)
       .eq('id', propertyId)
       .select()
       .single();
     
     if (error) {
       console.error('❌ Error al actualizar propiedad:', error);
-      throw error;
+      if (error.code === 'PGRST116') {
+        throw new Error('Propiedad no encontrada');
+      }
+      throw new Error(`Error al actualizar la propiedad: ${error.message}`);
+    }
+
+    // Registrar actividad (comentado temporalmente para evitar errores)
+    if (data) {
+      try {
+        // await logPropertyActivity(propertyId, 'updated', { updates: updateData });
+        console.log('✅ Propiedad actualizada exitosamente:', propertyId);
+      } catch (logError) {
+        console.warn('⚠️ Error al registrar actividad, pero actualización exitosa:', logError);
+      }
     }
     
     return data as Property;
@@ -1192,7 +1460,62 @@ export async function updateProperty(propertyId: string, propertyData: Partial<P
 // Función para eliminar una propiedad
 export async function deleteProperty(propertyId: string) {
   try {
+    console.log(`🗑️ Iniciando eliminación de propiedad: ${propertyId}`);
+
+    // Verificar que la propiedad existe antes de eliminar
+    const { data: property, error: fetchError } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('id', propertyId)
+      .single();
+
+    if (fetchError) {
+      console.error('❌ Error al buscar propiedad:', fetchError);
+      if (fetchError.code === 'PGRST116') {
+        throw new Error('Propiedad no encontrada');
+      }
+      throw new Error(`Error al buscar la propiedad: ${fetchError.message}`);
+    }
+
+    if (!property) {
+      throw new Error('Propiedad no encontrada');
+    }
+
+    // Verificar si la propiedad tiene citas pendientes
+    const { data: appointments, error: appointmentsError } = await supabase
+      .from('property_appointments')
+      .select('id, status')
+      .eq('property_id', propertyId)
+      .in('status', ['pending', 'confirmed']);
+
+    if (appointmentsError) {
+      console.warn('⚠️ Error al verificar citas:', appointmentsError);
+    }
+
+    if (appointments && appointments.length > 0) {
+      throw new Error(`No se puede eliminar la propiedad. Tiene ${appointments.length} citas pendientes o confirmadas.`);
+    }
+
+    // Registrar actividad antes de eliminar
+    await logPropertyActivity(propertyId, 'deleted', { 
+      property: property,
+      deleted_at: new Date().toISOString() 
+    });
+
+    // Eliminar las imágenes asociadas si existen
+    if (property.images && Array.isArray(property.images) && property.images.length > 0) {
+      console.log(`🖼️ Eliminando ${property.images.length} imágenes asociadas...`);
+      for (const imageUrl of property.images) {
+        try {
+          await deletePropertyImage(imageUrl);
+        } catch (imageError) {
+          console.warn('⚠️ Error al eliminar imagen:', imageUrl, imageError);
+          // No fallar por errores de imágenes
+        }
+      }
+    }
     
+    // Eliminar la propiedad
     const { error } = await supabase
       .from('properties')
       .delete()
@@ -1200,13 +1523,256 @@ export async function deleteProperty(propertyId: string) {
     
     if (error) {
       console.error('❌ Error al eliminar propiedad:', error);
-      throw error;
+      throw new Error(`Error al eliminar la propiedad: ${error.message}`);
     }
     
+    console.log('✅ Propiedad eliminada exitosamente:', propertyId);
     return true;
   } catch (error) {
     console.error('❌ Error en deleteProperty:', error);
     throw error;
+  }
+}
+
+// ==========================================
+// FUNCIONES DE NOTIFICACIONES Y ESTADO
+// ==========================================
+
+// Función para obtener propiedades por estado
+export async function getPropertiesByStatus(status: string) {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .select(`
+        *,
+        advisor:advisor_id (
+          id,
+          name,
+          email,
+          phone,
+          specialization,
+          image_url
+        )
+      `)
+      .eq('status', status)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error al obtener propiedades por estado:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en getPropertiesByStatus:', error);
+    throw error;
+  }
+}
+
+// Función para cambiar estado de propiedad
+export async function updatePropertyStatus(propertyId: string, newStatus: string, reason?: string) {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', propertyId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error al actualizar estado:', error);
+      throw error;
+    }
+
+    // Registrar actividad de cambio de estado
+    await logPropertyActivity(propertyId, 'status_changed', { 
+      newStatus, 
+      reason: reason || 'Sin razón especificada' 
+    });
+
+    return data;
+  } catch (error) {
+    console.error('❌ Error en updatePropertyStatus:', error);
+    throw error;
+  }
+}
+
+// Función para obtener resumen de actividades recientes
+export async function getRecentActivities(limit: number = 10) {
+  try {
+    // TEMPORAL: Tabla property_activity no existe aún
+    console.log('📊 Obteniendo actividades recientes (modo temporal)', { limit });
+    return [];
+    
+    /*
+    const { data, error } = await supabase
+      .from('property_activity')
+      .select(`
+        *,
+        property:property_id (
+          id,
+          title,
+          location
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('❌ Error al obtener actividades recientes:', error);
+      throw error;
+    }
+
+    return data || [];
+    */
+  } catch (error) {
+    console.error('❌ Error en getRecentActivities:', error);
+    throw error;
+  }
+}
+
+// Función para obtener propiedades que requieren atención
+export async function getPropertiesNeedingAttention() {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data, error } = await supabase
+      .from('properties')
+      .select(`
+        *,
+        advisor:advisor_id (
+          id,
+          name,
+          email
+        )
+      `)
+      .or(`status.eq.disponible,updated_at.lt.${thirtyDaysAgo.toISOString()}`)
+      .order('updated_at', { ascending: true });
+
+    if (error) {
+      console.error('❌ Error al obtener propiedades que necesitan atención:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en getPropertiesNeedingAttention:', error);
+    throw error;
+  }
+}
+
+// ==========================================
+// FUNCIONES DE MANEJO DE IMÁGENES AVANZADAS
+// ==========================================
+
+// Función para subir múltiples imágenes con código de propiedad
+export async function bulkUploadPropertyImages(
+  files: File[], 
+  propertyCode: string,
+  onProgress?: (current: number, total: number) => void
+): Promise<string[]> {
+  
+  console.log(`📤 Subida masiva: ${files.length} imágenes para ${propertyCode}`);
+  
+  const uploadedUrls: string[] = [];
+  const errors: string[] = [];
+  
+  for (let i = 0; i < files.length; i++) {
+    try {
+      onProgress?.(i + 1, files.length);
+      const url = await uploadPropertyImage(files[i], propertyCode);
+      uploadedUrls.push(url);
+      
+    } catch (error) {
+      console.error(`❌ Error subiendo ${files[i].name}:`, error);
+      errors.push(`${files[i].name}: ${(error as Error).message || 'Error desconocido'}`);
+    }
+  }
+  
+  if (errors.length > 0) {
+    console.warn('⚠️ Algunos archivos no se pudieron subir:', errors);
+  }
+  
+  console.log(`✅ Subida completada: ${uploadedUrls.length}/${files.length} exitosas`);
+  return uploadedUrls;
+}
+
+// Función para obtener todas las imágenes de una propiedad por código
+export async function getPropertyImagesByCode(propertyCode: string): Promise<string[]> {
+  try {
+    console.log(`🖼️ Obteniendo imágenes para propiedad ${propertyCode}...`);
+    
+    const { data, error } = await supabase.storage
+      .from('property-images')
+      .list(propertyCode, {
+        limit: 20,
+        sortBy: { column: 'name', order: 'asc' }
+      });
+    
+    if (error) {
+      console.error('❌ Error obteniendo imágenes:', error);
+      return [];
+    }
+    
+    if (!data || data.length === 0) {
+      console.log(`📭 No se encontraron imágenes para ${propertyCode}`);
+      return [];
+    }
+    
+    // Generar URLs públicas
+    const imageUrls = data.map(file => {
+      const { data: publicUrlData } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(`${propertyCode}/${file.name}`);
+      return publicUrlData.publicUrl;
+    });
+    
+    console.log(`✅ ${imageUrls.length} imágenes encontradas para ${propertyCode}`);
+    return imageUrls;
+    
+  } catch (error) {
+    console.error('❌ Error en getPropertyImagesByCode:', error);
+    return [];
+  }
+}
+
+// Función para generar próximo código de propiedad disponible
+export async function generatePropertyCode(): Promise<string> {
+  try {
+    // Obtener el último código usado
+    const { data, error } = await supabase
+      .from('properties')
+      .select('code')
+      .not('code', 'is', null)
+      .order('code', { ascending: false })
+      .limit(1);
+    
+    if (error) {
+      console.error('❌ Error obteniendo último código:', error);
+      return 'CA-001'; // Código por defecto
+    }
+    
+    if (!data || data.length === 0) {
+      return 'CA-001'; // Primer código
+    }
+    
+    const lastCode = data[0].code;
+    const match = lastCode.match(/CA-(\d+)/);
+    
+    if (match) {
+      const nextNumber = parseInt(match[1]) + 1;
+      return `CA-${nextNumber.toString().padStart(3, '0')}`;
+    }
+    
+    return 'CA-001'; // Fallback
+    
+  } catch (error) {
+    console.error('❌ Error en generatePropertyCode:', error);
+    return 'CA-001';
   }
 }
 
@@ -1226,9 +1792,6 @@ export async function debugUsers() {
       console.error('❌ Error obteniendo usuarios:', error);
       return;
     }
-    
-    users?.forEach(user => {
-    });
     
     return users;
   } catch (error) {
