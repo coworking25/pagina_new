@@ -77,12 +77,13 @@ import {
   Mountain,
   Sparkles
 } from 'lucide-react';
-import { getProperties, createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode } from '../lib/supabase';
+import { getProperties, createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, updatePropertyCoverImage } from '../lib/supabase';
 import { Property, Advisor } from '../types';
 import Modal from '../components/UI/Modal';
 import FloatingCard from '../components/UI/FloatingCard';
 import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
 import ContactModal from '../components/Modals/ContactModal';
+import { CoverImageSelector } from '../components/CoverImageSelector';
 
 function AdminProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -129,7 +130,8 @@ function AdminProperties() {
     type: 'house',
     status: 'sale',
     advisor_id: '',
-    images: [] as string[]
+    images: [] as string[],
+    cover_image: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -316,7 +318,8 @@ function AdminProperties() {
       type: 'house',
       status: 'sale',
       advisor_id: '',
-      images: []
+      images: [],
+      cover_image: ''
     });
     setSelectedAmenities([]);
     setCustomAmenities([]);
@@ -495,7 +498,8 @@ function AdminProperties() {
       type: property.type || 'house',
       status: property.status || 'sale',
       advisor_id: property.advisor_id || '',
-      images: property.images || []
+      images: property.images || [],
+      cover_image: property.cover_image || ''
     });
     
     // Cargar amenidades seleccionadas
@@ -586,7 +590,7 @@ function AdminProperties() {
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: formData.status as 'sale' | 'rent' | 'sold' | 'rented',
         amenities: selectedAmenities, // Usar amenidades seleccionadas
-        images: previewImages, // Usar imágenes de preview
+        images: selectedProperty.images, // Usar imágenes actuales de la propiedad (con orden de portada)
         advisor_id: formData.advisor_id || undefined
       };
       
@@ -1455,6 +1459,20 @@ function AdminProperties() {
             />
           </div>
 
+          {/* Selector de Imagen de Portada - Solo si hay imágenes */}
+          {previewImages.length > 0 && (
+            <div className="mb-8">
+              <CoverImageSelector
+                images={previewImages}
+                currentCoverImage={formData.cover_image}
+                onSelectCover={(imageUrl) => {
+                  setFormData(prev => ({ ...prev, cover_image: imageUrl }));
+                }}
+                propertyCode={formData.code}
+              />
+            </div>
+          )}
+
           {/* Botones de acción */}
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button
@@ -2149,6 +2167,52 @@ function AdminProperties() {
               </div>
             </div>
           </div>
+
+          {/* Selector de Imagen de Portada */}
+          {selectedProperty && selectedProperty.images && selectedProperty.images.length > 0 && (
+            <div className="mt-6 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <CoverImageSelector
+                images={selectedProperty.images}
+                currentCoverImage={selectedProperty.cover_image}
+                onSelectCover={async (imageUrl) => {
+                  try {
+                    setIsSubmitting(true);
+                    
+                    // Crear un nuevo array con la imagen seleccionada como primera
+                    const newImages = [imageUrl, ...selectedProperty.images.filter(img => img !== imageUrl)];
+                    
+                    // Actualizar usando updateProperty con el nuevo array de imágenes
+                    await updateProperty(selectedProperty.id, { images: newImages });
+                    
+                    // Actualizar la propiedad en el estado local
+                    setProperties(prev => prev.map(p => 
+                      p.id === selectedProperty.id 
+                        ? { ...p, images: newImages, cover_image: imageUrl }
+                        : p
+                    ));
+                    
+                    // Actualizar selectedProperty
+                    setSelectedProperty(prev => prev ? { 
+                      ...prev, 
+                      images: newImages, 
+                      cover_image: imageUrl 
+                    } : null);
+                    
+                    // IMPORTANTE: Actualizar también previewImages para mantener sincronización
+                    setPreviewImages(newImages);
+                    
+                    showNotification('Imagen de portada actualizada exitosamente. La imagen seleccionada ahora es la primera en la lista.', 'success');
+                  } catch (error) {
+                    console.error('Error actualizando imagen de portada:', error);
+                    showNotification('Error al actualizar la imagen de portada', 'error');
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                propertyCode={selectedProperty.code}
+              />
+            </div>
+          )}
 
           {/* Botones */}
           <div className="flex justify-end space-x-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">

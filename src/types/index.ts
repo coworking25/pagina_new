@@ -10,6 +10,7 @@ export interface Property {
   type: 'apartment' | 'house' | 'office' | 'commercial';
   status: 'sale' | 'rent' | 'sold' | 'rented';
   images: string[];
+  cover_image?: string;  // URL de la imagen de portada seleccionada
   amenities: string[];
   featured: boolean;
   description?: string;

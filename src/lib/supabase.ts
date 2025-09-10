@@ -1457,6 +1457,34 @@ export async function updateProperty(propertyId: string, propertyData: Partial<P
   }
 }
 
+// Función para actualizar la imagen de portada de una propiedad
+export async function updatePropertyCoverImage(propertyId: string, coverImageUrl: string) {
+  try {
+    console.log(`📸 Actualizando imagen de portada para propiedad ${propertyId}:`, coverImageUrl);
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .update({ cover_image: coverImageUrl })
+      .eq('id', propertyId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Error al actualizar imagen de portada:', error);
+      if (error.code === 'PGRST116') {
+        throw new Error('Propiedad no encontrada');
+      }
+      throw new Error(`Error al actualizar la imagen de portada: ${error.message}`);
+    }
+
+    console.log('✅ Imagen de portada actualizada exitosamente');
+    return data as Property;
+  } catch (error) {
+    console.error('❌ Error en updatePropertyCoverImage:', error);
+    throw error;
+  }
+}
+
 // Función para eliminar una propiedad
 export async function deleteProperty(propertyId: string) {
   try {
