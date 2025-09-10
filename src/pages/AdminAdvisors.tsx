@@ -17,14 +17,25 @@ import {
   UserCheck,
   Image as ImageIcon
 } from 'lucide-react';
-import { getAdvisors } from '../lib/supabase';
+import { getAdvisors, createAdvisor, updateAdvisor, deleteAdvisor } from '../lib/supabase';
 import { Advisor } from '../types';
+import AdvisorDetailsModal from '../components/AdvisorDetailsModal';
+import AdvisorFormModal from '../components/AdvisorFormModal';
+import DeleteAdvisorModal from '../components/DeleteAdvisorModal';
 
 function AdminAdvisors() {
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
+  
+  // Modal states
+  const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     loadAdvisors();
@@ -45,6 +56,82 @@ function AdminAdvisors() {
       setAdvisors([]);
       setLoading(false);
     }
+  };
+
+  // Modal handlers
+  const handleViewDetails = (advisor: Advisor) => {
+    setSelectedAdvisor(advisor);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleEditAdvisor = (advisor: Advisor) => {
+    setSelectedAdvisor(advisor);
+    setIsEditing(true);
+    setIsFormModalOpen(true);
+  };
+
+  const handleDeleteAdvisor = (advisor: Advisor) => {
+    setSelectedAdvisor(advisor);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCreateAdvisor = () => {
+    setSelectedAdvisor(null);
+    setIsEditing(false);
+    setIsFormModalOpen(true);
+  };
+
+  const handleSaveAdvisor = async (advisorData: Omit<Advisor, 'id'> | Partial<Advisor>) => {
+    setActionLoading(true);
+    try {
+      if (isEditing && selectedAdvisor) {
+        // Update existing advisor
+        await updateAdvisor(selectedAdvisor.id, advisorData as Partial<Advisor>);
+        console.log('✅ Asesor actualizado exitosamente');
+      } else {
+        // Create new advisor
+        await createAdvisor(advisorData as Omit<Advisor, 'id'>);
+        console.log('✅ Asesor creado exitosamente');
+      }
+      
+      // Reload advisors list
+      await loadAdvisors();
+      setIsFormModalOpen(false);
+      setSelectedAdvisor(null);
+    } catch (error) {
+      console.error('❌ Error guardando asesor:', error);
+      throw error;
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedAdvisor) return;
+    
+    setActionLoading(true);
+    try {
+      await deleteAdvisor(selectedAdvisor.id);
+      console.log('✅ Asesor eliminado exitosamente');
+      
+      // Reload advisors list
+      await loadAdvisors();
+      setIsDeleteModalOpen(false);
+      setSelectedAdvisor(null);
+    } catch (error) {
+      console.error('❌ Error eliminando asesor:', error);
+      throw error;
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const closeModals = () => {
+    setIsDetailsModalOpen(false);
+    setIsFormModalOpen(false);
+    setIsDeleteModalOpen(false);
+    setSelectedAdvisor(null);
+    setIsEditing(false);
   };
 
   const getRatingStars = (rating: number) => {
@@ -112,6 +199,7 @@ function AdminAdvisors() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={handleCreateAdvisor}
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-5 h-5 mr-2" />
@@ -340,6 +428,7 @@ function AdminAdvisors() {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
+                  onClick={() => handleViewDetails(advisor)}
                   className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                   title="Ver perfil"
                 >
@@ -348,6 +437,7 @@ function AdminAdvisors() {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
+                  onClick={() => handleEditAdvisor(advisor)}
                   className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
                   title="Editar"
                 >
@@ -356,6 +446,7 @@ function AdminAdvisors() {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
+                  onClick={() => handleDeleteAdvisor(advisor)}
                   className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   title="Eliminar"
                 >
@@ -389,6 +480,29 @@ function AdminAdvisors() {
           </p>
         </div>
       )}
+
+      {/* Modals */}
+      <AdvisorDetailsModal
+        advisor={selectedAdvisor}
+        isOpen={isDetailsModalOpen}
+        onClose={closeModals}
+      />
+
+      <AdvisorFormModal
+        advisor={selectedAdvisor}
+        isOpen={isFormModalOpen}
+        onClose={closeModals}
+        onSave={handleSaveAdvisor}
+        isEditing={isEditing}
+      />
+
+      <DeleteAdvisorModal
+        advisor={selectedAdvisor}
+        isOpen={isDeleteModalOpen}
+        onClose={closeModals}
+        onConfirm={handleConfirmDelete}
+        isLoading={actionLoading}
+      />
     </div>
   );
 }

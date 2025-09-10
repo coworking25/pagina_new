@@ -77,20 +77,24 @@ import {
   Mountain,
   Sparkles
 } from 'lucide-react';
-import { getProperties, createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, updatePropertyCoverImage } from '../lib/supabase';
+import { getProperties, createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode } from '../lib/supabase';
 import { Property, Advisor } from '../types';
 import Modal from '../components/UI/Modal';
 import FloatingCard from '../components/UI/FloatingCard';
 import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
 import ContactModal from '../components/Modals/ContactModal';
-import { CoverImageSelector } from '../components/CoverImageSelector';
+// import { CoverImageSelector } from '../components/CoverImageSelector';
 
 function AdminProperties() {
+  console.log('🔍 AdminProperties: Iniciando componente');
+  
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  
+  console.log('🔍 AdminProperties: Estados inicializados');
   
   // Estados para modales y ventanas flotantes
   const [showAddModal, setShowAddModal] = useState(false);
@@ -240,8 +244,13 @@ function AdminProperties() {
   const [newCustomAmenity, setNewCustomAmenity] = useState('');
 
   useEffect(() => {
-    loadProperties();
-    loadAdvisors();
+    console.log('🔍 AdminProperties: useEffect ejecutándose');
+    try {
+      loadProperties();
+      loadAdvisors();
+    } catch (error) {
+      console.error('❌ Error en useEffect:', error);
+    }
   }, []);
 
   const loadAdvisors = async () => {
@@ -1460,7 +1469,8 @@ function AdminProperties() {
           </div>
 
           {/* Selector de Imagen de Portada - Solo si hay imágenes */}
-          {previewImages.length > 0 && (
+          {/* TEMPORALMENTE COMENTADO PARA DIAGNÓSTICO */}
+          {/* {previewImages.length > 0 && (
             <div className="mb-8">
               <CoverImageSelector
                 images={previewImages}
@@ -1471,7 +1481,7 @@ function AdminProperties() {
                 propertyCode={formData.code}
               />
             </div>
-          )}
+          )} */}
 
           {/* Botones de acción */}
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -2169,7 +2179,8 @@ function AdminProperties() {
           </div>
 
           {/* Selector de Imagen de Portada */}
-          {selectedProperty && selectedProperty.images && selectedProperty.images.length > 0 && (
+          {/* TEMPORALMENTE COMENTADO PARA DIAGNÓSTICO */}
+          {/* {selectedProperty && selectedProperty.images && selectedProperty.images.length > 0 && (
             <div className="mt-6 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <CoverImageSelector
                 images={selectedProperty.images}
@@ -2212,7 +2223,7 @@ function AdminProperties() {
                 propertyCode={selectedProperty.code}
               />
             </div>
-          )}
+          )} */}
 
           {/* Botones */}
           <div className="flex justify-end space-x-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">

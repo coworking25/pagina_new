@@ -1833,6 +1833,161 @@ export function clearAuth() {
   localStorage.removeItem('user_data');
 }
 
+// ==========================================
+// FUNCIONES CRUD PARA ASESORES
+// ==========================================
+
+// Crear nuevo asesor
+export async function createAdvisor(advisorData: Omit<Advisor, 'id'>): Promise<Advisor> {
+  try {
+    console.log('🔨 Creando nuevo asesor:', advisorData);
+    
+    const { data, error } = await supabase
+      .from('advisors')
+      .insert([{
+        name: advisorData.name,
+        email: advisorData.email,
+        phone: advisorData.phone,
+        whatsapp: advisorData.whatsapp,
+        photo_url: advisorData.photo,
+        specialty: advisorData.specialty,
+        rating: advisorData.rating || 5.0,
+        reviews_count: advisorData.reviews || 0,
+        availability_weekdays: advisorData.availability?.weekdays || '9:00 AM - 5:00 PM',
+        availability_weekends: advisorData.availability?.weekends || 'No disponible',
+        calendar_link: advisorData.calendar_link,
+        bio: advisorData.bio,
+        experience_years: advisorData.experience_years || 0,
+        is_active: true
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Error creando asesor:', error);
+      throw error;
+    }
+    
+    console.log('✅ Asesor creado exitosamente:', data);
+    
+    // Convertir respuesta de la BD al formato de la interfaz
+    const advisor: Advisor = {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      whatsapp: data.whatsapp,
+      photo: data.photo_url || '',
+      specialty: data.specialty,
+      rating: data.rating,
+      reviews: data.reviews_count,
+      availability: {
+        weekdays: data.availability_weekdays,
+        weekends: data.availability_weekends
+      },
+      calendar_link: data.calendar_link,
+      availability_hours: `Lun-Vie: ${data.availability_weekdays}, Sáb-Dom: ${data.availability_weekends}`,
+      bio: data.bio,
+      experience_years: data.experience_years
+    };
+    
+    return advisor;
+    
+  } catch (error) {
+    console.error('❌ Error en createAdvisor:', error);
+    throw error;
+  }
+}
+
+// Actualizar asesor existente
+export async function updateAdvisor(id: string, advisorData: Partial<Advisor>): Promise<Advisor> {
+  try {
+    console.log('🔧 Actualizando asesor:', id, advisorData);
+    
+    const updateData: any = {};
+    
+    if (advisorData.name) updateData.name = advisorData.name;
+    if (advisorData.email) updateData.email = advisorData.email;
+    if (advisorData.phone) updateData.phone = advisorData.phone;
+    if (advisorData.whatsapp) updateData.whatsapp = advisorData.whatsapp;
+    if (advisorData.photo) updateData.photo_url = advisorData.photo;
+    if (advisorData.specialty) updateData.specialty = advisorData.specialty;
+    if (advisorData.rating !== undefined) updateData.rating = advisorData.rating;
+    if (advisorData.reviews !== undefined) updateData.reviews_count = advisorData.reviews;
+    if (advisorData.availability?.weekdays) updateData.availability_weekdays = advisorData.availability.weekdays;
+    if (advisorData.availability?.weekends) updateData.availability_weekends = advisorData.availability.weekends;
+    if (advisorData.calendar_link) updateData.calendar_link = advisorData.calendar_link;
+    if (advisorData.bio) updateData.bio = advisorData.bio;
+    if (advisorData.experience_years !== undefined) updateData.experience_years = advisorData.experience_years;
+    
+    const { data, error } = await supabase
+      .from('advisors')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Error actualizando asesor:', error);
+      throw error;
+    }
+    
+    console.log('✅ Asesor actualizado exitosamente:', data);
+    
+    // Convertir respuesta de la BD al formato de la interfaz
+    const advisor: Advisor = {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      whatsapp: data.whatsapp,
+      photo: data.photo_url || '',
+      specialty: data.specialty,
+      rating: data.rating,
+      reviews: data.reviews_count,
+      availability: {
+        weekdays: data.availability_weekdays,
+        weekends: data.availability_weekends
+      },
+      calendar_link: data.calendar_link,
+      availability_hours: `Lun-Vie: ${data.availability_weekdays}, Sáb-Dom: ${data.availability_weekends}`,
+      bio: data.bio,
+      experience_years: data.experience_years
+    };
+    
+    return advisor;
+    
+  } catch (error) {
+    console.error('❌ Error en updateAdvisor:', error);
+    throw error;
+  }
+}
+
+// Eliminar asesor (soft delete)
+export async function deleteAdvisor(id: string): Promise<boolean> {
+  try {
+    console.log('🗑️ Eliminando asesor:', id);
+    
+    // Soft delete - marcar como inactivo en lugar de eliminar
+    const { error } = await supabase
+      .from('advisors')
+      .update({ is_active: false })
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Error eliminando asesor:', error);
+      throw error;
+    }
+    
+    console.log('✅ Asesor eliminado exitosamente');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Error en deleteAdvisor:', error);
+    throw error;
+  }
+}
+
 // Exponer funciones de debug globalmente
 if (typeof window !== 'undefined') {
   (window as any).debugUsers = debugUsers;
