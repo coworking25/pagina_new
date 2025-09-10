@@ -240,17 +240,31 @@ function AdminAdvisors() {
             <div className="p-6 text-center">
               <div className="relative inline-block mb-4">
                 {advisor.photo ? (
-                  <img
-                    src={advisor.photo}
-                    alt={advisor.name}
-                    className="w-20 h-20 rounded-full object-cover mx-auto"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
+                  <div className="relative w-32 h-32 mx-auto">
+                    <img
+                      src={`${advisor.photo}?quality=100&format=auto&fit=face&facepad=2`}
+                      alt={advisor.name}
+                      className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg ring-2 ring-blue-100 dark:ring-blue-900 dark:border-gray-700"
+                      style={{
+                        objectPosition: 'center top'
+                      }}
+                      onError={(e) => {
+                        // Si falla con parámetros, intentar sin ellos
+                        const target = e.currentTarget;
+                        if (target.src.includes('?')) {
+                          target.src = advisor.photo;
+                        } else {
+                          target.style.display = 'none';
+                        }
+                      }}
+                      loading="lazy"
+                    />
+                    {/* Indicador de estado activo */}
+                    <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                  </div>
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
-                    <ImageIcon className="w-8 h-8 text-gray-400" />
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mx-auto border-4 border-white shadow-lg ring-2 ring-gray-100 dark:ring-gray-700 dark:border-gray-700">
+                    <ImageIcon className="w-12 h-12 text-gray-400" />
                   </div>
                 )}
               </div>
