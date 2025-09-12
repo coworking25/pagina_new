@@ -7,7 +7,6 @@ import {
   Calendar,
   Home,
   FileText,
-  MessageSquare,
   BarChart3,
   Settings,
   Bell,
@@ -15,7 +14,8 @@ import {
   Menu,
   ChevronRight,
   Sun,
-  Moon
+  Moon,
+  HelpCircle
 } from 'lucide-react';
 import { getCurrentUser } from '../../lib/supabase';
 import { useAdminBadges } from '../../contexts/AdminBadgeContext';
@@ -55,8 +55,7 @@ function AdminLayout() {
       id: 'clients',
       label: 'Clientes',
       icon: Users,
-      path: '/admin/clients',
-      badge: badges.clients
+      path: '/admin/clients'
     },
     {
       id: 'properties',
@@ -71,11 +70,11 @@ function AdminLayout() {
       path: '/admin/advisors'
     },
     {
-      id: 'inquiries',
+      id: 'service-inquiries',
       label: 'Consultas',
-      icon: MessageSquare,
-      path: '/admin/inquiries',
-      badge: badges.inquiries
+      icon: HelpCircle,
+      path: '/admin/service-inquiries',
+      badge: badges.clients
     },
     {
       id: 'documents',
