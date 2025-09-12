@@ -206,14 +206,14 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
         setEditForm(null);
         
         // Mostrar notificación de éxito (puedes agregar una librería de toast aquí)
-        alert('Cliente actualizado correctamente');
+        alert('Consulta actualizada correctamente');
       } else {
-        throw new Error('No se pudo actualizar el cliente');
+        throw new Error('No se pudo actualizar la consulta');
       }
       
     } catch (error) {
-      console.error('❌ Error actualizando cliente:', error);
-      alert('Error al actualizar el cliente. Por favor, inténtalo de nuevo.');
+      console.error('❌ Error actualizando consulta:', error);
+      alert('Error al actualizar la consulta. Por favor, inténtalo de nuevo.');
     }
   };
 
@@ -227,7 +227,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
       const success = await deleteServiceInquiry(selectedClient.id!);
       
       if (success) {
-        console.log('✅ Cliente eliminado correctamente');
+        console.log('✅ Consulta eliminada correctamente');
         
         // Actualizar el estado local
         setClients(clients.filter(client => client.id !== selectedClient.id));
@@ -237,14 +237,14 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
         setSelectedClient(null);
         
         // Mostrar notificación de éxito
-        alert('Cliente eliminado correctamente');
+        alert('Consulta eliminada correctamente');
       } else {
-        throw new Error('No se pudo eliminar el cliente');
+        throw new Error('No se pudo eliminar la consulta');
       }
       
     } catch (error) {
-      console.error('❌ Error eliminando cliente:', error);
-      alert('Error al eliminar el cliente. Por favor, inténtalo de nuevo.');
+      console.error('❌ Error eliminando consulta:', error);
+      alert('Error al eliminar la consulta. Por favor, inténtalo de nuevo.');
     }
   };
 
@@ -298,9 +298,9 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestión de Clientes</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Consultas de Servicios</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Administra todas las consultas e inquiries de clientes
+            Administra todas las consultas e inquiries de usuarios interesados
           </p>
         </div>
         <motion.button
@@ -309,7 +309,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-5 h-5 mr-2" />
-          Nuevo Cliente
+          Nueva Consulta
         </motion.button>
       </motion.div>
 
@@ -322,7 +322,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Consultas</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">{clients.length}</p>
             </div>
             <Users className="w-6 h-6 text-blue-600" />
@@ -483,10 +483,10 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Cliente
+                  Usuario Interesado
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Servicio
+                  Servicio Solicitado
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Presupuesto
@@ -615,10 +615,10 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
           <div className="text-center py-12">
             <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No hay clientes encontrados
+              No hay consultas encontradas
             </h3>
             <p className="text-gray-500 dark:text-gray-400">
-              No se encontraron clientes que coincidan con los filtros aplicados.
+              No se encontraron consultas de servicios que coincidan con los filtros aplicados.
             </p>
           </div>
         )}
@@ -644,7 +644,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Detalles del Cliente
+                  Detalles de la Consulta
                 </h2>
                 <button
                   onClick={closeModals}
@@ -658,14 +658,14 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nombre Completo
+                      Nombre del Interesado
                     </label>
                     <p className="text-gray-900 dark:text-white font-medium">{selectedClient.client_name}</p>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Estado
+                      Estado de la Consulta
                     </label>
                     <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(selectedClient.status)}`}>
                       {selectedClient.status === 'pending' && 'Pendiente'}
@@ -726,7 +726,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Fecha de Registro
+                      Fecha de Consulta
                     </label>
                     <p className="text-gray-900 dark:text-white">{formatDate(selectedClient.created_at)}</p>
                   </div>
@@ -789,7 +789,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Editar Cliente
+                  Editar Consulta de Servicio
                 </h2>
                 <button
                   onClick={closeModals}
@@ -803,7 +803,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nombre Completo
+                      Nombre del Interesado
                     </label>
                     <input
                       type="text"
@@ -815,7 +815,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Estado
+                      Estado de la Consulta
                     </label>
                     <select
                       value={editForm.status}
@@ -903,14 +903,14 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Detalles Adicionales
+                    Detalles de la Consulta
                   </label>
                   <textarea
                     value={editForm.details}
                     onChange={(e) => setEditForm({ ...editForm, details: e.target.value })}
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Detalles adicionales sobre la consulta..."
+                    placeholder="Detalles adicionales sobre la consulta de servicio..."
                   />
                 </div>
                 
@@ -957,7 +957,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Eliminar Cliente
+                      Eliminar Consulta
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Esta acción no se puede deshacer
@@ -966,7 +966,7 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
                 </div>
                 
                 <p className="text-gray-700 dark:text-gray-300 mb-6">
-                  ¿Estás seguro de que deseas eliminar a{' '}
+                  ¿Estás seguro de que deseas eliminar la consulta de{' '}
                   <span className="font-semibold">{selectedClient.client_name}</span>?
                   Toda la información asociada se perderá permanentemente.
                 </p>
