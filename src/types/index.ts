@@ -81,9 +81,8 @@ export interface ServiceInquiry {
   urgency: 'urgent' | 'normal' | 'flexible';
   budget?: string;
   details?: string;
-  selected_questions: string[]; // Mantenemos por compatibilidad
-  questions_and_answers: QuestionAnswer[]; // Nueva estructura
-  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  selected_questions?: any; // JSONB field
+  status?: 'pending' | 'contacted' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   assigned_advisor_id?: string;
   whatsapp_sent?: boolean;
   whatsapp_sent_at?: string;
@@ -91,6 +90,8 @@ export interface ServiceInquiry {
   response_received_at?: string;
   source?: string;
   notes?: string;
+  // Legacy field for compatibility
+  questions_and_answers?: QuestionAnswer[];
 }
 
 export interface QuestionAnswer {

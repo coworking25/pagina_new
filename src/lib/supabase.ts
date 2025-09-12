@@ -889,6 +889,31 @@ export async function markInquiryAsWhatsAppSent(id: string): Promise<boolean> {
 }
 
 /**
+ * Eliminar una consulta de servicio
+ */
+export async function deleteServiceInquiry(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('service_inquiries')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ [SUPABASE] Error al eliminar consulta de servicio:', error);
+      console.error('❌ [SUPABASE] ID a eliminar:', id);
+      throw error;
+    }
+    
+    console.log('✅ [SUPABASE] Consulta de servicio eliminada correctamente:', id);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ [SUPABASE] Error en deleteServiceInquiry:', error);
+    return false;
+  }
+}
+
+/**
  * Obtener estadísticas de consultas de servicios
  */
 export async function getServiceInquiriesStats(): Promise<{
