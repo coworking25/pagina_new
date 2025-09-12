@@ -6,7 +6,7 @@
 // TIPOS BÁSICOS Y ENUMS
 // =====================================================
 
-export type ClientType = 'buyer' | 'seller' | 'renter' | 'owner';
+export type ClientType = 'buyer' | 'seller' | 'renter' | 'owner' | 'tenant' | 'landlord';
 export type ClientStatus = 'active' | 'inactive' | 'suspended' | 'pending' | 'blocked';
 export type ContractType = 'rental' | 'sale' | 'management';
 export type ContractStatus = 'draft' | 'active' | 'expired' | 'terminated' | 'pending_renewal';
