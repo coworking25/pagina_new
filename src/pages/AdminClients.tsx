@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Users,
   Search,
-  Filter,
   User,
   Mail,
   Phone,
@@ -13,45 +12,47 @@ import {
   Trash2,
   Plus,
   Calendar,
-  Clock,
-  X,
-  Save,
-  UserCheck,
-  PhoneCall,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Home,
+  DollarSign,
+  FileText,
+  X
 } from 'lucide-react';
-import { getServiceInquiries, updateServiceInquiry, deleteServiceInquiry } from '../lib/supabase';
+import { 
+  getClients, 
+  createClient, 
+  updateClient, 
+  deleteClient
+} from '../lib/clientsApi';
 
+// Definimos las interfaces localmente para evitar conflictos
 interface Client {
   id: string;
-  client_name: string;
-  client_email: string;
-  client_phone: string;
-  service_type: string;
-  urgency: string;
-  budget: string;
-  status: 'pending' | 'contacted' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  full_name: string;
+  email: string;
+  phone: string;
+  client_type: 'buyer' | 'seller' | 'renter' | 'owner';
+  status: 'active' | 'inactive' | 'suspended' | 'pending' | 'blocked';
+  document_number?: string;
   created_at: string;
-  details: string;
-  source: string;
+  updated_at: string;
 }
 
 function AdminClients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [serviceFilter, setServiceFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   
   // Modal states
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  
-  // Edit form state
-  const [editForm, setEditForm] = useState<Client | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Client>>({});
 
   useEffect(() => {
     loadClients();
@@ -61,55 +62,84 @@ function AdminClients() {
     try {
       console.log('👥 Cargando clientes desde Supabase...');
       
-      const inquiriesData = await getServiceInquiries();
-      console.log('✅ Clientes obtenidos:', inquiriesData);
-      console.log('📊 Número de clientes:', inquiriesData?.length || 0);
+      const clientsData = await getClients();
+      console.log('✅ Clientes obtenidos:', clientsData);
+      console.log('📊 Número de clientes:', clientsData?.length || 0);
       
-      // Mapear los datos de ServiceInquiry a Client
-      const mappedClients: Client[] = inquiriesData.map((inquiry: any) => ({
-        id: inquiry.id || `temp-${Math.random()}`,
-        client_name: inquiry.client_name,
-        client_email: inquiry.client_email,
-        client_phone: inquiry.client_phone,
-        service_type: inquiry.service_type,
-        urgency: inquiry.urgency || 'normal',
-        budget: inquiry.budget || 'No especificado',
-        status: inquiry.status || 'pending',
-        created_at: inquiry.created_at,
-        details: inquiry.details || '',
-        source: inquiry.source || 'website'
-      }));
-      
-      console.log('🗂️ Clientes mapeados:', mappedClients);
-      console.log('📈 Estados encontrados:', [...new Set(mappedClients.map(c => c.status))]);
-      
-      setClients(mappedClients);
-      setLoading(false);
-      
+      setClients(clientsData || []);
+      console.log('🗂️ Clientes cargados exitosamente');
     } catch (error) {
-      console.error('❌ Error cargando clientes:', error);
+      console.error('❌ Error al cargar clientes:', error);
       setClients([]);
+    } finally {
       setLoading(false);
     }
+  };
+
+  // Funciones de filtrado
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = 
+      client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.phone.includes(searchTerm) ||
+      (client.document_number && client.document_number.includes(searchTerm));
+    
+    const matchesType = typeFilter === 'all' || client.client_type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  // Estadísticas
+  const stats = {
+    total: clients.length,
+    renters: clients.filter(c => c.client_type === 'renter').length,
+    owners: clients.filter(c => c.client_type === 'owner').length,
+    buyers: clients.filter(c => c.client_type === 'buyer').length,
+    sellers: clients.filter(c => c.client_type === 'seller').length,
+    active: clients.filter(c => c.status === 'active').length,
+    inactive: clients.filter(c => c.status === 'inactive').length
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'contacted': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'scheduled': return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400';
-      case 'in_progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      default: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'inactive': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'suspended': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'blocked': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency) {
-      case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'normal': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'flexible': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'renter': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'owner': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+      case 'buyer': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'seller': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const formatClientType = (type: string) => {
+    switch (type) {
+      case 'renter': return 'Inquilino';
+      case 'owner': return 'Propietario';
+      case 'buyer': return 'Comprador';
+      case 'seller': return 'Vendedor';
+      default: return type;
+    }
+  };
+
+  const formatStatus = (status: string) => {
+    switch (status) {
+      case 'active': return 'Activo';
+      case 'inactive': return 'Inactivo';
+      case 'pending': return 'Pendiente';
+      case 'suspended': return 'Suspendido';
+      case 'blocked': return 'Bloqueado';
+      default: return status;
     }
   };
 
@@ -129,7 +159,7 @@ function AdminClients() {
 
   const handleEditClient = (client: Client) => {
     setSelectedClient(client);
-    setEditForm({ ...client });
+    setEditForm(client);
     setShowEditModal(true);
   };
 
@@ -141,30 +171,18 @@ function AdminClients() {
   const handleContactClient = (client: Client, method: 'phone' | 'email' | 'whatsapp') => {
     switch (method) {
       case 'phone':
-        window.open(`tel:${client.client_phone}`);
+        window.open(`tel:${client.phone}`);
         break;
       case 'email':
-        window.open(`mailto:${client.client_email}?subject=Contacto desde Coworking Inmobiliario - ${formatServiceType(client.service_type)}`);
+        window.open(`mailto:${client.email}?subject=Contacto desde Coworking Inmobiliario`);
         break;
       case 'whatsapp':
-        const phoneNumber = client.client_phone.replace(/[^\d]/g, '');
-        const serviceType = formatServiceType(client.service_type);
-        const urgencyText = client.urgency === 'urgent' ? ' URGENTE' : client.urgency === 'normal' ? '' : ' (flexible)';
-        
-        const message = `¡Hola ${client.client_name}! 👋
+        const phoneNumber = client.phone.replace(/[^\d]/g, '');
+        const message = `¡Hola ${client.full_name}! 👋
 
-Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento a su consulta sobre *${serviceType}*${urgencyText}.
+Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
 
-📋 *Detalles de su solicitud:*
-• Servicio: ${serviceType}
-• Presupuesto: ${client.budget}
-• Fecha de consulta: ${formatDate(client.created_at)}
-
-Estamos aquí para ayudarle con todas sus necesidades inmobiliarias. ¿Cuándo le viene mejor que conversemos sobre su proyecto?
-
-¡Esperamos poder servirle pronto! 🏠✨
-
-_Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
+¡Esperamos poder servirle pronto! 🏠✨`;
         
         window.open(`https://wa.me/57${phoneNumber}?text=${encodeURIComponent(message)}`);
         break;
@@ -172,825 +190,599 @@ _Coworking Inmobiliaria - Su socio confiable en bienes raíces_`;
   };
 
   const handleSaveEdit = async () => {
-    if (!editForm) return;
+    if (!editForm || !selectedClient) return;
     
     try {
-      console.log('🔄 Actualizando cliente:', editForm.id, editForm);
+      console.log('🔄 Actualizando cliente:', editForm);
       
-      // Preparar los datos para actualizar con tipos correctos
-      const updateData = {
-        client_name: editForm.client_name,
-        client_email: editForm.client_email,
-        client_phone: editForm.client_phone,
-        service_type: editForm.service_type as any,
-        urgency: editForm.urgency as any,
-        budget: editForm.budget,
-        status: editForm.status,
-        details: editForm.details,
-        updated_at: new Date().toISOString()
-      };
-      
-      // Actualizar en Supabase
-      const updatedClient = await updateServiceInquiry(editForm.id!, updateData);
+      const updatedClient = await updateClient(selectedClient.id, editForm);
       
       if (updatedClient) {
         console.log('✅ Cliente actualizado correctamente:', updatedClient);
         
-        // Actualizar el estado local
         setClients(clients.map(client => 
-          client.id === editForm.id ? { ...client, ...updateData } : client
+          client.id === selectedClient.id ? { ...client, ...updatedClient } : client
         ));
         
-        // Cerrar modal
         setShowEditModal(false);
-        setEditForm(null);
+        setEditForm({});
+        setSelectedClient(null);
         
-        // Mostrar notificación de éxito (puedes agregar una librería de toast aquí)
-        alert('Consulta actualizada correctamente');
-      } else {
-        throw new Error('No se pudo actualizar la consulta');
+        alert('Cliente actualizado correctamente');
       }
-      
     } catch (error) {
-      console.error('❌ Error actualizando consulta:', error);
-      alert('Error al actualizar la consulta. Por favor, inténtalo de nuevo.');
+      console.error('❌ Error actualizando cliente:', error);
+      alert('Error al actualizar el cliente. Por favor, inténtalo de nuevo.');
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleConfirmDelete = async () => {
     if (!selectedClient) return;
     
     try {
       console.log('🗑️ Eliminando cliente:', selectedClient.id);
       
-      // Eliminar en Supabase
-      const success = await deleteServiceInquiry(selectedClient.id!);
+      await deleteClient(selectedClient.id);
       
-      if (success) {
-        console.log('✅ Consulta eliminada correctamente');
-        
-        // Actualizar el estado local
-        setClients(clients.filter(client => client.id !== selectedClient.id));
-        
-        // Cerrar modal
-        setShowDeleteModal(false);
-        setSelectedClient(null);
-        
-        // Mostrar notificación de éxito
-        alert('Consulta eliminada correctamente');
-      } else {
-        throw new Error('No se pudo eliminar la consulta');
-      }
+      setClients(clients.filter(client => client.id !== selectedClient.id));
+      setShowDeleteModal(false);
+      setSelectedClient(null);
       
+      alert('Cliente eliminado correctamente');
     } catch (error) {
-      console.error('❌ Error eliminando consulta:', error);
-      alert('Error al eliminar la consulta. Por favor, inténtalo de nuevo.');
+      console.error('❌ Error eliminando cliente:', error);
+      alert('Error al eliminar el cliente. Por favor, inténtalo de nuevo.');
     }
   };
 
-  const closeModals = () => {
-    setShowViewModal(false);
-    setShowEditModal(false);
-    setShowDeleteModal(false);
-    setSelectedClient(null);
-    setEditForm(null);
-  };
-
-  const formatServiceType = (serviceType: string) => {
-    const serviceMap: { [key: string]: string } = {
-      'arrendamientos': 'Arrendamientos',
-      'ventas': 'Ventas',
-      'avaluos': 'Avalúos',
-      'remodelacion': 'Remodelación',
-      'construccion': 'Construcción',
-      'asesorias-contables': 'Asesorías Contables'
-    };
-    return serviceMap[serviceType] || serviceType;
-  };
-
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.client_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.client_phone.includes(searchTerm);
-    const matchesService = serviceFilter === 'all' || client.service_type === serviceFilter;
-    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
-    return matchesSearch && matchesService && matchesStatus;
-  });
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"
-        />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Cargando clientes...
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            Conectando con la base de datos
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
-      >
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Consultas de Servicios</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Gestión de Clientes
+          </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Administra todas las consultas e inquiries de usuarios interesados
+            Administra tu base de clientes reales
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="mt-4 md:mt-0 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          Nueva Consulta
-        </motion.button>
-      </motion.div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Consultas</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{clients.length}</p>
-            </div>
-            <Users className="w-6 h-6 text-blue-600" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-xl font-bold text-yellow-600">
-                {clients.filter(c => c.status === 'pending').length}
-              </p>
-            </div>
-            <Clock className="w-6 h-6 text-yellow-600" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Contactados</p>
-              <p className="text-xl font-bold text-purple-600">
-                {clients.filter(c => c.status === 'contacted').length}
-              </p>
-            </div>
-            <UserCheck className="w-6 h-6 text-purple-600" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Agendados</p>
-              <p className="text-xl font-bold text-cyan-600">
-                {clients.filter(c => c.status === 'scheduled').length}
-              </p>
-            </div>
-            <Calendar className="w-6 h-6 text-cyan-600" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Progreso</p>
-              <p className="text-xl font-bold text-blue-600">
-                {clients.filter(c => c.status === 'in_progress').length}
-              </p>
-            </div>
-            <MessageSquare className="w-6 h-6 text-blue-600" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Completados</p>
-              <p className="text-xl font-bold text-green-600">
-                {clients.filter(c => c.status === 'completed').length}
-              </p>
-            </div>
-            <CheckCircle className="w-6 h-6 text-green-600" />
-          </div>
-        </motion.div>
+          <Plus className="w-4 h-4" />
+          Nuevo Cliente
+        </button>
       </div>
 
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
-      >
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.total}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+              <Home className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Inquilinos</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.renters}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+              <User className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Propietarios</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.owners}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Compradores</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.buyers}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Activos</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.active}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Inactivos</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.inactive}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Buscar por nombre, email o teléfono..."
+              placeholder="Buscar clientes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
 
-          {/* Service Filter */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <select
-              value={serviceFilter}
-              onChange={(e) => setServiceFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Todos los servicios</option>
-              <option value="arrendamientos">Arrendamientos</option>
-              <option value="ventas">Ventas</option>
-              <option value="avaluos">Avalúos</option>
-              <option value="remodelacion">Remodelación</option>
-              <option value="construccion">Construcción</option>
-              <option value="asesorias-contables">Asesorías Contables</option>
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="relative">
-            <MessageSquare className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="pending">Pendiente</option>
-              <option value="contacted">Contactado</option>
-              <option value="scheduled">Agendado</option>
-              <option value="in_progress">En Progreso</option>
-              <option value="completed">Completado</option>
-              <option value="cancelled">Cancelado</option>
-            </select>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Clients Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Usuario Interesado
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Servicio Solicitado
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Presupuesto
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fecha
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredClients.map((client, index) => (
-                <motion.tr
-                  key={client.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {client.client_name}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                          <Mail className="w-4 h-4 mr-1" />
-                          {client.client_email}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                          <Phone className="w-4 h-4 mr-1" />
-                          {client.client_phone}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {formatServiceType(client.service_type)}
-                      </span>
-                      <div className="mt-1">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getUrgencyColor(client.urgency)}`}>
-                          {client.urgency === 'urgent' && 'Urgente'}
-                          {client.urgency === 'normal' && 'Normal'}
-                          {client.urgency === 'flexible' && 'Flexible'}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-gray-900 dark:text-white font-medium">
-                      {client.budget}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(client.status)}`}>
-                      {client.status === 'pending' && 'Pendiente'}
-                      {client.status === 'contacted' && 'Contactado'}
-                      {client.status === 'scheduled' && 'Agendado'}
-                      {client.status === 'in_progress' && 'En Progreso'}
-                      {client.status === 'completed' && 'Completado'}
-                      {client.status === 'cancelled' && 'Cancelado'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-gray-900 dark:text-white">
-                      {formatDate(client.created_at)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleViewClient(client)}
-                        className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                        title="Ver detalles"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleEditClient(client)}
-                        className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleContactClient(client, 'whatsapp')}
-                        className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-                        title="Contactar por WhatsApp"
-                      >
-                        <PhoneCall className="w-4 h-4" />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDeleteClient(client)}
-                        className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </motion.button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredClients.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No hay consultas encontradas
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              No se encontraron consultas de servicios que coincidan con los filtros aplicados.
-            </p>
-          </div>
-        )}
-      </motion.div>
-
-      {/* Modales */}
-      <AnimatePresence>
-        {/* Modal Ver Cliente */}
-        {showViewModal && selectedClient && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={closeModals}
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Detalles de la Consulta
-                </h2>
+            <option value="all">Todos los tipos</option>
+            <option value="renter">Inquilinos</option>
+            <option value="owner">Propietarios</option>
+            <option value="buyer">Compradores</option>
+            <option value="seller">Vendedores</option>
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="all">Todos los estados</option>
+            <option value="active">Activos</option>
+            <option value="inactive">Inactivos</option>
+            <option value="pending">Pendientes</option>
+            <option value="suspended">Suspendidos</option>
+            <option value="blocked">Bloqueados</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Lista de clientes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        {filteredClients.map((client, index) => (
+          <motion.div
+            key={client.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700 hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  {client.full_name}
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
+                    {formatStatus(client.status)}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(client.client_type)}`}>
+                    {formatClientType(client.client_type)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={closeModals}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  onClick={() => handleViewClient(client)}
+                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                  title="Ver detalles"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <Eye className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleEditClient(client)}
+                  className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                  title="Editar"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDeleteClient(client)}
+                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                  title="Eliminar"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            </div>
+
+            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                <span>{client.email}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                <span>{client.phone}</span>
+              </div>
+              {client.document_number && (
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  <span>{client.document_number}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{formatDate(client.created_at)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => handleContactClient(client, 'phone')}
+                className="flex-1 flex items-center justify-center gap-1 bg-green-600 text-white py-1 px-2 rounded text-xs hover:bg-green-700"
+              >
+                <Phone className="w-3 h-3" />
+                Llamar
+              </button>
+              <button
+                onClick={() => handleContactClient(client, 'email')}
+                className="flex-1 flex items-center justify-center gap-1 bg-blue-600 text-white py-1 px-2 rounded text-xs hover:bg-blue-700"
+              >
+                <Mail className="w-3 h-3" />
+                Email
+              </button>
+              <button
+                onClick={() => handleContactClient(client, 'whatsapp')}
+                className="flex-1 flex items-center justify-center gap-1 bg-green-500 text-white py-1 px-2 rounded text-xs hover:bg-green-600"
+              >
+                <MessageSquare className="w-3 h-3" />
+                WhatsApp
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {filteredClients.length === 0 && (
+        <div className="text-center py-12">
+          <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            No se encontraron clientes
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            {clients.length === 0 
+              ? 'Aún no tienes clientes registrados en la base de datos'
+              : 'Intenta ajustar los filtros de búsqueda'}
+          </p>
+          {clients.length === 0 && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="mt-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+            >
+              <Plus className="w-4 h-4" />
+              Crear Primer Cliente
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Modal Ver Cliente */}
+      {showViewModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Detalles del Cliente
+                </h2>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nombre del Interesado
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nombre Completo
                     </label>
-                    <p className="text-gray-900 dark:text-white font-medium">{selectedClient.client_name}</p>
+                    <p className="text-gray-900 dark:text-white">{selectedClient.full_name}</p>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Estado de la Consulta
-                    </label>
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(selectedClient.status)}`}>
-                      {selectedClient.status === 'pending' && 'Pendiente'}
-                      {selectedClient.status === 'contacted' && 'Contactado'}
-                      {selectedClient.status === 'scheduled' && 'Agendado'}
-                      {selectedClient.status === 'in_progress' && 'En Progreso'}
-                      {selectedClient.status === 'completed' && 'Completado'}
-                      {selectedClient.status === 'cancelled' && 'Cancelado'}
-                    </span>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Email
                     </label>
-                    <div className="flex items-center space-x-2">
-                      <Mail className="w-4 h-4 text-gray-400" />
-                      <p className="text-gray-900 dark:text-white">{selectedClient.client_email}</p>
-                    </div>
+                    <p className="text-gray-900 dark:text-white">{selectedClient.email}</p>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Teléfono
                     </label>
-                    <div className="flex items-center space-x-2">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <p className="text-gray-900 dark:text-white">{selectedClient.client_phone}</p>
-                    </div>
+                    <p className="text-gray-900 dark:text-white">{selectedClient.phone}</p>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Servicio Solicitado
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tipo de Cliente
                     </label>
-                    <p className="text-gray-900 dark:text-white font-medium">
-                      {formatServiceType(selectedClient.service_type)}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Presupuesto
-                    </label>
-                    <p className="text-gray-900 dark:text-white font-medium">{selectedClient.budget}</p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Urgencia
-                    </label>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getUrgencyColor(selectedClient.urgency)}`}>
-                      {selectedClient.urgency === 'urgent' && 'Urgente'}
-                      {selectedClient.urgency === 'normal' && 'Normal'}
-                      {selectedClient.urgency === 'flexible' && 'Flexible'}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(selectedClient.client_type)}`}>
+                      {formatClientType(selectedClient.client_type)}
                     </span>
                   </div>
-                  
+                </div>
+
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Fecha de Consulta
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Estado
+                    </label>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedClient.status)}`}>
+                      {formatStatus(selectedClient.status)}
+                    </span>
+                  </div>
+
+                  {selectedClient.document_number && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Documento
+                      </label>
+                      <p className="text-gray-900 dark:text-white">{selectedClient.document_number}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Fecha de Registro
                     </label>
                     <p className="text-gray-900 dark:text-white">{formatDate(selectedClient.created_at)}</p>
                   </div>
                 </div>
-                
-                {selectedClient.details && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Detalles Adicionales
-                    </label>
-                    <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                      {selectedClient.details}
-                    </p>
-                  </div>
-                )}
-                
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => handleContactClient(selectedClient, 'phone')}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    Llamar
-                  </button>
-                  <button
-                    onClick={() => handleContactClient(selectedClient, 'email')}
-                    className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email
-                  </button>
-                  <button
-                    onClick={() => handleContactClient(selectedClient, 'whatsapp')}
-                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    WhatsApp
-                  </button>
-                </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
 
-        {/* Modal Editar Cliente */}
-        {showEditModal && editForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={closeModals}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Editar Consulta de Servicio
-                </h2>
+              <div className="mt-6 flex justify-end gap-3">
                 <button
-                  onClick={closeModals}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  onClick={() => setShowViewModal(false)}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    handleEditClient(selectedClient);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Editar Cliente
                 </button>
               </div>
-              
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal Editar Cliente */}
+      {showEditModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Editar Cliente
+                </h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nombre del Interesado
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Nombre Completo
                     </label>
                     <input
                       type="text"
-                      value={editForm.client_name}
-                      onChange={(e) => setEditForm({ ...editForm, client_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={editForm.full_name || ''}
+                      onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Estado de la Consulta
-                    </label>
-                    <select
-                      value={editForm.status}
-                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value as Client['status'] })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="pending">Pendiente</option>
-                      <option value="contacted">Contactado</option>
-                      <option value="scheduled">Agendado</option>
-                      <option value="in_progress">En Progreso</option>
-                      <option value="completed">Completado</option>
-                      <option value="cancelled">Cancelado</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Email
                     </label>
                     <input
                       type="email"
-                      value={editForm.client_email}
-                      onChange={(e) => setEditForm({ ...editForm, client_email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={editForm.email || ''}
+                      onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Teléfono
                     </label>
                     <input
                       type="tel"
-                      value={editForm.client_phone}
-                      onChange={(e) => setEditForm({ ...editForm, client_phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={editForm.phone || ''}
+                      onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
-                  
+                </div>
+
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Servicio
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tipo de Cliente
                     </label>
                     <select
-                      value={editForm.service_type}
-                      onChange={(e) => setEditForm({ ...editForm, service_type: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={editForm.client_type || ''}
+                      onChange={(e) => setEditForm({...editForm, client_type: e.target.value as any})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
-                      <option value="arrendamientos">Arrendamientos</option>
-                      <option value="ventas">Ventas</option>
-                      <option value="avaluos">Avalúos</option>
-                      <option value="remodelacion">Remodelación</option>
-                      <option value="construccion">Construcción</option>
-                      <option value="asesorias-contables">Asesorías Contables</option>
+                      <option value="renter">Inquilino</option>
+                      <option value="owner">Propietario</option>
+                      <option value="buyer">Comprador</option>
+                      <option value="seller">Vendedor</option>
                     </select>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Presupuesto
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Estado
+                    </label>
+                    <select
+                      value={editForm.status || ''}
+                      onChange={(e) => setEditForm({...editForm, status: e.target.value as any})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="active">Activo</option>
+                      <option value="inactive">Inactivo</option>
+                      <option value="pending">Pendiente</option>
+                      <option value="suspended">Suspendido</option>
+                      <option value="blocked">Bloqueado</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Documento
                     </label>
                     <input
                       type="text"
-                      value={editForm.budget}
-                      onChange={(e) => setEditForm({ ...editForm, budget: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={editForm.document_number || ''}
+                      onChange={(e) => setEditForm({...editForm, document_number: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Urgencia
-                    </label>
-                    <select
-                      value={editForm.urgency}
-                      onChange={(e) => setEditForm({ ...editForm, urgency: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="flexible">Flexible</option>
-                      <option value="normal">Normal</option>
-                      <option value="urgent">Urgente</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Detalles de la Consulta
-                  </label>
-                  <textarea
-                    value={editForm.details}
-                    onChange={(e) => setEditForm({ ...editForm, details: e.target.value })}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Detalles adicionales sobre la consulta de servicio..."
-                  />
-                </div>
-                
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSaveEdit}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Guardar Cambios
-                  </button>
-                  <button
-                    onClick={closeModals}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    Cancelar
-                  </button>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
 
-        {/* Modal Eliminar Cliente */}
-        {showDeleteModal && selectedClient && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={closeModals}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full"
-            >
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mr-4">
-                    <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Eliminar Consulta
-                    </h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">
-                      Esta acción no se puede deshacer
-                    </p>
-                  </div>
-                </div>
-                
-                <p className="text-gray-700 dark:text-gray-300 mb-6">
-                  ¿Estás seguro de que deseas eliminar la consulta de{' '}
-                  <span className="font-semibold">{selectedClient.client_name}</span>?
-                  Toda la información asociada se perderá permanentemente.
-                </p>
-                
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleDeleteConfirm}
-                    className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
-                  </button>
-                  <button
-                    onClick={closeModals}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Guardar Cambios
+                </button>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
+
+      {/* Modal Confirmar Eliminar */}
+      {showDeleteModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full"
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Confirmar Eliminación
+                </h2>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                ¿Estás seguro de que quieres eliminar al cliente <strong>{selectedClient.full_name}</strong>?
+                Esta acción no se puede deshacer.
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Eliminar Cliente
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

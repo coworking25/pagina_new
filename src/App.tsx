@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAppointments from './pages/AdminAppointments';
 import AdminClients from './pages/AdminClients';
+// import AdminRealClients from './pages/AdminRealClients'; // Temporarily disabled
 import AdminProperties from './pages/AdminProperties';
 import AdminAdvisors from './pages/AdminAdvisors';
 import AdminSettings from './pages/AdminSettings';
@@ -67,7 +68,7 @@ const AppLayout = () => {
             >
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="appointments" element={<AdminAppointments />} />
-              <Route path="clients" element={<div>Clientes Reales - En desarrollo</div>} />
+              <Route path="clients" element={<AdminClients />} />
               <Route path="properties" element={<AdminProperties />} />
               <Route path="advisors" element={<AdminAdvisors />} />
               <Route path="service-inquiries" element={<AdminClients />} />

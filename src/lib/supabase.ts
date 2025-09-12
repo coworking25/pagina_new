@@ -2013,9 +2013,8 @@ export async function deleteAdvisor(id: string): Promise<boolean> {
   }
 }
 
-// Exponer funciones de debug globalmente
-if (typeof window !== 'undefined') {
-  (window as any).debugUsers = debugUsers;
-  (window as any).clearAuth = clearAuth;
-  (window as any).isAuth = isAuthenticated;
-}
+// =====================================================
+// SISTEMA DE CLIENTES
+// =====================================================
+// Las funciones de clientes han sido movidas a src/lib/clientsApi.ts
+// para evitar conflictos y mantener separación de responsabilidades.

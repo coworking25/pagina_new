@@ -1,3 +1,6 @@
+// Re-export all client-related types
+export * from './clients';
+
 export interface Property {
   id: string;
   code?: string;  // Código único de la propiedad (ej: CA-001)
