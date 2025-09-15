@@ -83,7 +83,7 @@ import Modal from '../components/UI/Modal';
 import FloatingCard from '../components/UI/FloatingCard';
 import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
 import ContactModal from '../components/Modals/ContactModal';
-// import { CoverImageSelector } from '../components/CoverImageSelector';
+import { CoverImageSelector } from '../components/CoverImageSelector';
 
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
@@ -397,6 +397,52 @@ function AdminProperties() {
       console.log('✅ Imagen eliminada exitosamente');
     } catch (error) {
       console.error('❌ Error eliminando imagen:', error);
+    }
+  };
+
+  // Función para subir nuevas imágenes en el modal de edición
+  const handleEditImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0 || !selectedProperty) return;
+
+    setUploadingImages(true);
+    try {
+      console.log(`📤 Subiendo ${files.length} nuevas imágenes para ${selectedProperty.code}...`);
+
+      const uploadedUrls = await bulkUploadPropertyImages(
+        Array.from(files),
+        selectedProperty.code,
+        (current, total) => {
+          console.log(`📊 Progreso: ${current}/${total}`);
+        }
+      );
+
+      // Crear nuevo array de imágenes combinando las existentes con las nuevas
+      const newImages = [...selectedProperty.images, ...uploadedUrls];
+
+      // Actualizar la propiedad usando updateProperty
+      await updateProperty(selectedProperty.id, { images: newImages });
+
+      // Actualizar el estado local
+      setProperties(prev => prev.map(p =>
+        p.id === selectedProperty.id
+          ? { ...p, images: newImages }
+          : p
+      ));
+
+      // Actualizar selectedProperty
+      setSelectedProperty(prev => prev ? {
+        ...prev,
+        images: newImages
+      } : null);
+
+      console.log(`✅ ${uploadedUrls.length} imágenes agregadas exitosamente`);
+      showNotification(`${uploadedUrls.length} imágenes agregadas exitosamente`, 'success');
+    } catch (error) {
+      console.error('❌ Error subiendo imágenes:', error);
+      showNotification('Error al subir las imágenes', 'error');
+    } finally {
+      setUploadingImages(false);
     }
   };
 
@@ -2178,9 +2224,165 @@ function AdminProperties() {
             </div>
           </div>
 
+          {/* Gestión de Imágenes Existentes */}
+          {selectedProperty && selectedProperty.images && selectedProperty.images.length > 0 && (
+            <div className="mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                  <ImageIcon className="w-5 h-5 mr-2 text-blue-600" />
+                  Imágenes Actuales ({selectedProperty.images.length})
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Aquí podríamos abrir un modal para subir nuevas imágenes
+                    // Por ahora, solo mostramos las existentes
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Más
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {selectedProperty.images.map((imageUrl, index) => (
+                  <div key={index} className="relative group">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                      <img
+                        src={imageUrl}
+                        alt={`Imagen ${index + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400"><span>Imagen no disponible</span></div>';
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Indicadores */}
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-md font-medium flex items-center">
+                        <Star className="w-3 h-3 mr-1" />
+                        Portada
+                      </div>
+                    )}
+
+                    {/* Número de imagen */}
+                    <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                      #{index + 1}
+                    </div>
+
+                    {/* Botón de eliminar */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (window.confirm(`¿Estás seguro de que quieres eliminar esta imagen?`)) {
+                          try {
+                            setIsSubmitting(true);
+
+                            // Eliminar imagen usando la función deletePropertyImage
+                            await deletePropertyImage(selectedProperty.id, imageUrl);
+
+                            // Actualizar el estado local
+                            const newImages = selectedProperty.images.filter(img => img !== imageUrl);
+                            setProperties(prev => prev.map(p =>
+                              p.id === selectedProperty.id
+                                ? { ...p, images: newImages }
+                                : p
+                            ));
+
+                            // Actualizar selectedProperty
+                            setSelectedProperty(prev => prev ? {
+                              ...prev,
+                              images: newImages
+                            } : null);
+
+                            showNotification('Imagen eliminada exitosamente', 'success');
+                          } catch (error) {
+                            console.error('Error eliminando imagen:', error);
+                            showNotification('Error al eliminar la imagen', 'error');
+                          } finally {
+                            setIsSubmitting(false);
+                          }
+                        }
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+
+                    {/* Overlay al hacer hover */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity duration-200 rounded-lg" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  💡 <strong>Consejo:</strong> La primera imagen es la portada. Puedes cambiarla usando el selector abajo.
+                  Para eliminar una imagen, pasa el mouse sobre ella y haz clic en el botón rojo.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Sección para Agregar Nuevas Imágenes */}
+          {selectedProperty && (
+            <div className="mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <Upload className="w-5 h-5 mr-2 text-green-600" />
+                Agregar Nuevas Imágenes
+              </h3>
+
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleEditImageUpload}
+                  className="hidden"
+                  id="edit-image-upload"
+                  disabled={uploadingImages}
+                />
+                <label
+                  htmlFor="edit-image-upload"
+                  className="cursor-pointer block"
+                >
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    {uploadingImages ? 'Subiendo imágenes...' : 'Arrastra imágenes aquí o haz clic para seleccionar'}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Formatos soportados: JPG, PNG, WebP (máximo 5MB por imagen)
+                  </p>
+                </label>
+
+                {uploadingImages && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span className="ml-2 text-blue-600">Subiendo imágenes...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  💡 <strong>Nota:</strong> Las nuevas imágenes se agregarán al final de la lista.
+                  Puedes reorganizarlas usando el selector de imagen de portada abajo.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Selector de Imagen de Portada */}
-          {/* TEMPORALMENTE COMENTADO PARA DIAGNÓSTICO */}
-          {/* {selectedProperty && selectedProperty.images && selectedProperty.images.length > 0 && (
+          {selectedProperty && selectedProperty.images && selectedProperty.images.length > 0 && (
             <div className="mt-6 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
               <CoverImageSelector
                 images={selectedProperty.images}
@@ -2188,30 +2390,30 @@ function AdminProperties() {
                 onSelectCover={async (imageUrl) => {
                   try {
                     setIsSubmitting(true);
-                    
+
                     // Crear un nuevo array con la imagen seleccionada como primera
                     const newImages = [imageUrl, ...selectedProperty.images.filter(img => img !== imageUrl)];
-                    
+
                     // Actualizar usando updateProperty con el nuevo array de imágenes
                     await updateProperty(selectedProperty.id, { images: newImages });
-                    
+
                     // Actualizar la propiedad en el estado local
-                    setProperties(prev => prev.map(p => 
-                      p.id === selectedProperty.id 
+                    setProperties(prev => prev.map(p =>
+                      p.id === selectedProperty.id
                         ? { ...p, images: newImages, cover_image: imageUrl }
                         : p
                     ));
-                    
+
                     // Actualizar selectedProperty
-                    setSelectedProperty(prev => prev ? { 
-                      ...prev, 
-                      images: newImages, 
-                      cover_image: imageUrl 
+                    setSelectedProperty(prev => prev ? {
+                      ...prev,
+                      images: newImages,
+                      cover_image: imageUrl
                     } : null);
-                    
+
                     // IMPORTANTE: Actualizar también previewImages para mantener sincronización
                     setPreviewImages(newImages);
-                    
+
                     showNotification('Imagen de portada actualizada exitosamente. La imagen seleccionada ahora es la primera en la lista.', 'success');
                   } catch (error) {
                     console.error('Error actualizando imagen de portada:', error);
@@ -2223,7 +2425,7 @@ function AdminProperties() {
                 propertyCode={selectedProperty.code}
               />
             </div>
-          )} */}
+          )}
 
           {/* Botones */}
           <div className="flex justify-end space-x-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
