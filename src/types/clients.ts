@@ -1,6 +1,51 @@
 // =====================================================
-// INTERFACES PARA EL SISTEMA DE CLIENTES
+// INTERFACES PARA RELACIONES CLIENTE-PROPIEDAD
 // =====================================================
+
+// Relación entre cliente y propiedad
+export interface ClientPropertyRelation {
+  id: string;
+  client_id: string;
+  property_id: number; // Cambiado a number para coincidir con bigint en BD
+  relation_type: ClientPropertyRelationType; // 'owner', 'tenant', 'interested', 'pending_contract'
+  contract_id?: string; // Si hay un contrato asociado
+  status: ClientPropertyRelationStatus; // 'active', 'pending', 'completed', 'cancelled'
+  notes?: string;
+  // Propiedad denormalizada (devuelta por la consulta en clientsApi)
+  property?: {
+    id: number;
+    title?: string;
+    code?: string;
+    type?: string;
+    status?: string;
+    price?: number;
+    images?: any[];
+    cover_image?: string;
+  };
+  // Algunas consultas antiguas podrían devolver 'message'
+  message?: string;
+  created_at: string;
+  updated_at: string;
+
+  // Información adicional para relaciones específicas
+  pending_contract_status?: 'documents_pending' | 'approval_pending' | 'payment_pending' | 'ready_to_sign';
+  interest_level?: 'low' | 'medium' | 'high'; // Para interesados
+  move_in_date?: string; // Para tenants
+  lease_start_date?: string; // Para contratos pendientes
+  lease_end_date?: string; // Para contratos activos
+}
+
+export type ClientPropertyRelationType = 'owner' | 'tenant' | 'interested' | 'pending_contract';
+export type ClientPropertyRelationStatus = 'active' | 'pending' | 'completed' | 'cancelled' | 'expired';
+
+// Resumen de propiedades por cliente (para mostrar en la UI)
+export interface ClientPropertySummary {
+  owned_properties: number;
+  rented_properties: number;
+  interested_properties: number;
+  pending_contracts: number;
+  active_contracts: number;
+}
 
 // =====================================================
 // TIPOS BÁSICOS Y ENUMS
@@ -57,6 +102,10 @@ export interface Client {
   // Información de Marketing y Seguimiento
   referral_source?: string;
   property_requirements?: string;
+  
+  // Relaciones con Propiedades
+  property_relations?: ClientPropertyRelation[];
+  property_summary?: ClientPropertySummary;
   
   // Asignación y Metadatos
   assigned_advisor_id?: string;

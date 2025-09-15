@@ -496,12 +496,17 @@ export function getPublicImageUrl(path: string) {
 }
 
 // Función principal para obtener propiedades
-export async function getProperties(): Promise<Property[]> {
+export async function getProperties(onlyAvailable: boolean = false): Promise<Property[]> {
   try {
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*')
-      .order('created_at', { ascending: false });
+    let query = supabase.from('properties').select('*').order('created_at', { ascending: false });
+
+    // Si solo queremos propiedades disponibles, excluir estados que indican ocupación/vendida
+    if (onlyAvailable) {
+      // Excluir propiedades con status 'rented' o 'sold'
+      query = query.neq('status', 'rented').neq('status', 'sold');
+    }
+
+    const { data, error } = await query;
     
     if (error) {
       console.error('❌ Error al obtener propiedades:', error);
@@ -1394,6 +1399,20 @@ export async function createProperty(propertyData: Omit<Property, 'id' | 'create
 }
 
 // Función para actualizar una propiedad
+// Normaliza valores de status para que coincidan con el esquema de la base de datos
+function normalizePropertyStatus(s: string): Property['status'] {
+  const v = (s || '').toLowerCase().trim();
+  if (['sale','venta','sale','for sale'].includes(v)) return 'sale';
+  if (['rent','renta','rental','alquiler','for rent'].includes(v)) return 'rent';
+  if (['sold','vendido','vendida','sale','venta','for sale'].includes(v)) return 'sold';
+  if (['rented','arrendada','arrendado','occupied','ocupada','ocupado'].includes(v)) return 'rented';
+  if (['reserved','reservada','reservado','booked'].includes(v)) return 'reserved';
+  if (['maintenance','mantenimiento','in_repair'].includes(v)) return 'maintenance';
+  if (['pending','pendiente','en_revision'].includes(v)) return 'pending';
+  // fallback
+  return 'available';
+}
+
 export async function updateProperty(propertyId: string, propertyData: Partial<Property>) {
   try {
     // Validar que exista al menos un campo para actualizar
@@ -1426,7 +1445,7 @@ export async function updateProperty(propertyId: string, propertyData: Partial<P
       throw new Error('El área debe ser mayor a 0');
     }
 
-    // Preparar datos para actualización, mapeando campos correctamente
+  // Preparar datos para actualización, mapeando campos correctamente
     const updateData: any = { ...propertyData };
     
     // Limpiar campos que no deben ser actualizados o no existen
@@ -1449,6 +1468,12 @@ export async function updateProperty(propertyId: string, propertyData: Partial<P
     }
 
     console.log(`📝 Actualizando propiedad ${propertyId} con datos:`, updateData);
+
+    // Normalizar status si viene en payload para evitar violaciones de check constraint
+    // IMPORTANT: normalizar incluso si viene como cadena vacía ('')
+    if (Object.prototype.hasOwnProperty.call(updateData, 'status')) {
+      updateData.status = normalizePropertyStatus(String(updateData.status || ''));
+    }
     
     const { data, error } = await supabase
       .from('properties')
@@ -1625,10 +1650,11 @@ export async function getPropertiesByStatus(status: string) {
 // Función para cambiar estado de propiedad
 export async function updatePropertyStatus(propertyId: string, newStatus: string, reason?: string) {
   try {
+    const normalized = normalizePropertyStatus(newStatus);
     const { data, error } = await supabase
       .from('properties')
       .update({ 
-        status: newStatus,
+        status: normalized,
         updated_at: new Date().toISOString()
       })
       .eq('id', propertyId)
@@ -1703,7 +1729,8 @@ export async function getPropertiesNeedingAttention() {
           email
         )
       `)
-      .or(`status.eq.disponible,updated_at.lt.${thirtyDaysAgo.toISOString()}`)
+      // Use canonical status 'available' (was 'disponible') and check updated_at
+      .or(`status.eq.available,updated_at.lt.${thirtyDaysAgo.toISOString()}`)
       .order('updated_at', { ascending: true });
 
     if (error) {
@@ -1715,6 +1742,34 @@ export async function getPropertiesNeedingAttention() {
   } catch (error) {
     console.error('❌ Error en getPropertiesNeedingAttention:', error);
     throw error;
+  }
+}
+
+// Obtener inquilinos activos para una lista de property ids
+export async function getActiveTenantsForProperties(propertyIds: number[] | string[]) {
+  try {
+    const ids = propertyIds.map(id => String(id));
+    const { data, error } = await supabase
+      .from('client_property_relations')
+      .select('id, property_id, client_id, relation_type, status, client:client_id ( id, full_name, email, phone )')
+      .in('property_id', ids)
+      .eq('relation_type', 'tenant')
+      .eq('status', 'active');
+
+    if (error) {
+      console.error('❌ Error en getActiveTenantsForProperties:', error);
+      return {};
+    }
+
+    const map: Record<string, any> = {};
+    (data || []).forEach((r: any) => {
+      map[String(r.property_id)] = r.client || null;
+    });
+
+    return map;
+  } catch (error) {
+    console.error('❌ Error en getActiveTenantsForProperties:', error);
+    return {};
   }
 }
 

@@ -77,7 +77,7 @@ import {
   Mountain,
   Sparkles
 } from 'lucide-react';
-import { getProperties, createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode } from '../lib/supabase';
+import { getProperties, createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase } from '../lib/supabase';
 import { Property, Advisor } from '../types';
 import Modal from '../components/UI/Modal';
 import FloatingCard from '../components/UI/FloatingCard';
@@ -102,6 +102,7 @@ function AdminProperties() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [tenantMap, setTenantMap] = useState<Record<string, { id: string; full_name: string }>>({});
   
   // Estados para asesores
   const [currentAdvisor, setCurrentAdvisor] = useState<Advisor | null>(null);
@@ -278,6 +279,14 @@ function AdminProperties() {
       });
       
       setProperties(propertiesData);
+      // Cargar inquilinos activos para estas propiedades
+      try {
+        const ids = propertiesData.map((p: any) => p.id);
+        const tenants = await getActiveTenantsForProperties(ids);
+        setTenantMap(tenants);
+      } catch (tErr) {
+        console.warn('⚠️ No se pudieron cargar inquilinos activos:', tErr);
+      }
       setLoading(false);
       
     } catch (error) {
@@ -287,12 +296,59 @@ function AdminProperties() {
     }
   };
 
+  const handleReleaseProperty = async (propertyId: string) => {
+    if (!window.confirm('¿Confirmas liberar esta propiedad y cerrar el contrato asociado?')) return;
+    try {
+      // Find active contract for this property (if any)
+      const { data: contracts, error: cErr } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('property_id', propertyId)
+        .eq('status', 'active')
+        .limit(1)
+        .single();
+
+      if (cErr && cErr.code !== 'PGRST116') {
+        console.warn('⚠️ Error buscando contrato activo:', cErr);
+      }
+
+      if (contracts && contracts.id) {
+        // Call RPC to release
+        try {
+          const { error: rpcErr } = await supabase.rpc('release_property_and_close_contract', { p_contract_id: contracts.id });
+          if (rpcErr) throw rpcErr;
+        } catch (rpcErr) {
+          console.warn('⚠️ RPC release failed, falling back to status update', rpcErr);
+          await updatePropertyStatus(propertyId, 'available', 'Liberado manualmente desde UI');
+        }
+      } else {
+        // No active contract found — just set status to available
+        await updatePropertyStatus(propertyId, 'available', 'Liberado manualmente desde UI');
+      }
+
+      // Refresh properties and tenantMap
+      const refreshed = await getProperties();
+      setProperties(refreshed);
+      const refreshedTenants = await getActiveTenantsForProperties(refreshed.map((p: any) => p.id));
+      setTenantMap(refreshedTenants);
+
+      alert('Propiedad liberada correctamente');
+    } catch (err) {
+      console.error('❌ Error liberando propiedad:', err);
+      alert('Error liberando propiedad: ' + (err as any).message);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'available': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'sale': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'rent': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'sold': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       case 'rented': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+      case 'reserved': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'maintenance': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'pending': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
@@ -407,11 +463,11 @@ function AdminProperties() {
 
     setUploadingImages(true);
     try {
-      console.log(`📤 Subiendo ${files.length} nuevas imágenes para ${selectedProperty.code}...`);
+  console.log(`📤 Subiendo ${files.length} nuevas imágenes para ${selectedProperty.code || ''}...`);
 
       const uploadedUrls = await bulkUploadPropertyImages(
         Array.from(files),
-        selectedProperty.code,
+        selectedProperty.code || '',
         (current, total) => {
           console.log(`📊 Progreso: ${current}/${total}`);
         }
@@ -603,7 +659,7 @@ function AdminProperties() {
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
-        status: formData.status as 'sale' | 'rent' | 'sold' | 'rented',
+        status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
         images: previewImages, // Usar imágenes de preview
         featured: false,
@@ -627,6 +683,20 @@ function AdminProperties() {
   };
 
   // Función para actualizar propiedad
+  const normalizeStatus = (s: string | undefined): Property['status'] => {
+    if (!s) return 'available';
+    const v = String(s).toLowerCase().trim();
+  if (v === 'sale') return 'sale';
+  if (v === 'rent') return 'rent';
+    if (v === 'sold') return 'sold';
+    if (v === 'rented') return 'rented';
+    if (v === 'reserved') return 'reserved';
+    if (v === 'maintenance') return 'maintenance';
+    if (v === 'pending') return 'pending';
+    // default fallback
+    return 'available';
+  };
+
   const handleUpdateProperty = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || !selectedProperty) return;
@@ -643,7 +713,7 @@ function AdminProperties() {
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
-        status: formData.status as 'sale' | 'rent' | 'sold' | 'rented',
+        status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
         images: selectedProperty.images, // Usar imágenes actuales de la propiedad (con orden de portada)
         advisor_id: formData.advisor_id || undefined
@@ -849,10 +919,14 @@ function AdminProperties() {
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Todos los estados</option>
+                <option value="available">Disponible</option>
                 <option value="sale">En Venta</option>
                 <option value="rent">En Arriendo</option>
                 <option value="sold">Vendido</option>
                 <option value="rented">Arrendado</option>
+                <option value="reserved">Reservado</option>
+                <option value="maintenance">Mantenimiento</option>
+                <option value="pending">Pendiente</option>
               </select>
             </div>
 
@@ -929,12 +1003,23 @@ function AdminProperties() {
                 {/* Status Badge */}
                 <div className="absolute top-4 left-4">
                   <span className={`px-3 py-1 text-xs font-semibold rounded-full backdrop-blur-sm ${getStatusColor(property.status)}`}>
+                    {property.status === 'available' && 'Disponible'}
                     {property.status === 'sale' && 'En Venta'}
                     {property.status === 'rent' && 'En Arriendo'}
                     {property.status === 'sold' && 'Vendido'}
                     {property.status === 'rented' && 'Arrendado'}
+                    {property.status === 'reserved' && 'Reservado'}
+                    {property.status === 'maintenance' && 'Mantenimiento'}
+                    {property.status === 'pending' && 'Pendiente'}
                   </span>
                 </div>
+
+                {/* Tenant info if rented */}
+                {property.status === 'rented' && tenantMap[String(property.id)] && (
+                  <div className="absolute top-14 left-4 text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded-md">
+                    Inquilino: {tenantMap[String(property.id)]?.full_name || 'N/A'}
+                  </div>
+                )}
 
                 {/* Featured Badge */}
                 {property.featured && (
@@ -1031,6 +1116,18 @@ function AdminProperties() {
                     >
                       <Trash2 className="w-5 h-5" />
                     </motion.button>
+
+                    {property.status === 'rented' && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => { e.stopPropagation(); handleReleaseProperty(property.id); }}
+                        className="p-2 text-teal-600 hover:bg-teal-100 dark:hover:bg-teal-900/20 rounded-lg transition-all duration-200 hover:shadow-md"
+                        title="Liberar propiedad"
+                      >
+                        <ArrowUp className="w-5 h-5" />
+                      </motion.button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1244,10 +1341,14 @@ function AdminProperties() {
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { value: 'sale', label: '🏷️ En Venta', color: 'blue' },
-                  { value: 'rent', label: '🔑 En Alquiler', color: 'green' },
-                  { value: 'sold', label: '✅ Vendida', color: 'gray' },
-                  { value: 'rented', label: '🏠 Alquilada', color: 'gray' }
+                  { value: 'available', label: '🟢 Disponible', color: 'green' },
+                  { value: 'sale', label: '💰 En Venta', color: 'blue' },
+                  { value: 'rent', label: '🏠 En Arriendo', color: 'green' },
+                  { value: 'sold', label: '✅ Vendido', color: 'gray' },
+                  { value: 'rented', label: '🔒 Arrendado', color: 'purple' },
+                  { value: 'reserved', label: '📅 Reservado', color: 'yellow' },
+                  { value: 'maintenance', label: '🔧 Mantenimiento', color: 'orange' },
+                  { value: 'pending', label: '⏳ Pendiente', color: 'red' }
                 ].map(status => (
                   <label key={status.value} className="flex items-center">
                     <input
@@ -1619,10 +1720,14 @@ function AdminProperties() {
                         {/* Badge de Estado */}
                         <div className="absolute top-4 left-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(selectedProperty.status)}`}>
+                            {selectedProperty.status === 'available' && 'Disponible'}
                             {selectedProperty.status === 'sale' && 'En Venta'}
                             {selectedProperty.status === 'rent' && 'En Arriendo'}
                             {selectedProperty.status === 'sold' && 'Vendido'}
                             {selectedProperty.status === 'rented' && 'Arrendado'}
+                            {selectedProperty.status === 'reserved' && 'Reservado'}
+                            {selectedProperty.status === 'maintenance' && 'Mantenimiento'}
+                            {selectedProperty.status === 'pending' && 'Pendiente'}
                           </span>
                         </div>
                       </>
@@ -2077,10 +2182,14 @@ function AdminProperties() {
                 required
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
+                <option value="available">Disponible</option>
                 <option value="sale">En Venta</option>
-                <option value="rent">En Alquiler</option>
-                <option value="sold">Vendida</option>
-                <option value="rented">Alquilada</option>
+                <option value="rent">En Arriendo</option>
+                <option value="sold">Vendido</option>
+                <option value="rented">Arrendado</option>
+                <option value="reserved">Reservado</option>
+                <option value="maintenance">Mantenimiento</option>
+                <option value="pending">Pendiente</option>
               </select>
             </div>
 
@@ -2286,7 +2395,7 @@ function AdminProperties() {
                             setIsSubmitting(true);
 
                             // Eliminar imagen usando la función deletePropertyImage
-                            await deletePropertyImage(selectedProperty.id, imageUrl);
+                            await deletePropertyImage(imageUrl);
 
                             // Actualizar el estado local
                             const newImages = selectedProperty.images.filter(img => img !== imageUrl);
@@ -2422,7 +2531,7 @@ function AdminProperties() {
                     setIsSubmitting(false);
                   }
                 }}
-                propertyCode={selectedProperty.code}
+                propertyCode={selectedProperty?.code || ''}
               />
             </div>
           )}

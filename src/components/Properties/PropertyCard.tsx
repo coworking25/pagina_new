@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2, Settings } from 'lucide-react';
 import { Property } from '../../types';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
 import Dropdown, { DropdownItem, DropdownDivider } from '../UI/Dropdown';
-import { getPublicImageUrl } from '../../lib/supabase';
+import { getPublicImageUrl, updatePropertyStatus } from '../../lib/supabase';
 
 interface PropertyCardProps {
   property: Property;
@@ -28,6 +28,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentStatus, setCurrentStatus] = useState(property.status);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Función para abrir el modal de detalles
   const handleImageClick = (e: React.MouseEvent) => {
@@ -41,6 +43,23 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       return;
     }
     onViewDetails(property);
+  };
+
+  // Función para actualizar el estado de la propiedad
+  const handleStatusChange = async (newStatus: string) => {
+    if (newStatus === currentStatus) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      await updatePropertyStatus(property.id.toString(), newStatus);
+      setCurrentStatus(newStatus as Property['status']);
+      console.log(`✅ Estado de propiedad ${property.id} actualizado a: ${newStatus}`);
+    } catch (error) {
+      console.error('❌ Error al actualizar el estado:', error);
+      // Aquí podrías mostrar un toast de error
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   // Procesar imágenes del campo 'images' que viene como array de objetos con url
@@ -83,20 +102,28 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'available': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'sale': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'rent': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'sold': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       case 'rented': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+      case 'reserved': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'maintenance': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'pending': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
+      case 'available': return 'Disponible';
       case 'sale': return 'En Venta';
       case 'rent': return 'En Arriendo';
       case 'sold': return 'Vendido';
       case 'rented': return 'Arrendado';
+      case 'reserved': return 'Reservado';
+      case 'maintenance': return 'Mantenimiento';
+      case 'pending': return 'Pendiente';
       default: return status;
     }
   };
@@ -155,8 +182,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Status Badge */}
         <div className={`absolute bottom-3 left-3 ${publicImageUrls.length > 1 ? 'bottom-12' : 'bottom-3'}`}>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(property.status)}`}>
-            {getStatusText(property.status)}
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(currentStatus)} ${isUpdatingStatus ? 'opacity-50' : ''}`}>
+            {isUpdatingStatus ? 'Actualizando...' : getStatusText(currentStatus)}
           </span>
         </div>
 
@@ -206,6 +233,62 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
                   Editar
                 </DropdownItem>
               )}
+              <DropdownDivider />
+              <DropdownItem
+                onClick={() => {}}
+                className="font-semibold text-gray-900 dark:text-white"
+                disabled
+              >
+                Cambiar Estado
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => handleStatusChange('available')}
+                className={currentStatus === 'available' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                🟢 Disponible
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => handleStatusChange('sale')}
+                className={currentStatus === 'sale' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                💰 En Venta
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => handleStatusChange('rent')}
+                className={currentStatus === 'rent' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                🏠 En Arriendo
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => handleStatusChange('sold')}
+                className={currentStatus === 'sold' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                ✅ Vendido
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => handleStatusChange('rented')}
+                className={currentStatus === 'rented' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                🔒 Arrendado
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => handleStatusChange('reserved')}
+                className={currentStatus === 'reserved' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                📅 Reservado
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => handleStatusChange('maintenance')}
+                className={currentStatus === 'maintenance' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                🔧 Mantenimiento
+              </DropdownItem>
+              <DropdownItem
+                onClick={() => handleStatusChange('pending')}
+                className={currentStatus === 'pending' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                ⏳ Pendiente
+              </DropdownItem>
               <DropdownDivider />
               {onDelete && (
                 <DropdownItem
@@ -259,7 +342,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           <span className="text-2xl font-bold text-green-600 dark:text-green-400">
             {formatPrice(property.price)}
           </span>
-          {property.status === 'rent' && (
+          {currentStatus === 'rent' && (
             <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/mes</span>
           )}
         </div>

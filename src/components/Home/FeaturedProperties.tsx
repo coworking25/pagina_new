@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Property } from '../../types';
-import { getFeaturedProperties } from '../../lib/supabase';
+import { getFeaturedProperties, isAdmin } from '../../lib/supabase';
 import { advisors } from '../../data/advisors';
 import PropertyCard from '../Properties/PropertyCard';
 import Button from '../UI/Button';
@@ -17,9 +17,11 @@ const FeaturedProperties: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
 
   useEffect(() => {
     loadFeaturedProperties();
+    setIsUserAdmin(isAdmin());
   }, []);
 
   const loadFeaturedProperties = async () => {
@@ -202,6 +204,7 @@ const FeaturedProperties: React.FC = () => {
                   onViewDetails={handleViewDetails}
                   onContact={handleContact}
                   onSchedule={handleSchedule}
+                  showAdminActions={isUserAdmin}
                 />
               </motion.div>
             ))}

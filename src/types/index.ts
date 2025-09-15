@@ -11,7 +11,8 @@ export interface Property {
   area: number;
   location?: string;
   type: 'apartment' | 'house' | 'office' | 'commercial';
-  status: 'sale' | 'rent' | 'sold' | 'rented';
+  // Estados posibles: incluimos tanto los legacy ('sale','rent') como los canónicos
+  status: 'sale' | 'rent' | 'sold' | 'rented' | 'available' | 'reserved' | 'maintenance' | 'pending';
   images: string[];
   cover_image?: string;  // URL de la imagen de portada seleccionada
   amenities: string[];

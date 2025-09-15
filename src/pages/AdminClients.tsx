@@ -11,7 +11,6 @@ import {
   Edit,
   Trash2,
   Plus,
-  Calendar,
   CheckCircle,
   AlertCircle,
   Home,
@@ -21,14 +20,9 @@ import {
   MapPin,
   Building,
   Briefcase,
-  CreditCard,
-  Star,
-  Clock,
-  AlertTriangle,
-  Check,
-  MoreVertical
+  Clock
 } from 'lucide-react';
-import { 
+import {
   getClients, 
   createClient, 
   updateClient, 
@@ -38,9 +32,14 @@ import {
   getPayments,
   getClientCommunications,
   getActiveAlerts,
-  markPaymentAsPaid
+  getClientPropertyRelations,
+  updateClientPropertyRelation,
+  getClientPropertySummary,
+  createClientPropertyRelations,
+  generateContractPayments
 } from '../lib/clientsApi';
-import type { Client, Contract, Payment, ClientCommunication, ClientAlert } from '../types/clients';
+import { getProperties } from '../lib/supabase';
+import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary } from '../types/clients';
 
 function AdminClients() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -62,8 +61,26 @@ function AdminClients() {
   const [clientPayments, setClientPayments] = useState<Payment[]>([]);
   const [clientCommunications, setClientCommunications] = useState<ClientCommunication[]>([]);
   const [clientAlerts, setClientAlerts] = useState<ClientAlert[]>([]);
+  const [clientRelations, setClientRelations] = useState<ClientPropertyRelation[]>([]);
+  const [clientPropertySummary, setClientPropertySummary] = useState<ClientPropertySummary | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [activeTab, setActiveTab] = useState('info'); // 'info', 'contracts', 'payments', 'communications', 'alerts'
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [availableProperties, setAvailableProperties] = useState<any[]>([]);
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [loadingProperties, setLoadingProperties] = useState(false);
+
+  // Reusable notification helper (same shape used elsewhere)
+  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    if (type === 'error') {
+      alert(`❌ ${message}`);
+    } else if (type === 'success') {
+      alert(`✅ ${message}`);
+    } else {
+      alert(`ℹ️ ${message}`);
+    }
+  };
   const [createForm, setCreateForm] = useState({
     full_name: '',
     document_type: 'cedula' as const,
@@ -116,6 +133,73 @@ function AdminClients() {
       setClients([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Asignar propiedades a un cliente (modal)
+  const openAssignModal = async (client: Client) => {
+    setSelectedClient(client);
+    setShowAssignModal(true);
+    setSelectedPropertyIds([]);
+
+    try {
+      setLoadingProperties(true);
+      const props = await getProperties();
+      // Filtrar propiedades que ya tengan relación con el cliente (evitar duplicados en UI)
+      const relatedIds = (clientRelations || []).map(r => String(r.property_id));
+      const filtered = (props || []).filter((p: any) => !relatedIds.includes(String(p.id)));
+      setAvailableProperties(filtered);
+      // Guardar en una propiedad temporal la info si se excluyeron items
+      (setAvailableProperties as any).excludedCount = (props || []).length - filtered.length;
+    } catch (err) {
+      console.error('❌ Error cargando propiedades para asignar:', err);
+      setAvailableProperties([]);
+      (setAvailableProperties as any).excludedCount = 0;
+    } finally {
+      setLoadingProperties(false);
+    }
+  };
+
+  const handleToggleSelectProperty = (id: string) => {
+    setSelectedPropertyIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleAssignProperties = async () => {
+    if (!selectedClient) {
+      alert('Selecciona primero un cliente');
+      return;
+    }
+    if (selectedPropertyIds.length === 0) {
+      alert('Selecciona al menos una propiedad para asignar');
+      return;
+    }
+
+    // Preparar relaciones por defecto
+    const relationsToCreate = selectedPropertyIds.map(pid => ({
+      client_id: selectedClient.id,
+      property_id: pid,
+      relation_type: 'interested',
+      status: 'pending'
+    }));
+
+    try {
+      setIsAssigning(true);
+      await createClientPropertyRelations(relationsToCreate as any[]);
+      showNotification('Propiedades asignadas correctamente', 'success');
+      setShowAssignModal(false);
+
+      // Recargar relaciones y resumen
+      const [relations, summary] = await Promise.all([
+        getClientPropertyRelations(selectedClient.id),
+        getClientPropertySummary(selectedClient.id)
+      ]);
+      setClientRelations(relations || []);
+      setClientPropertySummary(summary || null);
+    } catch (err: any) {
+      console.error('❌ Error asignando propiedades:', err);
+      showNotification(err?.message || 'Error asignando propiedades. Revisa la consola.', 'error');
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -268,10 +352,102 @@ function AdminClients() {
       setClientAlerts(alerts || []);
       console.log('🚨 Alertas cargadas:', alerts?.length || 0);
       
+      // Cargar relaciones cliente-propiedad y resumen
+      try {
+        const [relations, summary] = await Promise.all([
+          getClientPropertyRelations(client.id),
+          getClientPropertySummary(client.id)
+        ]);
+        setClientRelations(relations || []);
+        setClientPropertySummary(summary || null);
+        console.log('\ud83d\udcc3 Relaciones cargadas:', relations?.length || 0);
+        console.log('\ud83d\udcca Resumen de propiedades:', summary || {});
+      } catch (relError) {
+        console.error('⚠️ Error cargando relaciones o resumen:', relError);
+      }
+      
     } catch (error) {
       console.error('❌ Error cargando detalles del cliente:', error);
     } finally {
       setLoadingDetails(false);
+    }
+  };
+
+  // Acción: Marcar relación pendiente como activa (ej. crear contrato fuera de banda o actualizar estado)
+  const handleMarkRelationActive = async (relation: ClientPropertyRelation) => {
+    if (!relation || !relation.id) return;
+
+    try {
+      // 1) Preparar datos del contrato
+      const startDate = relation.lease_start_date || new Date().toISOString().split('T')[0];
+      const durationMonths = relation.lease_start_date ? relation.lease_end_date ? Math.max(1, Math.round((new Date(relation.lease_end_date).getTime() - new Date(startDate).getTime())/(1000*60*60*24*30))) : 12 : 12;
+      const monthlyRent = relation.property?.price ? Number(relation.property.price) : undefined;
+
+      // 2) Crear contrato si no existe
+      let createdContract: any = null;
+      if (!relation.contract_id) {
+        try {
+          const contractData = {
+            client_id: relation.client_id,
+            property_id: relation.property_id?.toString(),
+            contract_type: 'rental',
+            status: 'active',
+            start_date: startDate,
+            end_date: undefined,
+            monthly_rent: monthlyRent,
+            deposit_amount: monthlyRent ? Math.round(monthlyRent) : undefined,
+            contract_duration_months: durationMonths,
+            renewal_type: 'manual',
+            payment_day: 1,
+            late_fee_percentage: 5
+          } as any;
+
+          createdContract = await createContract(contractData);
+          console.log('✅ Contrato creado automáticamente:', createdContract);
+        } catch (contractError) {
+          console.error('❌ Error creando contrato automáticamente:', contractError);
+          alert('Error al crear contrato automáticamente. La relación no se actualizará.');
+          return;
+        }
+      }
+
+      // 3) Actualizar relación
+      const updates: Partial<ClientPropertyRelation> = {
+        status: 'active',
+        relation_type: relation.relation_type === 'pending_contract' ? 'tenant' : relation.relation_type,
+        lease_start_date: startDate,
+        contract_id: createdContract ? createdContract.id : relation.contract_id
+      };
+
+      const updated = await updateClientPropertyRelation(relation.id, updates as any);
+
+      // 4) Generar pagos si creamos contrato
+      if (createdContract && createdContract.id) {
+        try {
+          await generateContractPayments(createdContract.id, 12);
+          console.log('✅ Pagos generados para contrato:', createdContract.id);
+        } catch (payError) {
+          console.error('❌ Error generando pagos automáticos:', payError);
+          alert('Contrato creado, pero hubo un error generando los pagos automáticos. Revisa la consola.');
+        }
+      }
+
+      alert('Relación actualizada y contrato creado (si aplicó)');
+
+      // 5) Recargar relaciones y resumen
+      if (selectedClient) {
+        const [relations, summary] = await Promise.all([
+          getClientPropertyRelations(selectedClient.id),
+          getClientPropertySummary(selectedClient.id)
+        ]);
+        setClientRelations(relations || []);
+        setClientPropertySummary(summary || null);
+      }
+
+      return updated;
+    } catch (error) {
+      console.error('❌ Error marcando relación como activa:', error);
+      alert('Error al actualizar la relación. Revisa la consola.');
     }
   };
 
@@ -822,6 +998,59 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
         </div>
       )}
 
+      {/* Modal Asignar Propiedades */}
+      {showAssignModal && selectedClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-gray-800 rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Asignar Propiedades a {selectedClient.full_name}</h3>
+                <button onClick={() => setShowAssignModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5"/></button>
+              </div>
+
+              <div className="space-y-4">
+                {loadingProperties ? (
+                  <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    Cargando propiedades...
+                  </div>
+                ) : availableProperties.length === 0 ? (
+                  <p className="text-gray-600 dark:text-gray-400">No hay propiedades disponibles para asignar.</p>
+                ) : (
+                  <>
+                    {((setAvailableProperties as any).excludedCount || 0) > 0 && (
+                      <p className="text-sm text-gray-500">Se excluyeron {((setAvailableProperties as any).excludedCount)} propiedades que ya estaban relacionadas con este cliente.</p>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {availableProperties.map(prop => (
+                        <label key={prop.id} className="p-3 border rounded-lg flex items-center gap-3 cursor-pointer">
+                          <input type="checkbox" checked={selectedPropertyIds.includes(prop.id)} onChange={() => handleToggleSelectProperty(prop.id)} />
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900 dark:text-white">{prop.title}</div>
+                            <div className="text-sm text-gray-500">{prop.price ? `$${Number(prop.price).toLocaleString()}` : 'Sin precio'} — {prop.status}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button onClick={() => setShowAssignModal(false)} className="px-4 py-2 border rounded-lg">Cancelar</button>
+                <button
+                  onClick={handleAssignProperties}
+                  disabled={isAssigning || selectedPropertyIds.length === 0}
+                  className={`px-4 py-2 rounded-lg text-white ${isAssigning || selectedPropertyIds.length === 0 ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                  {isAssigning ? 'Asignando...' : `Asignar (${selectedPropertyIds.length})`}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Modal Ver Cliente */}
       {showViewModal && selectedClient && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1182,7 +1411,7 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                 )}
 
                 {/* Pestaña Alertas */}
-                {activeTab === 'alerts' && !loadingDetails && (
+            {activeTab === 'alerts' && !loadingDetails && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -1226,6 +1455,97 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                         ))}
                       </div>
                     )}
+                  </div>
+                )}
+                
+                {/* Pestaña Relaciones */}
+                {activeTab === 'relaciones' && !loadingDetails && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        Relaciones Cliente-Propiedad ({clientRelations.length})
+                      </h3>
+                      <div>
+                        <button
+                          onClick={() => selectedClient && openAssignModal(selectedClient)}
+                          disabled={!selectedClient}
+                          className={`px-3 py-1 rounded-lg text-sm ${!selectedClient ? 'bg-blue-300 cursor-not-allowed text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                        >
+                          Asignar Propiedades
+                        </button>
+                      </div>
+                    </div>
+
+                    {clientRelations.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400">No hay relaciones registradas</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {clientRelations.map((rel) => (
+                          <div key={rel.id} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getContractStatusColor(rel.status || 'pending')}`}>
+                                    {rel.status}
+                                  </span>
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {rel.relation_type}
+                                  </span>
+                                </div>
+                                <p className="font-medium text-gray-900 dark:text-white">{rel.property?.title || `Propiedad #${rel.property_id}`}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Código: {rel.property?.code || '-'}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                {rel.status === 'pending' || rel.relation_type === 'pending_contract' ? (
+                                  <button
+                                    onClick={() => handleMarkRelationActive(rel)}
+                                    className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                                  >
+                                    Marcar Activa
+                                  </button>
+                                ) : null}
+                                <button
+                                  onClick={() => window.open(`/property/${rel.property_id}`, '_blank')}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                                >
+                                  Ver Propiedad
+                                </button>
+                              </div>
+                            </div>
+                            {rel.message && <p className="text-sm text-gray-600 dark:text-gray-400">{rel.message}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Pestaña Análisis */}
+                {activeTab === 'analysis' && !loadingDetails && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Análisis y Preferencias</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+                        <p className="text-sm text-gray-500">Propiedades Interesadas</p>
+                        <p className="text-2xl font-semibold text-gray-900 dark:text-white">{clientPropertySummary?.interested_properties ?? 0}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+                        <p className="text-sm text-gray-500">Contratos Pendientes</p>
+                        <p className="text-2xl font-semibold text-gray-900 dark:text-white">{clientPropertySummary?.pending_contracts ?? 0}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+                        <p className="text-sm text-gray-500">Contratos Activos</p>
+                        <p className="text-2xl font-semibold text-gray-900 dark:text-white">{clientPropertySummary?.active_contracts ?? 0}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+                      <p className="text-sm text-gray-500">Preferencias y Requisitos</p>
+                      <p className="text-gray-900 dark:text-white mt-2">{selectedClient?.property_requirements || 'No especificado'}</p>
+                    </div>
                   </div>
                 )}
               </div>

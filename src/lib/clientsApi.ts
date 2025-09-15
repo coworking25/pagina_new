@@ -12,8 +12,11 @@ import type {
   ClientWithDetails,
   ClientFormData,
   ContractFormData,
-  ClientFilters
+  ClientFilters,
+  ClientPropertyRelation,
+  ClientPropertySummary
 } from '../types/clients';
+import { updatePropertyStatus } from './supabase';
 
 // Crear cliente de Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -216,6 +219,33 @@ export async function createContract(contractData: ContractFormData): Promise<Co
     }
 
     console.log('✅ Contrato creado exitosamente:', data);
+
+    // Si el contrato queda activo y está asociado a una propiedad, marcar la propiedad como ocupada
+    try {
+      if (data && data.status === 'active' && data.property_id) {
+        await updatePropertyStatus(data.property_id, 'rented', `Contrato activado: ${data.id}`);
+
+        // Asegurar que exista una relación cliente-propiedad marcada como active
+        try {
+          const relPayload = {
+            client_id: data.client_id,
+            property_id: data.property_id,
+            relation_type: 'tenant',
+            status: 'active'
+          };
+          // Intentar upsert en client_property_relations por client_id y property_id
+          const { error: relError } = await supabase
+            .from('client_property_relations')
+            .upsert([relPayload], { onConflict: 'client_id,property_id' });
+          if (relError) console.warn('⚠️ Error upsert client_property_relations:', relError);
+        } catch (re) {
+          console.warn('⚠️ Error asegurando relación cliente-propiedad:', re);
+        }
+      }
+    } catch (statusErr) {
+      console.warn('⚠️ Error actualizando estado de propiedad tras crear contrato:', statusErr);
+    }
+
     return data;
   } catch (error) {
     console.error('❌ Error en createContract:', error);
@@ -443,6 +473,163 @@ export async function getBasicStats() {
   }
 }
 
+// =====================================================
+// FUNCIONES PARA RELACIONES CLIENTE-PROPIEDAD
+// =====================================================
+
+// Obtener relaciones de propiedad de un cliente
+export async function getClientPropertyRelations(clientId: string): Promise<ClientPropertyRelation[]> {
+  try {
+    // Intentar seleccionar la propiedad incluyendo cover_image. Si la columna no existe en la tabla properties,
+    // reintentar sin ese campo (compatibilidad con esquemas diferentes).
+    const selectWithCover = `*, property:properties(id, title, code, type, status, price, images, cover_image)`;
+
+    let resp = await supabase
+      .from('client_property_relations')
+      .select(selectWithCover)
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+
+    if (resp.error) {
+      // Si el error indica columna desconocida (42703) y menciona cover_image, reintentar sin cover_image
+      if (resp.error.code === '42703' && /cover_image/.test(String(resp.error.message))) {
+        console.warn('⚠️ Campo cover_image no existe en properties, reintentando sin ese campo');
+        const selectWithoutCover = `*, property:properties(id, title, code, type, status, price, images)`;
+        const retry = await supabase
+          .from('client_property_relations')
+          .select(selectWithoutCover)
+          .eq('client_id', clientId)
+          .order('created_at', { ascending: false });
+
+        if (retry.error) {
+          console.error('❌ Error obteniendo relaciones cliente-propiedad (retry):', retry.error);
+          throw retry.error;
+        }
+
+        return retry.data || [];
+      }
+
+      console.error('❌ Error obteniendo relaciones cliente-propiedad:', resp.error);
+      throw resp.error;
+    }
+
+    return resp.data || [];
+  } catch (error) {
+    console.error('❌ Error en getClientPropertyRelations:', error);
+    throw error;
+  }
+}
+
+// Crear múltiples relaciones cliente-propiedad en lote
+export async function createClientPropertyRelations(relations: Array<Omit<ClientPropertyRelation, 'id' | 'created_at' | 'updated_at'>>): Promise<ClientPropertyRelation[]> {
+  try {
+    const { data, error } = await supabase
+      .from('client_property_relations')
+      .insert(relations)
+      .select();
+
+    if (error) {
+      console.error('❌ Error creando relaciones cliente-propiedad en lote:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en createClientPropertyRelations:', error);
+    throw error;
+  }
+}
+
+// Crear relación cliente-propiedad
+export async function createClientPropertyRelation(relation: Omit<ClientPropertyRelation, 'id' | 'created_at' | 'updated_at'>): Promise<ClientPropertyRelation> {
+  try {
+    const { data, error } = await supabase
+      .from('client_property_relations')
+      .insert(relation)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error creando relación cliente-propiedad:', error);
+      throw error;
+    }
+
+    console.log('✅ Relación cliente-propiedad creada:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error en createClientPropertyRelation:', error);
+    throw error;
+  }
+}
+
+// Actualizar relación cliente-propiedad
+export async function updateClientPropertyRelation(id: string, updates: Partial<ClientPropertyRelation>): Promise<ClientPropertyRelation> {
+  try {
+    const { data, error } = await supabase
+      .from('client_property_relations')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error actualizando relación cliente-propiedad:', error);
+      throw error;
+    }
+
+    console.log('✅ Relación cliente-propiedad actualizada:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error en updateClientPropertyRelation:', error);
+    throw error;
+  }
+}
+
+// Eliminar relación cliente-propiedad
+export async function deleteClientPropertyRelation(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('client_property_relations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('❌ Error eliminando relación cliente-propiedad:', error);
+      throw error;
+    }
+
+    console.log('✅ Relación cliente-propiedad eliminada');
+    return true;
+  } catch (error) {
+    console.error('❌ Error en deleteClientPropertyRelation:', error);
+    throw error;
+  }
+}
+
+// Obtener resumen de propiedades de un cliente
+export async function getClientPropertySummary(clientId: string): Promise<ClientPropertySummary> {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_client_property_summary', { client_uuid: clientId });
+
+    if (error) {
+      console.error('❌ Error obteniendo resumen de propiedades:', error);
+      throw error;
+    }
+
+    return data?.[0] || {
+      owned_properties: 0,
+      rented_properties: 0,
+      interested_properties: 0,
+      pending_contracts: 0,
+      active_contracts: 0
+    };
+  } catch (error) {
+    console.error('❌ Error en getClientPropertySummary:', error);
+    throw error;
+  }
+}
+
 // Exponer funciones globalmente para debug en desarrollo
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).clientsAPI = {
@@ -458,6 +645,14 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     getClientCommunications,
     getActiveAlerts,
     resolveAlert,
-    getBasicStats
+    getBasicStats,
+    getClientPropertyRelations,
+    createClientPropertyRelations,
+    createClientPropertyRelation,
+    updateClientPropertyRelation,
+    deleteClientPropertyRelation,
+    getClientPropertySummary
+    ,
+    generateContractPayments
   };
 }
