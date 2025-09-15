@@ -38,6 +38,12 @@ export interface Client {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   
+  // Información Demográfica Adicional
+  birth_date?: string;
+  gender?: string;
+  marital_status?: string;
+  preferred_contact_method?: string;
+  
   // Tipo y Estado
   client_type: ClientType;
   status: ClientStatus;
@@ -46,6 +52,11 @@ export interface Client {
   monthly_income?: number;
   occupation?: string;
   company_name?: string;
+  budget_range?: string;
+  
+  // Información de Marketing y Seguimiento
+  referral_source?: string;
+  property_requirements?: string;
   
   // Asignación y Metadatos
   assigned_advisor_id?: string;
@@ -315,6 +326,14 @@ export interface ClientFormData {
   company_name?: string;
   assigned_advisor_id?: string;
   notes?: string;
+  // Campos adicionales
+  birth_date?: string;
+  gender?: string;
+  marital_status?: string;
+  preferred_contact_method?: string;
+  budget_range?: string;
+  referral_source?: string;
+  property_requirements?: string;
 }
 
 // Formulario para crear/editar contrato

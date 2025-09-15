@@ -17,7 +17,16 @@ import {
   Home,
   DollarSign,
   FileText,
-  X
+  X,
+  MapPin,
+  Building,
+  Briefcase,
+  CreditCard,
+  Star,
+  Clock,
+  AlertTriangle,
+  Check,
+  MoreVertical
 } from 'lucide-react';
 import { 
   getClients, 
@@ -71,6 +80,14 @@ function AdminClients() {
     occupation: '',
     company_name: '',
     notes: '',
+    // Campos adicionales
+    birth_date: '',
+    gender: '',
+    marital_status: '',
+    preferred_contact_method: 'phone',
+    referral_source: '',
+    budget_range: '',
+    property_requirements: '',
     // Campos adicionales para contrato
     contract_type: 'rental' as const,
     start_date: '',
@@ -353,6 +370,15 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
       occupation: '',
       company_name: '',
       notes: '',
+      // Campos adicionales
+      birth_date: '',
+      gender: '',
+      marital_status: '',
+      preferred_contact_method: 'phone',
+      referral_source: '',
+      budget_range: '',
+      property_requirements: '',
+      // Campos adicionales para contrato
       contract_type: 'rental' as const,
       start_date: '',
       end_date: '',
@@ -599,97 +625,175 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
       </div>
 
       {/* Lista de clientes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredClients.map((client, index) => (
           <motion.div
             key={client.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700 hover:shadow-lg transition-shadow"
+            className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 hover:shadow-xl transition-all duration-300 overflow-hidden group"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">
-                  {client.full_name}
-                </h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
-                    {formatStatus(client.status)}
-                  </span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(client.client_type)}`}>
-                    {formatClientType(client.client_type)}
-                  </span>
+            {/* Header con avatar y acciones */}
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                    {client.full_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                      {client.full_name}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
+                        {formatStatus(client.status)}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(client.client_type)}`}>
+                        {formatClientType(client.client_type)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => handleViewClient(client)}
-                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  title="Ver detalles"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleEditClient(client)}
-                  className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                  title="Editar"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteClient(client)}
-                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  title="Eliminar"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleViewClient(client)}
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="Ver detalles completos"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleEditClient(client)}
+                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                    title="Editar cliente"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClient(client)}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="Eliminar cliente"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                <span>{client.email}</span>
+            {/* Información de contacto */}
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-1 gap-2">
+                {client.email && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                      <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                      <p className="text-gray-900 dark:text-white truncate">{client.email}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                    <Phone className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Teléfono</p>
+                    <p className="text-gray-900 dark:text-white">{client.phone}</p>
+                  </div>
+                </div>
+
+                {client.document_number && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Documento</p>
+                      <p className="text-gray-900 dark:text-white">{client.document_number}</p>
+                    </div>
+                  </div>
+                )}
+
+                {(client.city || client.address) && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
+                      <MapPin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Ubicación</p>
+                      <p className="text-gray-900 dark:text-white truncate">
+                        {client.city || client.address}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {(client.occupation || client.company_name) && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center">
+                      <Briefcase className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Profesión</p>
+                      <p className="text-gray-900 dark:text-white truncate">
+                        {client.occupation || client.company_name}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <span>{client.phone}</span>
-              </div>
-              {client.document_number && (
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  <span>{client.document_number}</span>
+
+              {/* Información financiera (si existe) */}
+              {client.monthly_income && (
+                <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 text-sm">
+                    <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span className="text-green-800 dark:text-green-200 font-medium">
+                      ${client.monthly_income.toLocaleString()} / mes
+                    </span>
+                  </div>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>{formatDate(client.created_at)}</span>
+
+              {/* Fecha de registro */}
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                <Clock className="w-3 h-3" />
+                <span>Registrado: {formatDate(client.created_at)}</span>
               </div>
             </div>
 
-            <div className="flex gap-2 mt-4">
-              <button
-                onClick={() => handleContactClient(client, 'phone')}
-                className="flex-1 flex items-center justify-center gap-1 bg-green-600 text-white py-1 px-2 rounded text-xs hover:bg-green-700"
-              >
-                <Phone className="w-3 h-3" />
-                Llamar
-              </button>
-              <button
-                onClick={() => handleContactClient(client, 'email')}
-                className="flex-1 flex items-center justify-center gap-1 bg-blue-600 text-white py-1 px-2 rounded text-xs hover:bg-blue-700"
-              >
-                <Mail className="w-3 h-3" />
-                Email
-              </button>
-              <button
-                onClick={() => handleContactClient(client, 'whatsapp')}
-                className="flex-1 flex items-center justify-center gap-1 bg-green-500 text-white py-1 px-2 rounded text-xs hover:bg-green-600"
-              >
-                <MessageSquare className="w-3 h-3" />
-                WhatsApp
-              </button>
+            {/* Acciones rápidas */}
+            <div className="px-4 pb-4">
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleContactClient(client, 'phone')}
+                  className="flex items-center justify-center gap-1 bg-green-600 text-white py-2 px-3 rounded-lg text-xs hover:bg-green-700 transition-colors"
+                  title="Llamar"
+                >
+                  <Phone className="w-3 h-3" />
+                  <span className="hidden sm:inline">Llamar</span>
+                </button>
+                <button
+                  onClick={() => handleContactClient(client, 'email')}
+                  className="flex items-center justify-center gap-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-xs hover:bg-blue-700 transition-colors"
+                  title="Enviar email"
+                >
+                  <Mail className="w-3 h-3" />
+                  <span className="hidden sm:inline">Email</span>
+                </button>
+                <button
+                  onClick={() => handleContactClient(client, 'whatsapp')}
+                  className="flex items-center justify-center gap-1 bg-green-500 text-white py-2 px-3 rounded-lg text-xs hover:bg-green-600 transition-colors"
+                  title="WhatsApp"
+                >
+                  <MessageSquare className="w-3 h-3" />
+                  <span className="hidden sm:inline">WhatsApp</span>
+                </button>
+              </div>
             </div>
           </motion.div>
         ))}
@@ -1154,13 +1258,18 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto"
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Editar Cliente
-                </h2>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Editar Cliente: {selectedClient.full_name}
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Modifica la información del cliente según sea necesario
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowEditModal(false)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -1169,16 +1278,120 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Información Personal */}
                 <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                    <User className="w-5 h-5 mr-2 text-blue-600" />
+                    Información Personal
+                  </h3>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Nombre Completo
+                      Nombre Completo *
                     </label>
                     <input
                       type="text"
                       value={editForm.full_name || ''}
                       onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
+                      placeholder="Ej: Juan Pérez García"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Tipo Documento *
+                      </label>
+                      <select
+                        value={editForm.document_type || 'cedula'}
+                        onChange={(e) => setEditForm({...editForm, document_type: e.target.value as any})}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="cedula">Cédula</option>
+                        <option value="pasaporte">Pasaporte</option>
+                        <option value="nit">NIT</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Número Documento *
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.document_number || ''}
+                        onChange={(e) => setEditForm({...editForm, document_number: e.target.value})}
+                        placeholder="1234567890"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Fecha de Nacimiento
+                      </label>
+                      <input
+                        type="date"
+                        value={editForm.birth_date || ''}
+                        onChange={(e) => setEditForm({...editForm, birth_date: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Género
+                      </label>
+                      <select
+                        value={editForm.gender || ''}
+                        onChange={(e) => setEditForm({...editForm, gender: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="">Seleccionar</option>
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Estado Civil
+                    </label>
+                    <select
+                      value={editForm.marital_status || ''}
+                      onChange={(e) => setEditForm({...editForm, marital_status: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="soltero">Soltero/a</option>
+                      <option value="casado">Casado/a</option>
+                      <option value="union_libre">Unión Libre</option>
+                      <option value="divorciado">Divorciado/a</option>
+                      <option value="viudo">Viudo/a</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Información de Contacto */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                    <Phone className="w-5 h-5 mr-2 text-green-600" />
+                    Información de Contacto
+                  </h3>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Teléfono *
+                    </label>
+                    <input
+                      type="tel"
+                      value={editForm.phone || ''}
+                      onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                      placeholder="+57 300 123 4567"
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -1191,81 +1404,238 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                       type="email"
                       value={editForm.email || ''}
                       onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                      placeholder="correo@ejemplo.com"
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Teléfono
-                    </label>
-                    <input
-                      type="tel"
-                      value={editForm.phone || ''}
-                      onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Tipo de Cliente
+                      Método de Contacto Preferido
                     </label>
                     <select
-                      value={editForm.client_type || ''}
-                      onChange={(e) => setEditForm({...editForm, client_type: e.target.value as any})}
+                      value={editForm.preferred_contact_method || 'phone'}
+                      onChange={(e) => setEditForm({...editForm, preferred_contact_method: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
-                      <option value="renter">Inquilino</option>
-                      <option value="owner">Propietario</option>
-                      <option value="buyer">Comprador</option>
-                      <option value="seller">Vendedor</option>
+                      <option value="phone">Teléfono</option>
+                      <option value="email">Email</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="sms">SMS</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Estado
-                    </label>
-                    <select
-                      value={editForm.status || ''}
-                      onChange={(e) => setEditForm({...editForm, status: e.target.value as any})}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="active">Activo</option>
-                      <option value="inactive">Inactivo</option>
-                      <option value="pending">Pendiente</option>
-                      <option value="suspended">Suspendido</option>
-                      <option value="blocked">Bloqueado</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Documento
+                      Dirección
                     </label>
                     <input
                       type="text"
-                      value={editForm.document_number || ''}
-                      onChange={(e) => setEditForm({...editForm, document_number: e.target.value})}
+                      value={editForm.address || ''}
+                      onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                      placeholder="Calle 123 #45-67"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.city || ''}
+                      onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                      placeholder="Bogotá"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Contacto Emergencia
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.emergency_contact_name || ''}
+                        onChange={(e) => setEditForm({...editForm, emergency_contact_name: e.target.value})}
+                        placeholder="María García"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Teléfono Emergencia
+                      </label>
+                      <input
+                        type="tel"
+                        value={editForm.emergency_contact_phone || ''}
+                        onChange={(e) => setEditForm({...editForm, emergency_contact_phone: e.target.value})}
+                        placeholder="+57 301 234 5678"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Información Profesional y Financiera */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                    <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
+                    Información Profesional
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Ocupación
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.occupation || ''}
+                        onChange={(e) => setEditForm({...editForm, occupation: e.target.value})}
+                        placeholder="Ingeniero"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Empresa
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.company_name || ''}
+                        onChange={(e) => setEditForm({...editForm, company_name: e.target.value})}
+                        placeholder="ABC Ltda."
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Ingresos Mensuales
+                    </label>
+                    <input
+                      type="number"
+                      value={editForm.monthly_income || ''}
+                      onChange={(e) => setEditForm({...editForm, monthly_income: e.target.value ? parseInt(e.target.value) : undefined})}
+                      placeholder="2500000"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Rango de Presupuesto
+                    </label>
+                    <select
+                      value={editForm.budget_range || ''}
+                      onChange={(e) => setEditForm({...editForm, budget_range: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="1-3">1M - 3M COP</option>
+                      <option value="3-5">3M - 5M COP</option>
+                      <option value="5-10">5M - 10M COP</option>
+                      <option value="10-20">10M - 20M COP</option>
+                      <option value="20+">Más de 20M COP</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Fuente de Referencia
+                    </label>
+                    <select
+                      value={editForm.referral_source || ''}
+                      onChange={(e) => setEditForm({...editForm, referral_source: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="google">Google</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="amigo">Amigo/Familiar</option>
+                      <option value="sitio_web">Sitio Web</option>
+                      <option value="recomendacion">Recomendación</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Tipo de Cliente *
+                      </label>
+                      <select
+                        value={editForm.client_type || 'renter'}
+                        onChange={(e) => setEditForm({...editForm, client_type: e.target.value as any})}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="renter">Inquilino</option>
+                        <option value="owner">Propietario</option>
+                        <option value="buyer">Comprador</option>
+                        <option value="seller">Vendedor</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Estado *
+                      </label>
+                      <select
+                        value={editForm.status || 'active'}
+                        onChange={(e) => setEditForm({...editForm, status: e.target.value as any})}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="active">Activo</option>
+                        <option value="inactive">Inactivo</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="suspended">Suspendido</option>
+                        <option value="blocked">Bloqueado</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Requisitos de Propiedad
+                    </label>
+                    <textarea
+                      value={editForm.property_requirements || ''}
+                      onChange={(e) => setEditForm({...editForm, property_requirements: e.target.value})}
+                      placeholder="Número de habitaciones, zona preferida, amenidades requeridas..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Notas Adicionales
+                    </label>
+                    <textarea
+                      value={editForm.notes || ''}
+                      onChange={(e) => setEditForm({...editForm, notes: e.target.value})}
+                      placeholder="Información adicional sobre el cliente..."
+                      rows={2}
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end gap-3">
+              <div className="mt-8 flex justify-end gap-3 border-t pt-6">
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="px-6 py-2 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Guardar Cambios
                 </button>
@@ -1299,13 +1669,14 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Información Personal */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                    <User className="w-5 h-5 mr-2 text-blue-600" />
                     Información Personal
                   </h3>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Nombre Completo *
@@ -1351,28 +1722,98 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Teléfono *
+                        Fecha de Nacimiento
                       </label>
                       <input
-                        type="tel"
-                        value={createForm.phone}
-                        onChange={(e) => setCreateForm({...createForm, phone: e.target.value})}
-                        placeholder="+57 300 123 4567"
+                        type="date"
+                        value={createForm.birth_date}
+                        onChange={(e) => setCreateForm({...createForm, birth_date: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Email
+                        Género
                       </label>
-                      <input
-                        type="email"
-                        value={createForm.email}
-                        onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
-                        placeholder="correo@ejemplo.com"
+                      <select
+                        value={createForm.gender}
+                        onChange={(e) => setCreateForm({...createForm, gender: e.target.value})}
                         className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
+                      >
+                        <option value="">Seleccionar</option>
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                      </select>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Estado Civil
+                    </label>
+                    <select
+                      value={createForm.marital_status}
+                      onChange={(e) => setCreateForm({...createForm, marital_status: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="soltero">Soltero/a</option>
+                      <option value="casado">Casado/a</option>
+                      <option value="union_libre">Unión Libre</option>
+                      <option value="divorciado">Divorciado/a</option>
+                      <option value="viudo">Viudo/a</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Información de Contacto */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                    <Phone className="w-5 h-5 mr-2 text-green-600" />
+                    Información de Contacto
+                  </h3>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Teléfono *
+                    </label>
+                    <input
+                      type="tel"
+                      value={createForm.phone}
+                      onChange={(e) => setCreateForm({...createForm, phone: e.target.value})}
+                      placeholder="+57 300 123 4567"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={createForm.email}
+                      onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
+                      placeholder="correo@ejemplo.com"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Método de Contacto Preferido
+                    </label>
+                    <select
+                      value={createForm.preferred_contact_method}
+                      onChange={(e) => setCreateForm({...createForm, preferred_contact_method: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="phone">Teléfono</option>
+                      <option value="email">Email</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="sms">SMS</option>
+                    </select>
                   </div>
 
                   <div>
@@ -1404,42 +1845,38 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Tipo de Cliente *
+                        Contacto Emergencia
                       </label>
-                      <select
-                        value={createForm.client_type}
-                        onChange={(e) => setCreateForm({...createForm, client_type: e.target.value as any})}
+                      <input
+                        type="text"
+                        value={createForm.emergency_contact_name}
+                        onChange={(e) => setCreateForm({...createForm, emergency_contact_name: e.target.value})}
+                        placeholder="María García"
                         className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        <option value="renter">Inquilino</option>
-                        <option value="owner">Propietario</option>
-                        <option value="buyer">Comprador</option>
-                        <option value="seller">Vendedor</option>
-                      </select>
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Estado *
+                        Teléfono Emergencia
                       </label>
-                      <select
-                        value={createForm.status}
-                        onChange={(e) => setCreateForm({...createForm, status: e.target.value as any})}
+                      <input
+                        type="tel"
+                        value={createForm.emergency_contact_phone}
+                        onChange={(e) => setCreateForm({...createForm, emergency_contact_phone: e.target.value})}
+                        placeholder="+57 301 234 5678"
                         className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        <option value="active">Activo</option>
-                        <option value="inactive">Inactivo</option>
-                        <option value="pending">Pendiente</option>
-                      </select>
+                      />
                     </div>
                   </div>
                 </div>
 
-                {/* Información Adicional y Contrato */}
+                {/* Información Profesional y Financiera */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2">
-                    Información Adicional
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                    <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
+                    Información Profesional
                   </h3>
-                  
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1480,115 +1917,98 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Contacto Emergencia
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.emergency_contact_name}
-                        onChange={(e) => setCreateForm({...createForm, emergency_contact_name: e.target.value})}
-                        placeholder="María García"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Teléfono Emergencia
-                      </label>
-                      <input
-                        type="tel"
-                        value={createForm.emergency_contact_phone}
-                        onChange={(e) => setCreateForm({...createForm, emergency_contact_phone: e.target.value})}
-                        placeholder="+57 301 234 5678"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Rango de Presupuesto
+                    </label>
+                    <select
+                      value={createForm.budget_range}
+                      onChange={(e) => setCreateForm({...createForm, budget_range: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="1-3">1M - 3M COP</option>
+                      <option value="3-5">3M - 5M COP</option>
+                      <option value="5-10">5M - 10M COP</option>
+                      <option value="10-20">10M - 20M COP</option>
+                      <option value="20+">Más de 20M COP</option>
+                    </select>
                   </div>
-
-                  {/* Sección de Contrato (solo para inquilinos) */}
-                  {(createForm.client_type === 'renter' || createForm.client_type === 'tenant') && (
-                    <>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 mt-6">
-                        Información del Contrato
-                      </h3>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Fecha de Inicio
-                          </label>
-                          <input
-                            type="date"
-                            value={createForm.start_date}
-                            onChange={(e) => setCreateForm({...createForm, start_date: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Fecha de Finalización
-                          </label>
-                          <input
-                            type="date"
-                            value={createForm.end_date}
-                            onChange={(e) => setCreateForm({...createForm, end_date: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Arriendo Mensual
-                          </label>
-                          <input
-                            type="number"
-                            value={createForm.monthly_rent}
-                            onChange={(e) => setCreateForm({...createForm, monthly_rent: e.target.value})}
-                            placeholder="1500000"
-                            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Depósito
-                          </label>
-                          <input
-                            type="number"
-                            value={createForm.deposit_amount}
-                            onChange={(e) => setCreateForm({...createForm, deposit_amount: e.target.value})}
-                            placeholder="1500000"
-                            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Duración (meses)
-                          </label>
-                          <input
-                            type="number"
-                            value={createForm.contract_duration_months}
-                            onChange={(e) => setCreateForm({...createForm, contract_duration_months: e.target.value})}
-                            placeholder="12"
-                            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Notas
+                      Fuente de Referencia
+                    </label>
+                    <select
+                      value={createForm.referral_source}
+                      onChange={(e) => setCreateForm({...createForm, referral_source: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="google">Google</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="amigo">Amigo/Familiar</option>
+                      <option value="sitio_web">Sitio Web</option>
+                      <option value="recomendacion">Recomendación</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Tipo de Cliente *
+                      </label>
+                      <select
+                        value={createForm.client_type}
+                        onChange={(e) => setCreateForm({...createForm, client_type: e.target.value as any})}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="renter">Inquilino</option>
+                        <option value="owner">Propietario</option>
+                        <option value="buyer">Comprador</option>
+                        <option value="seller">Vendedor</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Estado *
+                      </label>
+                      <select
+                        value={createForm.status}
+                        onChange={(e) => setCreateForm({...createForm, status: e.target.value as any})}
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="active">Activo</option>
+                        <option value="inactive">Inactivo</option>
+                        <option value="pending">Pendiente</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Requisitos de Propiedad
+                    </label>
+                    <textarea
+                      value={createForm.property_requirements}
+                      onChange={(e) => setCreateForm({...createForm, property_requirements: e.target.value})}
+                      placeholder="Número de habitaciones, zona preferida, amenidades requeridas..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Notas Adicionales
                     </label>
                     <textarea
                       value={createForm.notes}
                       onChange={(e) => setCreateForm({...createForm, notes: e.target.value})}
                       placeholder="Información adicional sobre el cliente..."
-                      rows={3}
+                      rows={2}
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
