@@ -15,14 +15,14 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAppointments from './pages/AdminAppointments';
 import AdminClients from './pages/AdminClients';
-// import AdminRealClients from './pages/AdminRealClients'; // Temporarily disabled
 import AdminProperties from './pages/AdminProperties';
 import AdminAdvisors from './pages/AdminAdvisors';
+import AdminInquiries from './pages/AdminInquiries';
 import AdminSettings from './pages/AdminSettings';
 import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AdminBadgeProvider } from './contexts/AdminBadgeContext';
-import './utils/debug'; // Importar funciones de debug
+import './utils/debug';
 
 // Componente para manejar el layout según la ruta
 const AppLayout = () => {
@@ -71,7 +71,7 @@ const AppLayout = () => {
               <Route path="clients" element={<AdminClients />} />
               <Route path="properties" element={<AdminProperties />} />
               <Route path="advisors" element={<AdminAdvisors />} />
-              <Route path="service-inquiries" element={<AdminClients />} />
+              <Route path="service-inquiries" element={<AdminInquiries />} />
               <Route path="documents" element={<div>Documentos - En desarrollo</div>} />
               <Route path="reports" element={<div>Reportes - En desarrollo</div>} />
               <Route path="settings" element={<AdminSettings />} />
