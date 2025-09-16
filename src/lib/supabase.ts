@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Property, Advisor } from '../types';
+import { Property, Advisor, PropertyAppointment } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -305,6 +305,124 @@ export async function getAppointmentsByAdvisorId(advisorId: string) {
   } catch (error) {
     console.error('❌ Error en getAppointmentsByAdvisorId:', error);
     return [];
+  }
+}
+
+// Actualizar una cita existente
+export async function updateAppointment(appointmentId: string, appointmentData: Partial<PropertyAppointment>): Promise<PropertyAppointment> {
+  try {
+    const { data, error } = await supabase
+      .from('property_appointments')
+      .update({
+        ...appointmentData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', appointmentId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error actualizando cita:', error);
+      throw error;
+    }
+
+    console.log('✅ Cita actualizada exitosamente:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error en updateAppointment:', error);
+    throw error;
+  }
+}
+
+// Eliminar una cita
+export async function deleteAppointment(appointmentId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('property_appointments')
+      .delete()
+      .eq('id', appointmentId);
+
+    if (error) {
+      console.error('❌ Error eliminando cita:', error);
+      throw error;
+    }
+
+    console.log('✅ Cita eliminada exitosamente');
+  } catch (error) {
+    console.error('❌ Error en deleteAppointment:', error);
+    throw error;
+  }
+}
+
+// Cambiar el estado de una cita
+export async function updateAppointmentStatus(appointmentId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled'): Promise<PropertyAppointment> {
+  try {
+    const updateData: any = {
+      status,
+      updated_at: new Date().toISOString()
+    };
+
+    // Agregar timestamp específico según el estado
+    switch (status) {
+      case 'confirmed':
+        updateData.confirmed_at = new Date().toISOString();
+        break;
+      case 'completed':
+        updateData.completed_at = new Date().toISOString();
+        break;
+      case 'cancelled':
+        updateData.cancelled_at = new Date().toISOString();
+        break;
+      case 'no_show':
+        updateData.no_show_at = new Date().toISOString();
+        break;
+      case 'rescheduled':
+        updateData.rescheduled_at = new Date().toISOString();
+        break;
+    }
+
+    const { data, error } = await supabase
+      .from('property_appointments')
+      .update(updateData)
+      .eq('id', appointmentId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error actualizando estado de cita:', error);
+      throw error;
+    }
+
+    console.log('✅ Estado de cita actualizado exitosamente:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Error en updateAppointmentStatus:', error);
+    throw error;
+  }
+}
+
+// Obtener una cita por ID
+export async function getAppointmentById(appointmentId: string): Promise<PropertyAppointment | null> {
+  try {
+    const { data, error } = await supabase
+      .from('property_appointments')
+      .select('*')
+      .eq('id', appointmentId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No se encontró la cita
+        return null;
+      }
+      console.error('❌ Error obteniendo cita por ID:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('❌ Error en getAppointmentById:', error);
+    throw error;
   }
 }
 

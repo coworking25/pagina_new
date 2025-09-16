@@ -127,7 +127,16 @@ export interface PropertyAppointment {
   marketing_consent: boolean;
   
   // Estado de la cita
-  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled';
+  
+  // Información adicional para seguimiento
+  follow_up_notes?: string;
+  rescheduled_date?: string;
+  cancellation_reason?: string;
+  actual_attendees?: number;
+  appointment_duration?: number; // en minutos
+  appointment_rating?: number; // 1-5 estrellas
+  client_feedback?: string;
 }
 
 export interface User {

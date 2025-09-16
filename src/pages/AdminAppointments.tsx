@@ -16,29 +16,30 @@ import {
   AlertCircle,
   Plus
 } from 'lucide-react';
-import { getAllPropertyAppointments } from '../lib/supabase';
-
-interface Appointment {
-  id: string;
-  client_name: string;
-  client_email: string;
-  client_phone: string;
-  property_id: string;
-  advisor_id: string;
-  appointment_date: string;
-  appointment_type: string;
-  visit_type: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  special_requests?: string;
-  created_at: string;
-}
+import { getAllPropertyAppointments, updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties } from '../lib/supabase';
+import AppointmentDetailsModal from '../components/Modals/AppointmentDetailsModal';
+import EditAppointmentModal from '../components/Modals/EditAppointmentModal';
+import { PropertyAppointment, Advisor, Property } from '../types';
 
 function AdminAppointments() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<PropertyAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+
+  // Estados para modales
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<PropertyAppointment | null>(null);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{appointmentId: string, status: string} | null>(null);
+  const [statusNotes, setStatusNotes] = useState('');
+  const [rescheduledDate, setRescheduledDate] = useState('');
+  const [rescheduledTime, setRescheduledTime] = useState('');
+  const [advisors, setAdvisors] = useState<Advisor[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [additionalDataLoading, setAdditionalDataLoading] = useState(false);
 
   useEffect(() => {
     loadAppointments();
@@ -47,17 +48,150 @@ function AdminAppointments() {
   const loadAppointments = async () => {
     try {
       console.log('📅 Cargando citas desde Supabase...');
-      
+
       const appointmentsData = await getAllPropertyAppointments();
       console.log('✅ Citas obtenidas:', appointmentsData);
-      
+
       setAppointments(appointmentsData);
       setLoading(false);
-      
+
+      // Cargar asesores y propiedades para los modales
+      setAdditionalDataLoading(true);
+      try {
+        console.log('🔄 Cargando asesores y propiedades...');
+        const [advisorsData, propertiesData] = await Promise.all([
+          getAdvisors(),
+          getProperties()
+        ]);
+        setAdvisors(advisorsData || []);
+        setProperties(propertiesData || []);
+        console.log('✅ Asesores y propiedades cargados:', {
+          advisorsCount: advisorsData?.length || 0,
+          propertiesCount: propertiesData?.length || 0,
+          firstProperty: propertiesData?.[0],
+          firstAdvisor: advisorsData?.[0]
+        });
+      } catch (error) {
+        console.error('❌ Error cargando asesores y propiedades:', error);
+        setAdvisors([]);
+        setProperties([]);
+        // Mostrar alerta al usuario
+        alert('Advertencia: No se pudieron cargar los datos de asesores y propiedades. Los detalles de citas pueden mostrar información limitada.');
+      } finally {
+        setAdditionalDataLoading(false);
+      }
     } catch (error) {
       console.error('❌ Error cargando citas:', error);
       setAppointments([]);
       setLoading(false);
+    }
+  };
+
+  // Funciones para manejar modales
+  const handleViewDetails = (appointment: PropertyAppointment) => {
+    setSelectedAppointment(appointment);
+    setShowDetailsModal(true);
+  };
+
+  const handleEditAppointment = (appointment: PropertyAppointment) => {
+    setSelectedAppointment(appointment);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteAppointment = async (appointmentId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta cita? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      await deleteAppointment(appointmentId);
+      alert('Cita eliminada exitosamente');
+      loadAppointments(); // Recargar la lista
+    } catch (error) {
+      console.error('Error eliminando cita:', error);
+      alert('Error al eliminar la cita. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  const handleStatusChange = async (appointmentId: string, status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled') => {
+    // Para estados que requieren explicación, mostrar modal de confirmación
+    if (status === 'no_show' || status === 'rescheduled' || status === 'cancelled') {
+      setPendingStatusChange({ appointmentId, status });
+      setShowStatusModal(true);
+      return;
+    }
+
+    // Para estados simples, cambiar directamente
+    try {
+      await updateAppointmentStatus(appointmentId, status);
+      const statusMessages = {
+        confirmed: 'confirmada',
+        completed: 'completada',
+        pending: 'actualizada'
+      };
+      alert(`Cita ${statusMessages[status] || 'actualizada'} exitosamente`);
+      loadAppointments(); // Recargar la lista
+    } catch (error) {
+      console.error('Error cambiando estado de cita:', error);
+      alert('Error al cambiar el estado de la cita. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!pendingStatusChange) return;
+
+    try {
+      // Actualizar el estado
+      await updateAppointmentStatus(pendingStatusChange.appointmentId, pendingStatusChange.status as any);
+
+      // Si es reprogramación, actualizar la fecha
+      if (pendingStatusChange.status === 'rescheduled' && rescheduledDate && rescheduledTime) {
+        const newDateTime = new Date(`${rescheduledDate}T${rescheduledTime}`);
+        await updateAppointment(pendingStatusChange.appointmentId, {
+          appointment_date: newDateTime.toISOString(),
+          rescheduled_date: newDateTime.toISOString()
+        });
+      }
+
+      // Si hay notas, actualizar la cita con las notas de seguimiento
+      if (statusNotes.trim()) {
+        await updateAppointment(pendingStatusChange.appointmentId, {
+          follow_up_notes: statusNotes.trim()
+        });
+      }
+
+      const statusMessages = {
+        cancelled: 'cancelada',
+        no_show: 'marcada como no asistió',
+        rescheduled: 'reprogramada'
+      };
+
+      alert(`Cita ${statusMessages[pendingStatusChange.status as keyof typeof statusMessages] || 'actualizada'} exitosamente`);
+      loadAppointments(); // Recargar la lista
+
+      // Limpiar estado
+      setShowStatusModal(false);
+      setPendingStatusChange(null);
+      setStatusNotes('');
+      setRescheduledDate('');
+      setRescheduledTime('');
+    } catch (error) {
+      console.error('Error cambiando estado de cita:', error);
+      alert('Error al cambiar el estado de la cita. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  const handleSaveAppointment = async (appointmentData: Partial<PropertyAppointment>) => {
+    try {
+      if (selectedAppointment?.id) {
+        await updateAppointment(selectedAppointment.id, appointmentData);
+        alert('Cita actualizada exitosamente');
+      }
+      loadAppointments(); // Recargar la lista
+    } catch (error) {
+      console.error('Error guardando cita:', error);
+      alert('Error al guardar la cita. Por favor, inténtalo de nuevo.');
+      throw error; // Re-throw para que el modal maneje el error
     }
   };
 
@@ -66,6 +200,8 @@ function AdminAppointments() {
       case 'confirmed': return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'completed': return <CheckCircle className="w-5 h-5 text-blue-500" />;
       case 'cancelled': return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'no_show': return <AlertCircle className="w-5 h-5 text-orange-500" />;
+      case 'rescheduled': return <AlertCircle className="w-5 h-5 text-purple-500" />;
       default: return <AlertCircle className="w-5 h-5 text-yellow-500" />;
     }
   };
@@ -75,6 +211,8 @@ function AdminAppointments() {
       case 'confirmed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'completed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'no_show': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'rescheduled': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
       default: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
     }
   };
@@ -87,6 +225,18 @@ function AdminAppointments() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Pendiente';
+      case 'confirmed': return 'Confirmado';
+      case 'completed': return 'Completado';
+      case 'cancelled': return 'Cancelado';
+      case 'no_show': return 'No Asistió';
+      case 'rescheduled': return 'Reprogramado';
+      default: return 'Pendiente';
+    }
   };
 
   const filteredAppointments = appointments.filter(appointment => {
@@ -163,6 +313,8 @@ function AdminAppointments() {
               <option value="pending">Pendiente</option>
               <option value="confirmed">Confirmado</option>
               <option value="completed">Completado</option>
+              <option value="no_show">No Asistió</option>
+              <option value="rescheduled">Reprogramado</option>
               <option value="cancelled">Cancelado</option>
             </select>
           </div>
@@ -260,12 +412,9 @@ function AdminAppointments() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2">
-                      {getStatusIcon(appointment.status)}
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
-                        {appointment.status === 'pending' && 'Pendiente'}
-                        {appointment.status === 'confirmed' && 'Confirmado'}
-                        {appointment.status === 'completed' && 'Completado'}
-                        {appointment.status === 'cancelled' && 'Cancelado'}
+                      {getStatusIcon(appointment.status || 'pending')}
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status || 'pending')}`}>
+                        {getStatusText(appointment.status || 'pending')}
                       </span>
                     </div>
                   </td>
@@ -274,21 +423,27 @@ function AdminAppointments() {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        onClick={() => handleViewDetails(appointment)}
                         className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                        title="Ver detalles"
                       >
                         <Eye className="w-4 h-4" />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        onClick={() => handleEditAppointment(appointment)}
                         className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                        title="Editar cita"
                       >
                         <Edit className="w-4 h-4" />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        onClick={() => appointment.id && handleDeleteAppointment(appointment.id)}
                         className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                        title="Eliminar cita"
                       >
                         <Trash2 className="w-4 h-4" />
                       </motion.button>
@@ -312,6 +467,126 @@ function AdminAppointments() {
           </div>
         )}
       </motion.div>
+
+      {/* Modales */}
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        onEdit={() => {
+          setShowDetailsModal(false);
+          setShowEditModal(true);
+        }}
+        onDelete={() => {
+          if (selectedAppointment?.id) {
+            handleDeleteAppointment(selectedAppointment.id);
+          }
+        }}
+        onStatusChange={(status) => {
+          if (selectedAppointment?.id) {
+            handleStatusChange(selectedAppointment.id, status);
+          }
+        }}
+        advisors={advisors}
+        properties={properties}
+        isLoadingAdditionalData={additionalDataLoading}
+      />
+
+      <EditAppointmentModal
+        appointment={selectedAppointment}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSaveAppointment}
+        advisors={advisors}
+        properties={properties}
+      />
+
+      {/* Status Change Confirmation Modal */}
+      {showStatusModal && pendingStatusChange && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Confirmar cambio de estado
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              ¿Estás seguro de marcar esta cita como {
+                pendingStatusChange.status === 'no_show' ? 'cliente no asistió' :
+                pendingStatusChange.status === 'rescheduled' ? 'reprogramada' :
+                pendingStatusChange.status === 'cancelled' ? 'cancelada' : 'cambiada'
+              }?
+              {pendingStatusChange.status === 'rescheduled' && (
+                <span className="block mt-2 text-sm text-amber-600 dark:text-amber-400">
+                  ⚠️ Debes seleccionar la nueva fecha y hora para reprogramar la cita.
+                </span>
+              )}
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Notas de seguimiento (opcional)
+              </label>
+              <textarea
+                value={statusNotes}
+                onChange={(e) => setStatusNotes(e.target.value)}
+                placeholder="Agregue cualquier nota adicional sobre este cambio..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={3}
+              />
+            </div>
+
+            {/* Campos adicionales para reprogramación */}
+            {pendingStatusChange?.status === 'rescheduled' && (
+              <div className="mb-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nueva fecha de la cita *
+                  </label>
+                  <input
+                    type="date"
+                    value={rescheduledDate}
+                    onChange={(e) => setRescheduledDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nueva hora de la cita *
+                  </label>
+                  <input
+                    type="time"
+                    value={rescheduledTime}
+                    onChange={(e) => setRescheduledTime(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowStatusModal(false);
+                  setPendingStatusChange(null);
+                  setStatusNotes('');
+                  setRescheduledDate('');
+                  setRescheduledTime('');
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmStatusChange}
+                disabled={pendingStatusChange?.status === 'rescheduled' && (!rescheduledDate || !rescheduledTime)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
