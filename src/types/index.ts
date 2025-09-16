@@ -2,7 +2,7 @@
 export * from './clients';
 
 export interface Property {
-  id: string;
+  id: number;
   code?: string;  // Código único de la propiedad (ej: CA-001)
   title: string;
   price: number;

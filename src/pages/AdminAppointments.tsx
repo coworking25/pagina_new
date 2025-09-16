@@ -14,9 +14,10 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Plus
+  Plus,
+  MessageCircle
 } from 'lucide-react';
-import { getAllPropertyAppointments, updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple } from '../lib/supabase';
+import { getAllPropertyAppointments, updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple, sendWhatsAppToClient } from '../lib/supabase';
 import AppointmentDetailsModal from '../components/Modals/AppointmentDetailsModal';
 import EditAppointmentModal from '../components/Modals/EditAppointmentModal';
 import CreateAppointmentModal from '../components/Modals/CreateAppointmentModal';
@@ -148,7 +149,7 @@ function AdminAppointments() {
 
           console.log('🏠 Buscando propiedad con ID:', appointment.property_id, 'tipo:', typeof appointment.property_id);
           console.log('📋 Propiedades disponibles:', properties.map(p => ({ id: p.id, title: p.title })));
-          const property = properties.find(p => p.id === appointment.property_id.toString());
+          const property = properties.find(p => p.id === appointment.property_id);
           console.log('🏠 Propiedad encontrada:', property);
 
           if (advisor && (advisor.phone?.trim() || advisor.whatsapp?.trim())) {
@@ -246,6 +247,73 @@ function AdminAppointments() {
     }
   };
 
+  const handleSendConfirmation = async (appointment: PropertyAppointment) => {
+    try {
+      // Verificar que los datos adicionales estén cargados
+      if (additionalDataLoading) {
+        alert('Cargando datos adicionales, por favor espera un momento...');
+        return;
+      }
+
+      if (properties.length === 0) {
+        alert('No se pudieron cargar las propiedades. Inténtalo de nuevo.');
+        return;
+      }
+
+      console.log('🔍 Enviando confirmación para cita:', {
+        appointment_id: appointment.id,
+        property_id: appointment.property_id,
+        property_id_type: typeof appointment.property_id,
+        client_phone: appointment.client_phone
+      });
+
+      // Buscar la propiedad y asesor para el mensaje
+      const property = appointment.property_id ? properties.find(p => p.id === appointment.property_id) : null;
+      const advisor = advisors.find(a => {
+        if (!appointment.advisor_id) return false;
+        return a.id === appointment.advisor_id;
+      });
+
+      console.log('🎯 Enviando confirmación:', {
+        cita_id: appointment.id,
+        property_id: appointment.property_id,
+        property_encontrada: !!property,
+        property_title: property?.title,
+        advisor_encontrado: !!advisor,
+        advisor_name: advisor?.name
+      });
+
+      if (!property) {
+        alert(`No se pudo encontrar la propiedad con ID ${appointment.property_id}. Verifica que la propiedad existe.`);
+        return;
+      }
+
+      if (!appointment.client_phone) {
+        alert('El cliente no tiene teléfono registrado');
+        return;
+      }
+
+      if (!appointment.property_id) {
+        alert('La cita no tiene una propiedad asignada. No se puede enviar el mensaje de confirmación.');
+        return;
+      }
+
+      await sendWhatsAppToClient(appointment.client_phone, {
+        client_name: appointment.client_name,
+        appointment_date: appointment.appointment_date,
+        appointment_type: appointment.appointment_type,
+        property_title: property?.title,
+        advisor_name: advisor?.name,
+        appointment_id: appointment.id || 'pendiente'
+      });
+
+      alert('Mensaje de confirmación enviado exitosamente al cliente');
+    } catch (error) {
+      console.error('Error enviando confirmación:', error);
+      alert('Error al enviar el mensaje de confirmación');
+    }
+  };
+
   const handleSaveAppointment = async (appointmentData: Partial<PropertyAppointment>) => {
     try {
       if (selectedAppointment?.id) {
@@ -278,7 +346,56 @@ function AdminAppointments() {
         marketing_consent: appointmentData.marketing_consent!
       };
 
-      await savePropertyAppointmentSimple(formattedData);
+      // Crear la cita
+      const createdAppointment = await savePropertyAppointmentSimple(formattedData);
+      console.log('✅ Cita creada:', createdAppointment);
+
+      // Enviar WhatsApp al cliente para confirmación
+      if (appointmentData.client_phone) {
+        console.log('📱 Enviando WhatsApp al cliente:', appointmentData.client_phone);
+        console.log('🔍 Datos del formulario:', {
+          property_id: appointmentData.property_id,
+          property_id_type: typeof appointmentData.property_id,
+          advisor_id: appointmentData.advisor_id,
+          properties_count: properties.length,
+          advisors_count: advisors.length
+        });
+
+        // Buscar información de la propiedad y asesor para el mensaje
+        const property = properties.find(p => {
+          const pId = String(p.id);
+          const formId = String(appointmentData.property_id);
+          const match = pId === formId;
+          console.log('🔍 Comparando propiedad:', { pId, formId, match, title: p.title });
+          return match;
+        });
+        const advisor = advisors.find(a => a.id === appointmentData.advisor_id!);
+
+        console.log('🎯 Resultados de búsqueda:', {
+          property_found: !!property,
+          property_title: property?.title,
+          advisor_found: !!advisor,
+          advisor_name: advisor?.name
+        });
+
+        try {
+          sendWhatsAppToClient(appointmentData.client_phone, {
+            client_name: appointmentData.client_name!,
+            appointment_date: appointmentData.appointment_date!,
+            appointment_type: appointmentData.appointment_type!,
+            property_title: property?.title,
+            advisor_name: advisor?.name,
+            appointment_id: createdAppointment?.id || 'pendiente'
+          });
+          console.log('✅ WhatsApp enviado al cliente exitosamente');
+        } catch (whatsappError) {
+          console.warn('❌ Error enviando WhatsApp al cliente:', whatsappError);
+          // No fallar la creación de la cita por error en WhatsApp
+        }
+      } else {
+        console.warn('⚠️ Cliente sin teléfono configurado, no se puede enviar WhatsApp');
+      }
+
       alert('Cita creada exitosamente');
       setShowCreateModal(false);
       loadAppointments(); // Recargar la lista
@@ -542,6 +659,28 @@ function AdminAppointments() {
                       >
                         <Trash2 className="w-4 h-4" />
                       </motion.button>
+                      {(appointment.status === 'pending' || !appointment.status) && (
+                        <>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleSendConfirmation(appointment)}
+                            className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                            title="Enviar confirmación por WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => appointment.id && handleStatusChange(appointment.id, 'confirmed')}
+                            className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                            title="Confirmar cita"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </motion.button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </motion.tr>

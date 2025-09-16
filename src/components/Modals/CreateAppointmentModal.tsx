@@ -55,7 +55,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
   });
 
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Reset form when modal opens
   useEffect(() => {
@@ -79,11 +79,11 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
   }, [isOpen]); // Solo se ejecuta cuando isOpen cambia a true
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.client_name.trim()) newErrors.client_name = 'Nombre del cliente es requerido';
     if (!formData.client_email.trim()) newErrors.client_email = 'Email del cliente es requerido';
-    if (!formData.property_id) newErrors.property_id = 'Debe seleccionar una propiedad';
+    if (!formData.property_id || formData.property_id === 0) newErrors.property_id = 'Debe seleccionar una propiedad';
     if (!formData.advisor_id) newErrors.advisor_id = 'Debe seleccionar un asesor';
     if (!formData.appointment_date) newErrors.appointment_date = 'Fecha y hora son requeridas';
 
@@ -133,7 +133,11 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
     // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -213,12 +217,12 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
               </label>
               <select
                 value={formData.property_id}
-                onChange={(e) => handleInputChange('property_id', parseInt(e.target.value))}
+                onChange={(e) => handleInputChange('property_id', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.property_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
               >
-                <option value={0}>Seleccionar propiedad...</option>
+                <option value="">Seleccionar propiedad...</option>
                 {properties.map((property) => (
                   <option key={property.id} value={property.id}>
                     {property.code || property.id} - {property.title}

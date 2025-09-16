@@ -38,7 +38,7 @@ export async function savePropertyAppointmentSimple(appointmentData: {
       client_name: appointmentData.client_name,
       client_email: appointmentData.client_email,
       client_phone: appointmentData.client_phone || null,
-      property_id: appointmentData.property_id.toString(), // VARCHAR en la tabla
+      property_id: appointmentData.property_id, // VARCHAR en la tabla
       advisor_id: appointmentData.advisor_id, // VARCHAR en la tabla
       appointment_date: appointmentData.appointment_date,
       appointment_type: appointmentData.appointment_type,
@@ -2383,4 +2383,67 @@ La cita ha sido CONFIRMADA por el cliente:
   window.open(whatsappUrl, '_blank', 'width=400,height=600');
 
   console.log('✅ WhatsApp confirmation sent to advisor:', phoneNumber);
+}
+
+/**
+ * Envía un mensaje de WhatsApp al cliente para confirmar, cancelar o reprogramar la cita
+ * @param phoneNumber Número de teléfono del cliente
+ * @param appointmentData Datos de la cita
+ */
+export function sendWhatsAppToClient(
+  phoneNumber: string,
+  appointmentData: {
+    client_name: string;
+    appointment_date: string;
+    appointment_type: string;
+    property_title?: string;
+    advisor_name?: string;
+    appointment_id: string;
+  }
+): void {
+  const message = `*Confirmación de Cita - Coworking Inmobiliario*
+
+Hola ${appointmentData.client_name},
+
+¡Gracias por solicitar una cita con nosotros!
+
+📅 *Fecha propuesta:* ${new Date(appointmentData.appointment_date).toLocaleDateString('es-CO', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})}
+
+🏠 *Tipo:* ${appointmentData.appointment_type}
+🏢 *Propiedad:* ${appointmentData.property_title || 'Por definir'}
+👨‍💼 *Asesor asignado:* ${appointmentData.advisor_name || 'Por asignar'}
+
+*Por favor confirma tu asistencia respondiendo con una de las siguientes opciones:*
+
+✅ *CONFIRMAR* - Si la fecha y hora te parece bien
+❌ *CANCELAR* - Si ya no necesitas la cita
+📅 *REPROGRAMAR* - Si necesitas cambiar la fecha/hora
+
+*Tu asesor se pondrá en contacto contigo pronto para coordinar los detalles finales.*
+
+*Coworking Inmobiliario*
+📞 +57 3028240488
+🏠 www.coworkinginmobiliario.com`;
+
+  // Limpiar el número de teléfono
+  const cleanPhone = phoneNumber.replace(/\s|-|\(|\)/g, '');
+  const phoneWithCountryCode = cleanPhone.startsWith('+') ? cleanPhone : `+57${cleanPhone}`;
+
+  // Codificar el mensaje para URL
+  const encodedMessage = encodeURIComponent(message);
+
+  // Generar el enlace de WhatsApp
+  const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
+
+  // Abrir WhatsApp en una nueva ventana
+  window.open(whatsappUrl, '_blank', 'width=400,height=600');
+
+  console.log('📱 WhatsApp message sent to client:', phoneNumber);
 }

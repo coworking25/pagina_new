@@ -53,6 +53,58 @@ interface FormErrors {
   visitType?: string;
 }
 
+// Componente reutilizable para campos de entrada con validación
+const InputField = React.memo(({
+  label,
+  type,
+  value,
+  onChange,
+  placeholder,
+  icon: Icon,
+  required = false,
+  colSpan = 1,
+  error,
+  field
+}: {
+  label: string;
+  type: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  icon: any;
+  required?: boolean;
+  colSpan?: number;
+  error?: string;
+  field: string;
+}) => (
+  <div className={colSpan === 2 ? 'md:col-span-2' : ''}>
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <div className="relative">
+      <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors ${
+          error
+            ? 'border-red-500 dark:border-red-400'
+            : 'border-gray-300 dark:border-gray-600'
+        }`}
+        placeholder={placeholder}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${field}-error` : undefined}
+      />
+    </div>
+    {error && (
+      <p id={`${field}-error`} className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
+        {error}
+      </p>
+    )}
+  </div>
+));
+
 const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> = ({
   property,
   advisor,
@@ -175,7 +227,7 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
         client_name: formData.name.trim(),
         client_email: formData.email.trim().toLowerCase(),
         client_phone: formData.phone.replace(/[\s-()]/g, ''),
-        property_id: parseInt(property.id),
+        property_id: property.id,
         advisor_id: advisor.id,
         appointment_date: combineDateAndTime(formData.preferredDate, formData.preferredTime),
         appointment_type: formData.appointmentType,
@@ -327,52 +379,6 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
     }
   };
 
-  // Componente reutilizable para campos de entrada con validación
-  const InputField = ({ 
-    label, 
-    type, 
-    field, 
-    placeholder, 
-    icon: Icon, 
-    required = false,
-    colSpan = 1 
-  }: {
-    label: string;
-    type: string;
-    field: keyof AppointmentForm;
-    placeholder: string;
-    icon: any;
-    required?: boolean;
-    colSpan?: number;
-  }) => (
-    <div className={colSpan === 2 ? 'md:col-span-2' : ''}>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="relative">
-        <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          type={type}
-          value={formData[field] as string}
-          onChange={(e) => updateFormData(field, e.target.value)}
-          className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors ${
-            formErrors[field as keyof FormErrors] 
-              ? 'border-red-500 dark:border-red-400' 
-              : 'border-gray-300 dark:border-gray-600'
-          }`}
-          placeholder={placeholder}
-          aria-invalid={!!formErrors[field as keyof FormErrors]}
-          aria-describedby={formErrors[field as keyof FormErrors] ? `${field}-error` : undefined}
-        />
-      </div>
-      {formErrors[field as keyof FormErrors] && (
-        <p id={`${field}-error`} className="mt-1 text-sm text-red-600 dark:text-red-400" role="alert">
-          {formErrors[field as keyof FormErrors]}
-        </p>
-      )}
-    </div>
-  );
-
   return (
     <div 
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
@@ -522,31 +528,43 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                   {/* Formulario Personal Mejorado */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <InputField
+                      key="name-field"
                       label="Nombre completo"
                       type="text"
                       field="name"
+                      value={formData.name}
+                      onChange={(value) => updateFormData('name', value)}
                       placeholder="Ingresa tu nombre completo"
                       icon={User}
                       required={true}
+                      error={formErrors.name}
                     />
 
                     <InputField
+                      key="email-field"
                       label="Correo electrónico"
                       type="email"
                       field="email"
+                      value={formData.email}
+                      onChange={(value) => updateFormData('email', value)}
                       placeholder="tu@email.com"
                       icon={Mail}
                       required={true}
+                      error={formErrors.email}
                     />
 
                     <InputField
+                      key="phone-field"
                       label="Número de teléfono"
                       type="tel"
                       field="phone"
+                      value={formData.phone}
+                      onChange={(value) => updateFormData('phone', value)}
                       placeholder="+57 300 123 4567"
                       icon={Phone}
                       required={true}
                       colSpan={2}
+                      error={formErrors.phone}
                     />
                   </div>
 
