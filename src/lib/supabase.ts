@@ -616,6 +616,7 @@ export function getPublicImageUrl(path: string) {
 // Función principal para obtener propiedades
 export async function getProperties(onlyAvailable: boolean = false): Promise<Property[]> {
   try {
+    console.log('🔍 getProperties called with onlyAvailable:', onlyAvailable);
     let query = supabase.from('properties').select('*').order('created_at', { ascending: false });
 
     // Si solo queremos propiedades disponibles, excluir estados que indican ocupación/vendida
@@ -632,8 +633,11 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
     }
     
     if (!data || data.length === 0) {
+      console.log('⚠️ No se encontraron propiedades en la base de datos');
       return [];
     }
+
+    console.log('✅ Propiedades obtenidas de BD:', data.length, 'propiedades');
     
     // Transformar datos de Supabase a formato de la aplicación
     const properties: Property[] = data.map(prop => {
@@ -2191,3 +2195,192 @@ export async function deleteAdvisor(id: string): Promise<boolean> {
 // =====================================================
 // Las funciones de clientes han sido movidas a src/lib/clientsApi.ts
 // para evitar conflictos y mantener separación de responsabilidades.
+
+// =====================================================
+// FUNCIONES DE WHATSAPP
+// =====================================================
+
+/**
+ * Envía un mensaje de WhatsApp al cliente para confirmar una cita
+ * @param phoneNumber Número de teléfono del cliente (con código de país)
+ * @param appointmentData Datos de la cita para el mensaje
+ * @returns URL de WhatsApp con el mensaje pre-cargado
+ */
+export function generateWhatsAppConfirmationMessage(
+  phoneNumber: string,
+  appointmentData: {
+    client_name: string;
+    appointment_date: string;
+    appointment_type: string;
+    property_title?: string;
+    advisor_name?: string;
+  }
+): string {
+  // Limpiar el número de teléfono (remover espacios, guiones, etc.)
+  const cleanPhone = phoneNumber.replace(/\s|-|\(|\)/g, '');
+
+  // Asegurarse de que tenga el código de país (+57 para Colombia)
+  const phoneWithCountryCode = cleanPhone.startsWith('+') ? cleanPhone : `+57${cleanPhone}`;
+
+  // Formatear la fecha para mostrarla de manera legible
+  const appointmentDate = new Date(appointmentData.appointment_date);
+  const formattedDate = appointmentDate.toLocaleDateString('es-CO', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  // Crear el mensaje de confirmación
+  const message = `*Confirmación de Cita - Coworking Inmobiliario*
+
+Hola ${appointmentData.client_name},
+
+Se ha agendado una cita para ti:
+
+📅 *Fecha:* ${formattedDate}
+🏠 *Tipo:* ${appointmentData.appointment_type}
+${appointmentData.property_title ? `🏢 *Propiedad:* ${appointmentData.property_title}` : ''}
+${appointmentData.advisor_name ? `👨‍💼 *Asesor:* ${appointmentData.advisor_name}` : ''}
+
+*¿Podrías confirmar tu asistencia?*
+
+✅ Responde *SÍ* para confirmar
+❌ Responde *NO* para cancelar
+📝 Responde *CAMBIAR* para reprogramar
+
+Gracias por tu interés en nuestras propiedades.
+
+*Coworking Inmobiliario*
+📞 +57 3028240488`;
+
+  // Codificar el mensaje para URL
+  const encodedMessage = encodeURIComponent(message);
+
+  // Generar el enlace de WhatsApp
+  const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
+
+  return whatsappUrl;
+}
+
+/**
+ * Envía un mensaje de WhatsApp al asesor informándole sobre una nueva cita para coordinar
+ * @param phoneNumber Número de teléfono del asesor
+ * @param appointmentData Datos de la cita para el mensaje
+ */
+export function sendWhatsAppToAdvisor(
+  phoneNumber: string,
+  appointmentData: {
+    client_name: string;
+    appointment_date: string;
+    appointment_type: string;
+    property_title?: string;
+    advisor_name?: string;
+    client_phone?: string;
+    client_email?: string;
+  }
+): void {
+  const message = `*Nueva Cita Asignada - Coworking Inmobiliario*
+
+Hola ${appointmentData.advisor_name},
+
+Se te ha asignado una nueva cita para coordinar:
+
+👤 *Cliente:* ${appointmentData.client_name}
+📧 *Email:* ${appointmentData.client_email || 'No proporcionado'}
+📱 *Teléfono:* ${appointmentData.client_phone || 'No proporcionado'}
+
+📅 *Fecha solicitada:* ${new Date(appointmentData.appointment_date).toLocaleDateString('es-CO', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})}
+
+🏠 *Tipo:* ${appointmentData.appointment_type}
+🏢 *Propiedad:* ${appointmentData.property_title || 'Por definir'}
+
+*Por favor coordina directamente con el cliente para confirmar la fecha y hora definitiva.*
+
+*Coworking Inmobiliario*
+📞 +57 3028240488`;
+
+  // Limpiar el número de teléfono
+  const cleanPhone = phoneNumber.replace(/\s|-|\(|\)/g, '');
+  const phoneWithCountryCode = cleanPhone.startsWith('+') ? cleanPhone : `+57${cleanPhone}`;
+
+  // Codificar el mensaje para URL
+  const encodedMessage = encodeURIComponent(message);
+
+  // Generar el enlace de WhatsApp
+  const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
+
+  // Abrir WhatsApp en una nueva ventana
+  window.open(whatsappUrl, '_blank', 'width=400,height=600');
+
+  console.log('📱 WhatsApp message sent to advisor:', phoneNumber);
+}
+
+/**
+ * Envía un mensaje de WhatsApp al asesor confirmando que la cita fue aceptada por el cliente
+ * @param phoneNumber Número de teléfono del asesor
+ * @param appointmentData Datos de la cita confirmada
+ */
+export function sendWhatsAppConfirmationToAdvisor(
+  phoneNumber: string,
+  appointmentData: {
+    client_name: string;
+    appointment_date: string;
+    appointment_type: string;
+    property_title?: string;
+    advisor_name?: string;
+    client_phone?: string;
+    client_email?: string;
+  }
+): void {
+  const message = `*✅ Cita Confirmada - Coworking Inmobiliario*
+
+¡Excelente ${appointmentData.advisor_name}!
+
+La cita ha sido CONFIRMADA por el cliente:
+
+👤 *Cliente:* ${appointmentData.client_name}
+📧 *Email:* ${appointmentData.client_email || 'No proporcionado'}
+📱 *Teléfono:* ${appointmentData.client_phone || 'No proporcionado'}
+
+📅 *Fecha confirmada:* ${new Date(appointmentData.appointment_date).toLocaleDateString('es-CO', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})}
+
+🏠 *Tipo:* ${appointmentData.appointment_type}
+🏢 *Propiedad:* ${appointmentData.property_title || 'Por definir'}
+
+*El cliente ha confirmado su asistencia. Por favor, prepárate para la cita.*
+
+*Coworking Inmobiliario*
+📞 +57 3028240488`;
+
+  // Limpiar el número de teléfono
+  const cleanPhone = phoneNumber.replace(/\s|-|\(|\)/g, '');
+  const phoneWithCountryCode = cleanPhone.startsWith('+') ? cleanPhone : `+57${cleanPhone}`;
+
+  // Codificar el mensaje para URL
+  const encodedMessage = encodeURIComponent(message);
+
+  // Generar el enlace de WhatsApp
+  const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
+
+  // Abrir WhatsApp en una nueva ventana
+  window.open(whatsappUrl, '_blank', 'width=400,height=600');
+
+  console.log('✅ WhatsApp confirmation sent to advisor:', phoneNumber);
+}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   User,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Modal from '../UI/Modal';
 import { PropertyAppointment, Advisor, Property } from '../../types';
+import { getProperties, getAdvisors } from '../../lib/supabase';
 
 interface AppointmentDetailsModalProps {
   appointment: PropertyAppointment | null;
@@ -36,15 +37,76 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
   onEdit,
   onDelete,
   onStatusChange,
-  advisors = [],
-  properties = [],
+  advisors: initialAdvisors = [],
+  properties: initialProperties = [],
   isLoadingAdditionalData = false
 }) => {
+  const [localAdvisors, setLocalAdvisors] = useState<Advisor[]>(initialAdvisors);
+  const [localProperties, setLocalProperties] = useState<Property[]>(initialProperties);
+  const [localLoading, setLocalLoading] = useState(false);
+
+  // Cargar datos adicionales si no están disponibles
+  useEffect(() => {
+    if (isOpen && appointment) {
+      const loadAdditionalData = async () => {
+        // Si ya tenemos datos, no cargar
+        if (localAdvisors.length > 0 && localProperties.length > 0) return;
+
+        setLocalLoading(true);
+        try {
+          console.log('🔄 Cargando datos adicionales en modal...');
+          const [advisorsData, propertiesData] = await Promise.all([
+            localAdvisors.length === 0 ? getAdvisors() : Promise.resolve(localAdvisors),
+            localProperties.length === 0 ? getProperties() : Promise.resolve(localProperties)
+          ]);
+
+          if (localAdvisors.length === 0) setLocalAdvisors(advisorsData || []);
+          if (localProperties.length === 0) setLocalProperties(propertiesData || []);
+
+          console.log('✅ Datos cargados en modal:', {
+            advisors: advisorsData?.length || localAdvisors.length,
+            properties: propertiesData?.length || localProperties.length
+          });
+        } catch (error) {
+          console.error('❌ Error cargando datos en modal:', error);
+        } finally {
+          setLocalLoading(false);
+        }
+      };
+
+      loadAdditionalData();
+    }
+  }, [isOpen, appointment, localAdvisors.length, localProperties.length]);
+
   if (!appointment) return null;
+
+  // Usar datos locales si están disponibles, sino los iniciales
+  const advisors = localAdvisors.length > 0 ? localAdvisors : initialAdvisors;
+  const properties = localProperties.length > 0 ? localProperties : initialProperties;
+  const isLoading = isLoadingAdditionalData || localLoading;
 
   // Buscar asesor y propiedad por ID
   const advisor = advisors.find(a => a.id === appointment.advisor_id);
-  const property = properties.find(p => p.id === appointment.property_id.toString());
+  const property = properties.find(p => {
+    const appointmentPropertyId = String(appointment.property_id || '');
+    const propertyId = String(p.id || '');
+    const match = propertyId === appointmentPropertyId;
+    return match;
+  });
+
+  console.log('🔍 AppointmentDetailsModal - Buscando datos:', {
+    appointmentId: appointment.id,
+    propertyId: appointment.property_id,
+    propertyIdType: typeof appointment.property_id,
+    advisorId: appointment.advisor_id,
+    propertiesCount: properties.length,
+    advisorsCount: advisors.length,
+    isLoading: isLoading,
+    propertyFound: !!property,
+    advisorFound: !!advisor,
+    property: property ? { id: property.id, title: property.title } : null,
+    advisor: advisor ? { id: advisor.id, name: advisor.name } : null
+  });
 
   const handleEmailContact = () => {
     const subject = `Cita programada - ${appointment.appointment_type}`;
@@ -305,7 +367,7 @@ Equipo de Inmobiliaria`;
             <div>
               <span className="text-gray-500 dark:text-gray-400">Propiedad:</span>
               <p className="font-medium text-gray-900 dark:text-white">
-                {isLoadingAdditionalData ? (
+                {isLoading ? (
                   <span className="text-blue-600 dark:text-blue-400">Cargando datos de propiedades...</span>
                 ) : properties.length === 0 ? (
                   <span className="text-yellow-600 dark:text-yellow-400">Datos de propiedades no disponibles</span>
@@ -320,7 +382,7 @@ Equipo de Inmobiliaria`;
             <div>
               <span className="text-gray-500 dark:text-gray-400">Asesor:</span>
               <p className="font-medium text-gray-900 dark:text-white">
-                {isLoadingAdditionalData ? (
+                {isLoading ? (
                   <span className="text-blue-600 dark:text-blue-400">Cargando datos de asesores...</span>
                 ) : advisors.length === 0 ? (
                   <span className="text-yellow-600 dark:text-yellow-400">Datos de asesores no disponibles</span>

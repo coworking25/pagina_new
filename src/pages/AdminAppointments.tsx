@@ -16,9 +16,10 @@ import {
   AlertCircle,
   Plus
 } from 'lucide-react';
-import { getAllPropertyAppointments, updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties } from '../lib/supabase';
+import { getAllPropertyAppointments, updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple } from '../lib/supabase';
 import AppointmentDetailsModal from '../components/Modals/AppointmentDetailsModal';
 import EditAppointmentModal from '../components/Modals/EditAppointmentModal';
+import CreateAppointmentModal from '../components/Modals/CreateAppointmentModal';
 import { PropertyAppointment, Advisor, Property } from '../types';
 
 function AdminAppointments() {
@@ -31,6 +32,7 @@ function AdminAppointments() {
   // Estados para modales
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<PropertyAppointment | null>(null);
   const [pendingStatusChange, setPendingStatusChange] = useState<{appointmentId: string, status: string} | null>(null);
@@ -57,19 +59,26 @@ function AdminAppointments() {
 
       // Cargar asesores y propiedades para los modales
       setAdditionalDataLoading(true);
+      console.log('🔄 Iniciando carga de datos adicionales...');
       try {
         console.log('🔄 Cargando asesores y propiedades...');
         const [advisorsData, propertiesData] = await Promise.all([
           getAdvisors(),
           getProperties()
         ]);
+        console.log('✅ Datos obtenidos de las funciones:', {
+          advisorsData: advisorsData?.length || 0,
+          propertiesData: propertiesData?.length || 0
+        });
         setAdvisors(advisorsData || []);
         setProperties(propertiesData || []);
-        console.log('✅ Asesores y propiedades cargados:', {
+        console.log('✅ Estados actualizados:', {
           advisorsCount: advisorsData?.length || 0,
           propertiesCount: propertiesData?.length || 0,
           firstProperty: propertiesData?.[0],
-          firstAdvisor: advisorsData?.[0]
+          firstAdvisor: advisorsData?.[0],
+          propertyIds: propertiesData?.map(p => ({ id: p.id, title: p.title })),
+          advisorIds: advisorsData?.map(a => ({ id: a.id, name: a.name }))
         });
       } catch (error) {
         console.error('❌ Error cargando asesores y propiedades:', error);
@@ -78,6 +87,7 @@ function AdminAppointments() {
         // Mostrar alerta al usuario
         alert('Advertencia: No se pudieron cargar los datos de asesores y propiedades. Los detalles de citas pueden mostrar información limitada.');
       } finally {
+        console.log('🔄 Finalizando carga de datos adicionales, additionalDataLoading = false');
         setAdditionalDataLoading(false);
       }
     } catch (error) {
@@ -124,6 +134,61 @@ function AdminAppointments() {
     // Para estados simples, cambiar directamente
     try {
       await updateAppointmentStatus(appointmentId, status);
+
+      // Si se confirma la cita, enviar notificación al asesor
+      if (status === 'confirmed') {
+        console.log('🔍 Buscando cita con ID:', appointmentId);
+        const appointment = appointments.find(a => a.id === appointmentId);
+        console.log('📅 Cita encontrada:', appointment);
+
+        if (appointment) {
+          console.log('👨 Buscando asesor con ID:', appointment.advisor_id);
+          const advisor = advisors.find(a => a.id === appointment.advisor_id);
+          console.log('🎯 Asesor encontrado:', advisor);
+
+          console.log('🏠 Buscando propiedad con ID:', appointment.property_id, 'tipo:', typeof appointment.property_id);
+          console.log('📋 Propiedades disponibles:', properties.map(p => ({ id: p.id, title: p.title })));
+          const property = properties.find(p => p.id === appointment.property_id.toString());
+          console.log('🏠 Propiedad encontrada:', property);
+
+          if (advisor && (advisor.phone?.trim() || advisor.whatsapp?.trim())) {
+            const phoneNumber = advisor.phone?.trim() || advisor.whatsapp?.trim();
+            console.log('📱 Enviando WhatsApp al asesor:', phoneNumber);
+            console.log('👤 Datos del asesor:', {
+              name: advisor.name,
+              phone: advisor.phone,
+              whatsapp: advisor.whatsapp,
+              hasPhone: !!advisor.phone?.trim(),
+              hasWhatsapp: !!advisor.whatsapp?.trim()
+            });
+            try {
+              sendWhatsAppConfirmationToAdvisor(phoneNumber!, {
+                client_name: appointment.client_name,
+                appointment_date: appointment.appointment_date,
+                appointment_type: appointment.appointment_type,
+                property_title: property?.title,
+                advisor_name: advisor.name,
+                client_phone: appointment.client_phone,
+                client_email: appointment.client_email
+              });
+              console.log('✅ WhatsApp enviado exitosamente');
+            } catch (whatsappError) {
+              console.warn('❌ Error enviando notificación de confirmación al asesor:', whatsappError);
+            }
+          } else {
+            console.warn('⚠️ Asesor sin teléfono configurado:', {
+              advisor: advisor?.name,
+              phone: advisor?.phone,
+              whatsapp: advisor?.whatsapp,
+              hasPhone: !!advisor?.phone?.trim(),
+              hasWhatsapp: !!advisor?.whatsapp?.trim()
+            });
+          }
+        } else {
+          console.warn('⚠️ Cita no encontrada para ID:', appointmentId);
+        }
+      }
+
       const statusMessages = {
         confirmed: 'confirmada',
         completed: 'completada',
@@ -191,6 +256,35 @@ function AdminAppointments() {
     } catch (error) {
       console.error('Error guardando cita:', error);
       alert('Error al guardar la cita. Por favor, inténtalo de nuevo.');
+      throw error; // Re-throw para que el modal maneje el error
+    }
+  };
+
+  const handleCreateAppointment = async (appointmentData: Partial<PropertyAppointment>) => {
+    try {
+      // Convertir los datos al formato esperado por savePropertyAppointmentSimple
+      const formattedData = {
+        client_name: appointmentData.client_name!,
+        client_email: appointmentData.client_email!,
+        client_phone: appointmentData.client_phone,
+        property_id: appointmentData.property_id!,
+        advisor_id: appointmentData.advisor_id!,
+        appointment_date: appointmentData.appointment_date!,
+        appointment_type: appointmentData.appointment_type!,
+        visit_type: appointmentData.visit_type!,
+        attendees: appointmentData.attendees!,
+        special_requests: appointmentData.special_requests,
+        contact_method: appointmentData.contact_method!,
+        marketing_consent: appointmentData.marketing_consent!
+      };
+
+      await savePropertyAppointmentSimple(formattedData);
+      alert('Cita creada exitosamente');
+      setShowCreateModal(false);
+      loadAppointments(); // Recargar la lista
+    } catch (error) {
+      console.error('Error creando cita:', error);
+      alert('Error al crear la cita. Por favor, inténtalo de nuevo.');
       throw error; // Re-throw para que el modal maneje el error
     }
   };
@@ -275,6 +369,7 @@ function AdminAppointments() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={() => setShowCreateModal(true)}
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-5 h-5 mr-2" />
@@ -500,6 +595,17 @@ function AdminAppointments() {
         advisors={advisors}
         properties={properties}
       />
+
+      {/* Create Appointment Modal */}
+      {showCreateModal && (
+        <CreateAppointmentModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSave={handleCreateAppointment}
+          properties={properties}
+          advisors={advisors}
+        />
+      )}
 
       {/* Status Change Confirmation Modal */}
       {showStatusModal && pendingStatusChange && (
