@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -18,9 +18,9 @@ import {
   FileText,
   X,
   MapPin,
-  Building,
   Briefcase,
-  Clock
+  Clock,
+  ChevronDown
 } from 'lucide-react';
 import {
   getClients, 
@@ -36,10 +36,151 @@ import {
   updateClientPropertyRelation,
   getClientPropertySummary,
   createClientPropertyRelations,
-  generateContractPayments
+  deleteClientPropertyRelation,
+  generateContractPayments,
+  checkClientExists
 } from '../lib/clientsApi';
 import { getProperties } from '../lib/supabase';
+import Modal from '../components/UI/Modal';
+import { ChevronLeft, ChevronRight, MapPin as MapPinIcon } from 'lucide-react';
 import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary } from '../types/clients';
+
+// Componente PropertySelector personalizado
+interface PropertySelectorProps {
+  properties: any[];
+  selectedIds: string[];
+  onSelectionChange: (ids: string[]) => void;
+  loading: boolean;
+  placeholder: string;
+}
+
+function PropertySelector({ properties, selectedIds, onSelectionChange, loading, placeholder }: PropertySelectorProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleToggleProperty = (propertyId: string) => {
+    const newSelected = selectedIds.includes(propertyId)
+      ? selectedIds.filter(id => id !== propertyId)
+      : [...selectedIds, propertyId];
+    onSelectionChange(newSelected);
+  };
+
+  const handleRemoveProperty = (propertyId: string) => {
+    onSelectionChange(selectedIds.filter(id => id !== propertyId));
+  };
+
+  const filteredProperties = properties.filter(property =>
+    property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    property.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectedProperties = properties.filter(property => selectedIds.includes(property.id));
+
+  if (loading) {
+    return (
+      <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
+        <div className="text-center py-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Cargando propiedades...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Chips de propiedades seleccionadas */}
+      <div className="min-h-[42px] border border-gray-200 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700">
+        <div className="flex flex-wrap gap-1">
+          {selectedProperties.map(property => (
+            <span
+              key={property.id}
+              className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+            >
+              {property.title} ({property.code})
+              <button
+                type="button"
+                onClick={() => handleRemoveProperty(property.id)}
+                className="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="inline-flex items-center px-2 py-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            {selectedIds.length === 0 ? placeholder : 'Agregar más...'}
+            <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Dropdown */}
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          {/* Barra de búsqueda */}
+          <div className="p-2 border-b border-gray-200 dark:border-gray-600">
+            <input
+              type="text"
+              placeholder="Buscar propiedades..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          {/* Lista de propiedades */}
+          <div className="max-h-48 overflow-y-auto">
+            {filteredProperties.length === 0 ? (
+              <div className="p-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                No se encontraron propiedades
+              </div>
+            ) : (
+              filteredProperties.map(property => (
+                <div
+                  key={property.id}
+                  className="flex items-center p-3 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
+                  onClick={() => handleToggleProperty(property.id)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(property.id)}
+                    onChange={() => {}} // Controlado por el onClick del div
+                    className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {property.title}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {property.code} • ${property.price?.toLocaleString()} • {property.type}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AdminClients() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -64,12 +205,23 @@ function AdminClients() {
   const [clientRelations, setClientRelations] = useState<ClientPropertyRelation[]>([]);
   const [clientPropertySummary, setClientPropertySummary] = useState<ClientPropertySummary | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [activeTab, setActiveTab] = useState('info'); // 'info', 'contracts', 'payments', 'communications', 'alerts'
+  const [activeTab, setActiveTab] = useState('info'); // 'info', 'contracts', 'payments', 'communications', 'alerts', 'relaciones', 'analysis'
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [availableProperties, setAvailableProperties] = useState<any[]>([]);
   const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
   const [isAssigning, setIsAssigning] = useState(false);
   const [loadingProperties, setLoadingProperties] = useState(false);
+
+  // Estados para selección de propiedades en formularios
+  const [allProperties, setAllProperties] = useState<any[]>([]);
+  const [createSelectedPropertyIds, setCreateSelectedPropertyIds] = useState<string[]>([]);
+  const [editSelectedPropertyIds, setEditSelectedPropertyIds] = useState<string[]>([]);
+  const [loadingFormProperties, setLoadingFormProperties] = useState(false);
+
+  // Estados para modal de detalles de propiedad
+  const [showPropertyDetailsModal, setShowPropertyDetailsModal] = useState(false);
+  const [selectedPropertyForDetails, setSelectedPropertyForDetails] = useState<any>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Reusable notification helper (same shape used elsewhere)
   const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
@@ -91,32 +243,32 @@ function AdminClients() {
     city: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    client_type: 'renter' as const,
+    client_type: 'tenant' as const, // Changed from 'renter' to 'tenant'
     status: 'active' as const,
     monthly_income: '',
     occupation: '',
     company_name: '',
-    notes: '',
-    // Campos adicionales
-    birth_date: '',
-    gender: '',
-    marital_status: '',
-    preferred_contact_method: 'phone',
-    referral_source: '',
-    budget_range: '',
-    property_requirements: '',
-    // Campos adicionales para contrato
-    contract_type: 'rental' as const,
-    start_date: '',
-    end_date: '',
-    monthly_rent: '',
-    deposit_amount: '',
-    contract_duration_months: '12'
+    notes: ''
   });
 
   useEffect(() => {
     loadClients();
+    loadAllProperties();
   }, []);
+
+  // Cargar todas las propiedades disponibles para selección en formularios
+  const loadAllProperties = async () => {
+    try {
+      setLoadingFormProperties(true);
+      const properties = await getProperties();
+      setAllProperties(properties || []);
+    } catch (error) {
+      console.error('❌ Error cargando propiedades para formularios:', error);
+      setAllProperties([]);
+    } finally {
+      setLoadingFormProperties(false);
+    }
+  };
 
   const loadClients = async () => {
     try {
@@ -455,6 +607,29 @@ function AdminClients() {
     setSelectedClient(client);
     setEditForm(client);
     setShowEditModal(true);
+
+    // Cargar propiedades asignadas al cliente para edición
+    loadClientPropertyAssignments(client.id);
+  };
+
+  // Cargar asignaciones de propiedades para un cliente (para edición)
+  const loadClientPropertyAssignments = async (clientId: string) => {
+    try {
+      const relations = await getClientPropertyRelations(clientId);
+      const propertyIds = relations.map(relation => String(relation.property_id));
+      setEditSelectedPropertyIds(propertyIds);
+    } catch (error) {
+      console.error('❌ Error cargando asignaciones de propiedades:', error);
+      setEditSelectedPropertyIds([]);
+    }
+  };
+
+  // Función para abrir modal de detalles de propiedad
+  const handleViewPropertyDetails = (property: any) => {
+    console.log('🔍 Abriendo detalles de propiedad desde cliente:', property);
+    setSelectedPropertyForDetails(property);
+    setCurrentImageIndex(0); // Reiniciar al primer índice
+    setShowPropertyDetailsModal(true);
   };
 
   const handleDeleteClient = (client: Client) => {
@@ -494,6 +669,9 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
       if (updatedClient) {
         console.log('✅ Cliente actualizado correctamente:', updatedClient);
         
+        // Manejar cambios en asignaciones de propiedades
+        await handlePropertyAssignmentsUpdate(selectedClient.id);
+        
         setClients(clients.map(client => 
           client.id === selectedClient.id ? { ...client, ...updatedClient } : client
         ));
@@ -501,12 +679,49 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
         setShowEditModal(false);
         setEditForm({});
         setSelectedClient(null);
+        setEditSelectedPropertyIds([]);
         
         alert('Cliente actualizado correctamente');
       }
     } catch (error) {
       console.error('❌ Error actualizando cliente:', error);
       alert('Error al actualizar el cliente. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  // Manejar actualizaciones de asignaciones de propiedades
+  const handlePropertyAssignmentsUpdate = async (clientId: string) => {
+    try {
+      // Obtener relaciones actuales
+      const currentRelations = await getClientPropertyRelations(clientId);
+      const currentPropertyIds = currentRelations.map(r => String(r.property_id));
+      
+      // Determinar qué agregar y qué eliminar
+      const toAdd = editSelectedPropertyIds.filter(id => !currentPropertyIds.includes(id));
+      const toRemove = currentRelations.filter(r => !editSelectedPropertyIds.includes(String(r.property_id)));
+      
+      // Crear nuevas relaciones
+      if (toAdd.length > 0) {
+        const relationsToCreate = toAdd.map(pid => ({
+          client_id: clientId,
+          property_id: pid,
+          relation_type: 'interested',
+          status: 'pending'
+        }));
+        await createClientPropertyRelations(relationsToCreate as any[]);
+        console.log(`✅ Agregadas ${toAdd.length} nuevas asignaciones de propiedad`);
+      }
+      
+      // Eliminar relaciones removidas
+      if (toRemove.length > 0) {
+        for (const relation of toRemove) {
+          await deleteClientPropertyRelation(relation.id);
+        }
+        console.log(`✅ Eliminadas ${toRemove.length} asignaciones de propiedad`);
+      }
+    } catch (error) {
+      console.error('⚠️ Error actualizando asignaciones de propiedades:', error);
+      throw error; // Re-lanzar para que sea manejado por el caller
     }
   };
 
@@ -540,28 +755,14 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
       city: '',
       emergency_contact_name: '',
       emergency_contact_phone: '',
-      client_type: 'renter' as const,
+      client_type: 'tenant' as const, // Changed from 'renter' to 'tenant'
       status: 'active' as const,
       monthly_income: '',
       occupation: '',
       company_name: '',
-      notes: '',
-      // Campos adicionales
-      birth_date: '',
-      gender: '',
-      marital_status: '',
-      preferred_contact_method: 'phone',
-      referral_source: '',
-      budget_range: '',
-      property_requirements: '',
-      // Campos adicionales para contrato
-      contract_type: 'rental' as const,
-      start_date: '',
-      end_date: '',
-      monthly_rent: '',
-      deposit_amount: '',
-      contract_duration_months: '12'
+      notes: ''
     });
+    setCreateSelectedPropertyIds([]);
   };
 
   const handleCreateClient = async () => {
@@ -581,31 +782,61 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
       }
 
       console.log('👤 Creando nuevo cliente:', createForm);
+
+      // Verificar si ya existe un cliente con el mismo tipo y número de documento
+      try {
+        const clientExists = await checkClientExists(createForm.document_type, createForm.document_number.trim());
+        if (clientExists) {
+          alert(`Ya existe un cliente con ${createForm.document_type} número ${createForm.document_number}. Por favor, verifica los datos o busca el cliente existente.`);
+          return;
+        }
+      } catch (checkError) {
+        console.error('⚠️ Error verificando existencia del cliente:', checkError);
+        // Continuar con la creación si no se puede verificar (por si acaso)
+      }
       
-      // Preparar datos del cliente
+      // Preparar datos del cliente (solo campos que existen en la BD)
       const clientData = {
         full_name: createForm.full_name.trim(),
         document_type: createForm.document_type,
         document_number: createForm.document_number.trim(),
         phone: createForm.phone.trim(),
-        email: createForm.email.trim() || undefined,
-        address: createForm.address.trim() || undefined,
-        city: createForm.city.trim() || undefined,
-        emergency_contact_name: createForm.emergency_contact_name.trim() || undefined,
-        emergency_contact_phone: createForm.emergency_contact_phone.trim() || undefined,
-        client_type: createForm.client_type,
+        email: createForm.email.trim() || null,
+        address: createForm.address.trim() || null,
+        city: createForm.city.trim() || null,
+        emergency_contact_name: createForm.emergency_contact_name.trim() || null,
+        emergency_contact_phone: createForm.emergency_contact_phone.trim() || null,
+        client_type: createForm.client_type === 'renter' ? 'tenant' : createForm.client_type, // Map 'renter' to 'tenant'
         status: createForm.status,
-        monthly_income: createForm.monthly_income ? Number(createForm.monthly_income) : undefined,
-        occupation: createForm.occupation.trim() || undefined,
-        company_name: createForm.company_name.trim() || undefined,
-        notes: createForm.notes.trim() || undefined
+        monthly_income: createForm.monthly_income ? Number(createForm.monthly_income) : null,
+        occupation: createForm.occupation.trim() || null,
+        company_name: createForm.company_name.trim() || null,
+        notes: createForm.notes.trim() || null
       };
 
       // Crear cliente
       const newClient = await createClient(clientData);
       console.log('✅ Cliente creado:', newClient);
 
-      // Si tiene fechas de contrato, crear contrato también
+      // Si se seleccionaron propiedades, crear las relaciones
+      if (createSelectedPropertyIds.length > 0) {
+        try {
+          console.log('🏠 Creando relaciones cliente-propiedad...');
+          
+          const relationsToCreate = createSelectedPropertyIds.map(pid => ({
+            client_id: newClient.id,
+            property_id: pid,
+            relation_type: 'interested',
+            status: 'pending'
+          }));
+
+          await createClientPropertyRelations(relationsToCreate as any[]);
+          console.log('✅ Relaciones cliente-propiedad creadas');
+        } catch (relationError) {
+          console.error('⚠️ Error creando relaciones cliente-propiedad (cliente creado exitosamente):', relationError);
+          alert('Cliente creado exitosamente, pero hubo un error al asignar las propiedades. Puedes asignarlas manualmente después.');
+        }
+      }
       if (createForm.start_date && (createForm.client_type === 'renter' || createForm.client_type === 'tenant')) {
         try {
           console.log('📄 Creando contrato para el cliente...');
@@ -641,9 +872,20 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
       
       alert('Cliente creado exitosamente');
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error creando cliente:', error);
-      alert('Error al crear el cliente. Por favor, inténtalo de nuevo.');
+
+      // Manejar errores específicos
+      if (error?.code === '23505') {
+        // Error de clave duplicada
+        alert(`Ya existe un cliente con ${createForm.document_type} número ${createForm.document_number}. Por favor, verifica los datos o busca el cliente existente.`);
+      } else if (error?.message?.includes('duplicate key')) {
+        // Otro tipo de error de duplicado
+        alert('Ya existe un cliente con estos datos. Por favor, verifica la información.');
+      } else {
+        // Error genérico
+        alert('Error al crear el cliente. Por favor, inténtalo de nuevo.');
+      }
     }
   };
 
@@ -1134,6 +1376,26 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                 >
                   Alertas ({clientAlerts.length})
                 </button>
+                <button
+                  onClick={() => setActiveTab('relaciones')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'relaciones'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Propiedades ({clientRelations.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('analysis')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'analysis'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Análisis
+                </button>
               </div>
 
               {/* Contenido de las pestañas */}
@@ -1231,6 +1493,92 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                             Notas
                           </label>
                           <p className="text-gray-900 dark:text-white text-sm">{selectedClient.notes}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Propiedades Asignadas - Resumen */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                        <Home className="w-5 h-5 mr-2 text-blue-600" />
+                        Propiedades Asignadas ({clientRelations.length})
+                      </h3>
+
+                      {clientRelations.length === 0 ? (
+                        <div className="text-center py-6 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <Home className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">No hay propiedades asignadas</p>
+                          <button
+                            onClick={() => selectedClient && openAssignModal(selectedClient)}
+                            className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Asignar Propiedad
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {clientRelations.slice(0, 3).map((rel) => (
+                            <div key={rel.id} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  {rel.property?.images && rel.property.images.length > 0 ? (
+                                    <img
+                                      src={rel.property.images[0]}
+                                      alt={rel.property.title}
+                                      className="w-12 h-12 object-cover rounded-lg"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">
+                                      <Home className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <p className="font-medium text-gray-900 dark:text-white text-sm">
+                                      {rel.property?.title || `Propiedad #${rel.property_id}`}
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                                      {rel.property?.code} • {rel.property?.type} • ${rel.property?.price?.toLocaleString()}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getContractStatusColor(rel.status || 'pending')}`}>
+                                        {rel.status}
+                                      </span>
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        {rel.relation_type}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleViewPropertyDetails(rel.property)}
+                                  className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                  title="Ver detalles de la propiedad"
+                                >
+                                  Ver
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {clientRelations.length > 3 && (
+                            <div className="text-center pt-2">
+                              <button
+                                onClick={() => setActiveTab('relaciones')}
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+                              >
+                                Ver todas las {clientRelations.length} propiedades →
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                            <button
+                              onClick={() => selectedClient && openAssignModal(selectedClient)}
+                              className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              Asignar Más Propiedades
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1460,62 +1808,160 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                 
                 {/* Pestaña Relaciones */}
                 {activeTab === 'relaciones' && !loadingDetails && (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                        Relaciones Cliente-Propiedad ({clientRelations.length})
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                        <Home className="w-5 h-5 mr-2 text-blue-600" />
+                        Propiedades Asignadas ({clientRelations.length})
                       </h3>
-                      <div>
-                        <button
-                          onClick={() => selectedClient && openAssignModal(selectedClient)}
-                          disabled={!selectedClient}
-                          className={`px-3 py-1 rounded-lg text-sm ${!selectedClient ? 'bg-blue-300 cursor-not-allowed text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                        >
-                          Asignar Propiedades
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => selectedClient && openAssignModal(selectedClient)}
+                        disabled={!selectedClient}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                          !selectedClient
+                            ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        } transition-colors`}
+                      >
+                        Asignar Propiedad
+                      </button>
                     </div>
 
                     {clientRelations.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600 dark:text-gray-400">No hay relaciones registradas</p>
+                      <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                          No hay propiedades asignadas
+                        </h4>
+                        <p className="text-gray-600 dark:text-gray-400 mb-6">
+                          Asigna propiedades a este cliente para comenzar a gestionar sus intereses inmobiliarios.
+                        </p>
+                        <button
+                          onClick={() => selectedClient && openAssignModal(selectedClient)}
+                          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        >
+                          Asignar Primera Propiedad
+                        </button>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {clientRelations.map((rel) => (
-                          <div key={rel.id} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getContractStatusColor(rel.status || 'pending')}`}>
-                                    {rel.status}
-                                  </span>
-                                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    {rel.relation_type}
-                                  </span>
+                          <div key={rel.id} className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                            {/* Imagen de la propiedad */}
+                            <div className="relative h-32 bg-gray-200 dark:bg-gray-600">
+                              {rel.property?.images && rel.property.images.length > 0 ? (
+                                <img
+                                  src={rel.property.images[0]}
+                                  alt={rel.property.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Home className="w-8 h-8 text-gray-400" />
                                 </div>
-                                <p className="font-medium text-gray-900 dark:text-white">{rel.property?.title || `Propiedad #${rel.property_id}`}</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Código: {rel.property?.code || '-'}</p>
-                              </div>
-                              <div className="flex gap-2">
-                                {rel.status === 'pending' || rel.relation_type === 'pending_contract' ? (
-                                  <button
-                                    onClick={() => handleMarkRelationActive(rel)}
-                                    className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                                  >
-                                    Marcar Activa
-                                  </button>
-                                ) : null}
-                                <button
-                                  onClick={() => window.open(`/property/${rel.property_id}`, '_blank')}
-                                  className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-                                >
-                                  Ver Propiedad
-                                </button>
+                              )}
+                              <div className="absolute top-2 right-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getContractStatusColor(rel.status || 'pending')}`}>
+                                  {rel.status}
+                                </span>
                               </div>
                             </div>
-                            {rel.message && <p className="text-sm text-gray-600 dark:text-gray-400">{rel.message}</p>}
+
+                            {/* Información de la propiedad */}
+                            <div className="p-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-1 truncate">
+                                    {rel.property?.title || `Propiedad #${rel.property_id}`}
+                                  </h4>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                    Código: {rel.property?.code} • {rel.property?.type}
+                                  </p>
+                                  <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                                    ${rel.property?.price?.toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Características principales */}
+                              <div className="grid grid-cols-3 gap-2 mb-3">
+                                <div className="text-center p-2 bg-gray-50 dark:bg-gray-600 rounded text-xs">
+                                  <div className="font-medium text-gray-900 dark:text-white">{rel.property?.bedrooms || 0}</div>
+                                  <div className="text-gray-600 dark:text-gray-400">Hab</div>
+                                </div>
+                                <div className="text-center p-2 bg-gray-50 dark:bg-gray-600 rounded text-xs">
+                                  <div className="font-medium text-gray-900 dark:text-white">{rel.property?.bathrooms || 0}</div>
+                                  <div className="text-gray-600 dark:text-gray-400">Baños</div>
+                                </div>
+                                <div className="text-center p-2 bg-gray-50 dark:bg-gray-600 rounded text-xs">
+                                  <div className="font-medium text-gray-900 dark:text-white">{rel.property?.area || 0}m²</div>
+                                  <div className="text-gray-600 dark:text-gray-400">Área</div>
+                                </div>
+                              </div>
+
+                              {/* Ubicación */}
+                              <div className="mb-3">
+                                <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  {rel.property?.location}
+                                </p>
+                              </div>
+
+                              {/* Estado de la propiedad */}
+                              <div className="mb-3">
+                                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(rel.property?.status || 'available')}`}>
+                                  {rel.property?.status === 'available' && 'Disponible'}
+                                  {rel.property?.status === 'sale' && 'En Venta'}
+                                  {rel.property?.status === 'rent' && 'En Arriendo'}
+                                  {rel.property?.status === 'sold' && 'Vendido'}
+                                  {rel.property?.status === 'rented' && 'Arrendado'}
+                                  {rel.property?.status === 'reserved' && 'Reservado'}
+                                  {rel.property?.status === 'maintenance' && 'Mantenimiento'}
+                                  {rel.property?.status === 'pending' && 'Pendiente'}
+                                </span>
+                              </div>
+
+                              {/* Descripción corta */}
+                              {rel.property?.description && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                  {rel.property.description.length > 80
+                                    ? `${rel.property.description.substring(0, 80)}...`
+                                    : rel.property.description
+                                  }
+                                </p>
+                              )}
+
+                              {/* Tipo de relación y acciones */}
+                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                                  {rel.relation_type}
+                                </span>
+                                <div className="flex gap-2">
+                                  {rel.status === 'pending' || rel.relation_type === 'pending_contract' ? (
+                                    <button
+                                      onClick={() => handleMarkRelationActive(rel)}
+                                      className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                                      title="Marcar como activa"
+                                    >
+                                      Activar
+                                    </button>
+                                  ) : null}
+                                  <button
+                                    onClick={() => handleViewPropertyDetails(rel.property)}
+                                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                    title="Ver detalles de la propiedad"
+                                  >
+                                    Ver
+                                  </button>
+                                </div>
+                              </div>
+
+                              {rel.message && (
+                                <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-xs text-yellow-800 dark:text-yellow-200">
+                                  {rel.message}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1933,6 +2379,19 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Propiedades Asignadas
+                    </label>
+                    <PropertySelector
+                      properties={allProperties}
+                      selectedIds={editSelectedPropertyIds}
+                      onSelectionChange={setEditSelectedPropertyIds}
+                      loading={loadingFormProperties}
+                      placeholder="Seleccionar propiedades..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Notas Adicionales
                     </label>
                     <textarea
@@ -1971,436 +2430,519 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-gray-800 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
           >
             <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Crear Nuevo Cliente
-                </h2>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                    <User className="w-6 h-6 mr-3 text-blue-600" />
+                    Crear Nuevo Cliente
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Complete la información del cliente para registrarlo en el sistema
+                  </p>
+                </div>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
                     resetCreateForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <form onSubmit={(e) => { e.preventDefault(); handleCreateClient(); }} className="space-y-8">
                 {/* Información Personal */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <User className="w-5 h-5 mr-2 text-blue-600" />
                     Información Personal
                   </h3>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Nombre Completo *
-                    </label>
-                    <input
-                      type="text"
-                      value={createForm.full_name}
-                      onChange={(e) => setCreateForm({...createForm, full_name: e.target.value})}
-                      placeholder="Ej: Juan Pérez García"
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nombre Completo <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.full_name}
+                        onChange={(e) => setCreateForm({...createForm, full_name: e.target.value})}
+                        placeholder="Ej: Juan Pérez García"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        required
+                      />
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Tipo Documento *
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Tipo de Documento <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={createForm.document_type}
                         onChange={(e) => setCreateForm({...createForm, document_type: e.target.value as any})}
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        required
                       >
-                        <option value="cedula">Cédula</option>
+                        <option value="cedula">Cédula de Ciudadanía</option>
                         <option value="pasaporte">Pasaporte</option>
                         <option value="nit">NIT</option>
                       </select>
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Número Documento *
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Número de Documento <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={createForm.document_number}
                         onChange={(e) => setCreateForm({...createForm, document_number: e.target.value})}
                         placeholder="1234567890"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        required
                       />
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Fecha de Nacimiento
-                      </label>
-                      <input
-                        type="date"
-                        value={createForm.birth_date}
-                        onChange={(e) => setCreateForm({...createForm, birth_date: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Género
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Tipo de Cliente <span className="text-red-500">*</span>
                       </label>
                       <select
-                        value={createForm.gender}
-                        onChange={(e) => setCreateForm({...createForm, gender: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        value={createForm.client_type}
+                        onChange={(e) => setCreateForm({...createForm, client_type: e.target.value as any})}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        required
                       >
-                        <option value="">Seleccionar</option>
-                        <option value="masculino">Masculino</option>
-                        <option value="femenino">Femenino</option>
-                        <option value="otro">Otro</option>
+                        <option value="tenant">Arrendatario</option>
+                        <option value="landlord">Arrendador</option>
+                        <option value="buyer">Comprador</option>
+                        <option value="seller">Vendedor</option>
                       </select>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Estado Civil
-                    </label>
-                    <select
-                      value={createForm.marital_status}
-                      onChange={(e) => setCreateForm({...createForm, marital_status: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="soltero">Soltero/a</option>
-                      <option value="casado">Casado/a</option>
-                      <option value="union_libre">Unión Libre</option>
-                      <option value="divorciado">Divorciado/a</option>
-                      <option value="viudo">Viudo/a</option>
-                    </select>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Estado
+                      </label>
+                      <select
+                        value={createForm.status}
+                        onChange={(e) => setCreateForm({...createForm, status: e.target.value as any})}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      >
+                        <option value="active">Activo</option>
+                        <option value="inactive">Inactivo</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="blocked">Bloqueado</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
                 {/* Información de Contacto */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <Phone className="w-5 h-5 mr-2 text-green-600" />
                     Información de Contacto
                   </h3>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Teléfono *
-                    </label>
-                    <input
-                      type="tel"
-                      value={createForm.phone}
-                      onChange={(e) => setCreateForm({...createForm, phone: e.target.value})}
-                      placeholder="+57 300 123 4567"
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={createForm.email}
-                      onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
-                      placeholder="correo@ejemplo.com"
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Método de Contacto Preferido
-                    </label>
-                    <select
-                      value={createForm.preferred_contact_method}
-                      onChange={(e) => setCreateForm({...createForm, preferred_contact_method: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="phone">Teléfono</option>
-                      <option value="email">Email</option>
-                      <option value="whatsapp">WhatsApp</option>
-                      <option value="sms">SMS</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Dirección
-                    </label>
-                    <input
-                      type="text"
-                      value={createForm.address}
-                      onChange={(e) => setCreateForm({...createForm, address: e.target.value})}
-                      placeholder="Calle 123 #45-67"
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Ciudad
-                    </label>
-                    <input
-                      type="text"
-                      value={createForm.city}
-                      onChange={(e) => setCreateForm({...createForm, city: e.target.value})}
-                      placeholder="Bogotá"
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Contacto Emergencia
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.emergency_contact_name}
-                        onChange={(e) => setCreateForm({...createForm, emergency_contact_name: e.target.value})}
-                        placeholder="María García"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Teléfono Emergencia
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Teléfono <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="tel"
-                        value={createForm.emergency_contact_phone}
-                        onChange={(e) => setCreateForm({...createForm, emergency_contact_phone: e.target.value})}
-                        placeholder="+57 301 234 5678"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        value={createForm.phone}
+                        onChange={(e) => setCreateForm({...createForm, phone: e.target.value})}
+                        placeholder="+57 300 123 4567"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Correo Electrónico
+                      </label>
+                      <input
+                        type="email"
+                        value={createForm.email}
+                        onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
+                        placeholder="correo@ejemplo.com"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Dirección
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.address}
+                        onChange={(e) => setCreateForm({...createForm, address: e.target.value})}
+                        placeholder="Calle 123 #45-67, Barrio Centro"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Ciudad
+                      </label>
+                      <input
+                        type="text"
+                        value={createForm.city}
+                        onChange={(e) => setCreateForm({...createForm, city: e.target.value})}
+                        placeholder="Bogotá"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Información Profesional y Financiera */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b pb-2 flex items-center">
+                {/* Información Profesional */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
                     Información Profesional
                   </h3>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Ocupación
                       </label>
                       <input
                         type="text"
                         value={createForm.occupation}
                         onChange={(e) => setCreateForm({...createForm, occupation: e.target.value})}
-                        placeholder="Ingeniero"
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="Ingeniero, Médico, Empresario..."
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Empresa
                       </label>
                       <input
                         type="text"
                         value={createForm.company_name}
                         onChange={(e) => setCreateForm({...createForm, company_name: e.target.value})}
-                        placeholder="ABC Ltda."
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="ABC Ltda., Universidad Nacional..."
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Ingresos Mensuales (COP)
+                      </label>
+                      <input
+                        type="number"
+                        value={createForm.monthly_income}
+                        onChange={(e) => setCreateForm({...createForm, monthly_income: e.target.value})}
+                        placeholder="2500000"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        min="0"
                       />
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Ingresos Mensuales
-                    </label>
-                    <input
-                      type="number"
-                      value={createForm.monthly_income}
-                      onChange={(e) => setCreateForm({...createForm, monthly_income: e.target.value})}
-                      placeholder="2500000"
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
+                {/* Contacto de Emergencia */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <AlertCircle className="w-5 h-5 mr-2 text-orange-600" />
+                    Contacto de Emergencia
+                  </h3>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Rango de Presupuesto
-                    </label>
-                    <select
-                      value={createForm.budget_range}
-                      onChange={(e) => setCreateForm({...createForm, budget_range: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="1-3">1M - 3M COP</option>
-                      <option value="3-5">3M - 5M COP</option>
-                      <option value="5-10">5M - 10M COP</option>
-                      <option value="10-20">10M - 20M COP</option>
-                      <option value="20+">Más de 20M COP</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Fuente de Referencia
-                    </label>
-                    <select
-                      value={createForm.referral_source}
-                      onChange={(e) => setCreateForm({...createForm, referral_source: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="google">Google</option>
-                      <option value="facebook">Facebook</option>
-                      <option value="instagram">Instagram</option>
-                      <option value="amigo">Amigo/Familiar</option>
-                      <option value="sitio_web">Sitio Web</option>
-                      <option value="recomendacion">Recomendación</option>
-                      <option value="otro">Otro</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Tipo de Cliente *
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nombre del Contacto
                       </label>
-                      <select
-                        value={createForm.client_type}
-                        onChange={(e) => setCreateForm({...createForm, client_type: e.target.value as any})}
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        <option value="renter">Inquilino</option>
-                        <option value="owner">Propietario</option>
-                        <option value="buyer">Comprador</option>
-                        <option value="seller">Vendedor</option>
-                      </select>
+                      <input
+                        type="text"
+                        value={createForm.emergency_contact_name}
+                        onChange={(e) => setCreateForm({...createForm, emergency_contact_name: e.target.value})}
+                        placeholder="María García Pérez"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      />
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Estado *
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Teléfono del Contacto
                       </label>
-                      <select
-                        value={createForm.status}
-                        onChange={(e) => setCreateForm({...createForm, status: e.target.value as any})}
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        <option value="active">Activo</option>
-                        <option value="inactive">Inactivo</option>
-                        <option value="pending">Pendiente</option>
-                      </select>
+                      <input
+                        type="tel"
+                        value={createForm.emergency_contact_phone}
+                        onChange={(e) => setCreateForm({...createForm, emergency_contact_phone: e.target.value})}
+                        placeholder="+57 301 234 5678"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                      />
                     </div>
                   </div>
+                </div>
+
+                {/* Notas Adicionales */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <FileText className="w-5 h-5 mr-2 text-gray-600" />
+                    Notas Adicionales
+                  </h3>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Requisitos de Propiedad
-                    </label>
-                    <textarea
-                      value={createForm.property_requirements}
-                      onChange={(e) => setCreateForm({...createForm, property_requirements: e.target.value})}
-                      placeholder="Número de habitaciones, zona preferida, amenidades requeridas..."
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Notas Adicionales
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Observaciones
                     </label>
                     <textarea
                       value={createForm.notes}
                       onChange={(e) => setCreateForm({...createForm, notes: e.target.value})}
-                      placeholder="Información adicional sobre el cliente..."
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Información adicional relevante sobre el cliente..."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all resize-none"
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-8 flex justify-end gap-3 border-t pt-6">
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    resetCreateForm();
-                  }}
-                  className="px-6 py-2 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCreateClient}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Crear Cliente
-                </button>
-              </div>
+                {/* Propiedades de Interés (Opcional) */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Home className="w-5 h-5 mr-2 text-blue-600" />
+                    Propiedades de Interés (Opcional)
+                  </h3>
+
+                  <PropertySelector
+                    properties={allProperties}
+                    selectedIds={createSelectedPropertyIds}
+                    onSelectionChange={setCreateSelectedPropertyIds}
+                    loading={loadingProperties}
+                    placeholder="Buscar propiedades..."
+                  />
+
+                  {createSelectedPropertyIds.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        Se crearán {createSelectedPropertyIds.length} relación(es) de interés con el cliente.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Botones de Acción */}
+                <div className="flex justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      resetCreateForm();
+                    }}
+                    className="px-6 py-3 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium flex items-center"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Crear Cliente
+                  </button>
+                </div>
+              </form>
             </div>
           </motion.div>
         </div>
       )}
 
-      {/* Modal Confirmar Eliminar */}
-      {showDeleteModal && selectedClient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full"
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Confirmar Eliminación
-                </h2>
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+      {/* Modal de Detalles de Propiedad */}
+      <Modal
+        isOpen={showPropertyDetailsModal}
+        onClose={() => setShowPropertyDetailsModal(false)}
+        title={selectedPropertyForDetails?.title || 'Detalles de Propiedad'}
+        size="full"
+      >
+        {selectedPropertyForDetails && (
+          <div className="p-6 max-h-[80vh] overflow-y-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Galería de Imágenes - Columna Principal */}
+              <div className="lg:col-span-2">
+                <div className="mb-6">
+                  {/* Imagen Principal */}
+                  <div className="relative h-96 bg-gray-200 dark:bg-gray-700 rounded-xl mb-4 overflow-hidden">
+                    {selectedPropertyForDetails.images && selectedPropertyForDetails.images.length > 0 ? (
+                      <>
+                        <img
+                          src={selectedPropertyForDetails.images[currentImageIndex]}
+                          alt={selectedPropertyForDetails.title}
+                          className="w-full h-full object-cover"
+                        />
+
+                        {/* Navegación de Imágenes */}
+                        {selectedPropertyForDetails.images.length > 1 && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentImageIndex(prev =>
+                                  prev === 0 ? selectedPropertyForDetails.images.length - 1 : prev - 1
+                                );
+                              }}
+                              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                            >
+                              <ChevronLeft className="h-6 w-6" />
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentImageIndex(prev =>
+                                  prev === selectedPropertyForDetails.images.length - 1 ? 0 : prev + 1
+                                );
+                              }}
+                              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                            >
+                              <ChevronRight className="h-6 w-6" />
+                            </button>
+                          </>
+                        )}
+
+                        {/* Contador de Imágenes */}
+                        <div className="absolute top-4 right-4 bg-black bg-opacity-60 text-white px-3 py-1 rounded-lg text-sm">
+                          {currentImageIndex + 1} / {selectedPropertyForDetails.images.length}
+                        </div>
+
+                        {/* Badge de Estado */}
+                        <div className="absolute top-4 left-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(selectedPropertyForDetails.status)}`}>
+                            {selectedPropertyForDetails.status === 'available' && 'Disponible'}
+                            {selectedPropertyForDetails.status === 'sale' && 'En Venta'}
+                            {selectedPropertyForDetails.status === 'rent' && 'En Arriendo'}
+                            {selectedPropertyForDetails.status === 'sold' && 'Vendido'}
+                            {selectedPropertyForDetails.status === 'rented' && 'Arrendado'}
+                            {selectedPropertyForDetails.status === 'reserved' && 'Reservado'}
+                            {selectedPropertyForDetails.status === 'maintenance' && 'Mantenimiento'}
+                            {selectedPropertyForDetails.status === 'pending' && 'Pendiente'}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Home className="w-16 h-16 text-gray-400" />
+                        <span className="ml-2 text-gray-500">Sin imágenes disponibles</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thumbnails */}
+                  {selectedPropertyForDetails.images && selectedPropertyForDetails.images.length > 1 && (
+                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                      {selectedPropertyForDetails.images.map((image: string, index: number) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                            index === currentImageIndex
+                              ? 'border-blue-500 ring-2 ring-blue-200'
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                        >
+                          <img
+                            src={image}
+                            alt={`${selectedPropertyForDetails.title} ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                ¿Estás seguro de que quieres eliminar al cliente <strong>{selectedClient.full_name}</strong>?
-                Esta acción no se puede deshacer.
-              </p>
+              {/* Información Lateral */}
+              <div className="space-y-6">
+                {/* Precio y Código */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                  <div className="text-center mb-4">
+                    <p className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
+                      ${selectedPropertyForDetails?.price?.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Código: {selectedPropertyForDetails.code}
+                    </p>
+                  </div>
 
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Eliminar Cliente
-                </button>
+                  {/* Características principales */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Habitaciones</span>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedPropertyForDetails.bedrooms}</p>
+                    </div>
+                    <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Baños</span>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedPropertyForDetails.bathrooms}</p>
+                    </div>
+                    <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Área</span>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedPropertyForDetails.area}m²</p>
+                    </div>
+                    <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Tipo</span>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white capitalize">{selectedPropertyForDetails.type}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ubicación */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                    <MapPinIcon className="w-5 h-5 mr-2 text-blue-600" />
+                    Ubicación
+                  </h4>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {selectedPropertyForDetails.address}, {selectedPropertyForDetails.city}
+                  </p>
+                </div>
+
+                {/* Descripción */}
+                {selectedPropertyForDetails.description && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Descripción</h4>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                      {selectedPropertyForDetails.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Amenidades */}
+                {selectedPropertyForDetails.amenities && selectedPropertyForDetails.amenities.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Amenidades</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedPropertyForDetails.amenities.map((amenity: string, index: number) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 rounded-full text-sm"
+                        >
+                          {amenity}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </motion.div>
-        </div>
-      )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

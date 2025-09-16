@@ -477,42 +477,24 @@ export async function getBasicStats() {
 // FUNCIONES PARA RELACIONES CLIENTE-PROPIEDAD
 // =====================================================
 
-// Obtener relaciones de propiedad de un cliente
+// Obtener relaciones de propiedad de un cliente (versión simplificada)
 export async function getClientPropertyRelations(clientId: string): Promise<ClientPropertyRelation[]> {
   try {
-    // Intentar seleccionar la propiedad incluyendo cover_image. Si la columna no existe en la tabla properties,
-    // reintentar sin ese campo (compatibilidad con esquemas diferentes).
-    const selectWithCover = `*, property:properties(id, title, code, type, status, price, images, cover_image)`;
+    // Consulta simplificada sin cover_image para evitar problemas de compatibilidad
+    const selectQuery = `*, property:properties(id, title, code, type, status, price, images, bedrooms, bathrooms, area, location, description, amenities)`;
 
-    let resp = await supabase
+    const resp = await supabase
       .from('client_property_relations')
-      .select(selectWithCover)
+      .select(selectQuery)
       .eq('client_id', clientId)
       .order('created_at', { ascending: false });
 
     if (resp.error) {
-      // Si el error indica columna desconocida (42703) y menciona cover_image, reintentar sin cover_image
-      if (resp.error.code === '42703' && /cover_image/.test(String(resp.error.message))) {
-        console.warn('⚠️ Campo cover_image no existe en properties, reintentando sin ese campo');
-        const selectWithoutCover = `*, property:properties(id, title, code, type, status, price, images)`;
-        const retry = await supabase
-          .from('client_property_relations')
-          .select(selectWithoutCover)
-          .eq('client_id', clientId)
-          .order('created_at', { ascending: false });
-
-        if (retry.error) {
-          console.error('❌ Error obteniendo relaciones cliente-propiedad (retry):', retry.error);
-          throw retry.error;
-        }
-
-        return retry.data || [];
-      }
-
       console.error('❌ Error obteniendo relaciones cliente-propiedad:', resp.error);
       throw resp.error;
     }
 
+    console.log('✅ Consulta exitosa, obtenidas', resp.data?.length || 0, 'relaciones para cliente', clientId);
     return resp.data || [];
   } catch (error) {
     console.error('❌ Error en getClientPropertyRelations:', error);
@@ -630,6 +612,28 @@ export async function getClientPropertySummary(clientId: string): Promise<Client
   }
 }
 
+// Verificar si existe un cliente con el mismo tipo y número de documento
+export async function checkClientExists(documentType: string, documentNumber: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('document_type', documentType)
+      .eq('document_number', documentNumber)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('❌ Error verificando existencia de cliente:', error);
+      throw error;
+    }
+
+    return !!data; // Retorna true si existe, false si no
+  } catch (error) {
+    console.error('❌ Error en checkClientExists:', error);
+    throw error;
+  }
+}
+
 // Exponer funciones globalmente para debug en desarrollo
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).clientsAPI = {
@@ -651,8 +655,8 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     createClientPropertyRelation,
     updateClientPropertyRelation,
     deleteClientPropertyRelation,
-    getClientPropertySummary
-    ,
-    generateContractPayments
+    getClientPropertySummary,
+    generateContractPayments,
+    checkClientExists
   };
 }

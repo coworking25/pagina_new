@@ -21,6 +21,12 @@ export interface ClientPropertyRelation {
     price?: number;
     images?: any[];
     cover_image?: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    area?: number;
+    location?: string;
+    description?: string;
+    amenities?: string[];
   };
   // Algunas consultas antiguas podrían devolver 'message'
   message?: string;
