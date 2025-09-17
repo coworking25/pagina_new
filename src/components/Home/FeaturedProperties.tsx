@@ -39,7 +39,7 @@ const FeaturedProperties: React.FC = () => {
         // Mock data if no properties in database
         const mockProperties: Property[] = [
           {
-            id: '1',
+            id: 1,
             title: 'Apartamento Moderno en El Poblado',
             location: 'El Poblado, Medellín',
             price: 450000000,
@@ -60,7 +60,7 @@ const FeaturedProperties: React.FC = () => {
             advisor_id: advisors[0].id
           },
           {
-            id: '2',
+            id: 2,
             title: 'Casa Familiar en Envigado',
             location: 'Envigado, Antioquia',
             price: 2500000,
@@ -81,7 +81,7 @@ const FeaturedProperties: React.FC = () => {
             advisor_id: advisors[1].id
           },
           {
-            id: '3',
+            id: 3,
             title: 'Oficina Ejecutiva Centro',
             location: 'Centro, Medellín',
             price: 350000000,
@@ -110,7 +110,7 @@ const FeaturedProperties: React.FC = () => {
       // En caso de error, mostrar datos mock para evitar página en blanco
       const fallbackProperties: Property[] = [
         {
-          id: 'fallback-1',
+          id: 999,
           title: 'Apartamento Moderno en El Poblado',
           location: 'El Poblado, Medellín',
           price: 450000000,

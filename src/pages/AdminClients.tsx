@@ -43,7 +43,7 @@ import {
 import { getProperties } from '../lib/supabase';
 import Modal from '../components/UI/Modal';
 import { ChevronLeft, ChevronRight, MapPin as MapPinIcon } from 'lucide-react';
-import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary } from '../types/clients';
+import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary, ClientFormData, ContractFormData } from '../types/clients';
 
 // Componente PropertySelector personalizado
 interface PropertySelectorProps {
@@ -193,7 +193,6 @@ function AdminClients() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editForm, setEditForm] = useState<Partial<Client>>({});
   
@@ -248,7 +247,14 @@ function AdminClients() {
     monthly_income: '',
     occupation: '',
     company_name: '',
-    notes: ''
+    notes: '',
+    // Contract-related fields
+    start_date: '',
+    contract_type: 'rental',
+    end_date: '',
+    monthly_rent: '',
+    deposit_amount: '',
+    contract_duration_months: '12'
   });
 
   useEffect(() => {
@@ -632,9 +638,17 @@ function AdminClients() {
     setShowPropertyDetailsModal(true);
   };
 
-  const handleDeleteClient = (client: Client) => {
-    setSelectedClient(client);
-    setShowDeleteModal(true);
+  const handleDeleteClient = async (client: Client) => {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar al cliente ${client.full_name}?`)) {
+      try {
+        await deleteClient(client.id);
+        setClients(clients.filter(c => c.id !== client.id));
+        alert('Cliente eliminado correctamente');
+      } catch (error) {
+        console.error('Error eliminando cliente:', error);
+        alert('Error al eliminar el cliente');
+      }
+    }
   };
 
   const handleContactClient = (client: Client, method: 'phone' | 'email' | 'whatsapp') => {
@@ -725,25 +739,6 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!selectedClient) return;
-    
-    try {
-      console.log('🗑️ Eliminando cliente:', selectedClient.id);
-      
-      await deleteClient(selectedClient.id);
-      
-      setClients(clients.filter(client => client.id !== selectedClient.id));
-      setShowDeleteModal(false);
-      setSelectedClient(null);
-      
-      alert('Cliente eliminado correctamente');
-    } catch (error) {
-      console.error('❌ Error eliminando cliente:', error);
-      alert('Error al eliminar el cliente. Por favor, inténtalo de nuevo.');
-    }
-  };
-
   const resetCreateForm = () => {
     setCreateForm({
       full_name: '',
@@ -796,22 +791,22 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
       }
       
       // Preparar datos del cliente (solo campos que existen en la BD)
-      const clientData = {
+      const clientData: ClientFormData = {
         full_name: createForm.full_name.trim(),
         document_type: createForm.document_type,
         document_number: createForm.document_number.trim(),
         phone: createForm.phone.trim(),
-        email: createForm.email.trim() || null,
-        address: createForm.address.trim() || null,
-        city: createForm.city.trim() || null,
-        emergency_contact_name: createForm.emergency_contact_name.trim() || null,
-        emergency_contact_phone: createForm.emergency_contact_phone.trim() || null,
-        client_type: createForm.client_type === 'renter' ? 'tenant' : createForm.client_type, // Map 'renter' to 'tenant'
+        email: createForm.email.trim() || undefined,
+        address: createForm.address.trim() || undefined,
+        city: createForm.city.trim() || undefined,
+        emergency_contact_name: createForm.emergency_contact_name.trim() || undefined,
+        emergency_contact_phone: createForm.emergency_contact_phone.trim() || undefined,
+        client_type: createForm.client_type,
         status: createForm.status,
-        monthly_income: createForm.monthly_income ? Number(createForm.monthly_income) : null,
-        occupation: createForm.occupation.trim() || null,
-        company_name: createForm.company_name.trim() || null,
-        notes: createForm.notes.trim() || null
+        monthly_income: createForm.monthly_income ? Number(createForm.monthly_income) : undefined,
+        occupation: createForm.occupation.trim() || undefined,
+        company_name: createForm.company_name.trim() || undefined,
+        notes: createForm.notes.trim() || undefined
       };
 
       // Crear cliente
@@ -841,7 +836,7 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
         try {
           console.log('📄 Creando contrato para el cliente...');
           
-          const contractData = {
+          const contractData: ContractFormData = {
             client_id: newClient.id,
             contract_type: createForm.contract_type,
             status: 'active' as const,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2, Settings } from 'lucide-react';
+import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Property } from '../../types';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
@@ -51,7 +51,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
     setIsUpdatingStatus(true);
     try {
-      await updatePropertyStatus(property.id.toString(), newStatus);
+      await updatePropertyStatus(property.id, newStatus);
       setCurrentStatus(newStatus as Property['status']);
       console.log(`✅ Estado de propiedad ${property.id} actualizado a: ${newStatus}`);
     } catch (error) {

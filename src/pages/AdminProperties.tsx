@@ -296,7 +296,7 @@ function AdminProperties() {
     }
   };
 
-  const handleReleaseProperty = async (propertyId: string) => {
+  const handleReleaseProperty = async (propertyId: number) => {
     if (!window.confirm('¿Confirmas liberar esta propiedad y cerrar el contrato asociado?')) return;
     try {
       // Find active contract for this property (if any)
@@ -736,7 +736,7 @@ function AdminProperties() {
     }
   };
 
-  const handleDeleteProperty = async (propertyId: string) => {
+  const handleDeleteProperty = async (propertyId: number) => {
     console.log('🗑️ ELIMINANDO PROPIEDAD:', propertyId);
     alert(`Eliminando propiedad con ID: ${propertyId}`);
     if (window.confirm('¿Estás seguro de que quieres eliminar esta propiedad?')) {

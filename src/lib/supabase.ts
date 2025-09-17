@@ -1314,7 +1314,7 @@ export async function deletePropertyImage(imageUrl: string): Promise<boolean> {
 // ==================== PROPERTY STATISTICS ====================
 
 // Función para obtener estadísticas de una propiedad
-export async function getPropertyStats(propertyId: string) {
+export async function getPropertyStats(propertyId: number) {
   try {
     console.log('📊 Obteniendo estadísticas para propiedad:', propertyId);
     
@@ -1356,7 +1356,7 @@ export async function getPropertyStats(propertyId: string) {
 }
 
 // Función para incrementar vistas de propiedad
-export async function incrementPropertyViews(propertyId: string, userInfo: any = {}) {
+export async function incrementPropertyViews(propertyId: number, userInfo: any = {}) {
   try {
     const { error } = await supabase.rpc('increment_property_views', {
       prop_id: propertyId,
@@ -1372,7 +1372,7 @@ export async function incrementPropertyViews(propertyId: string, userInfo: any =
 }
 
 // Función para incrementar consultas de propiedad
-export async function incrementPropertyInquiries(propertyId: string, inquiryDetails: any = {}) {
+export async function incrementPropertyInquiries(propertyId: number, inquiryDetails: any = {}) {
   try {
     const { error } = await supabase.rpc('increment_property_inquiries', {
       prop_id: propertyId,
@@ -1388,7 +1388,7 @@ export async function incrementPropertyInquiries(propertyId: string, inquiryDeta
 }
 
 // Función para incrementar citas de propiedad
-export async function incrementPropertyAppointments(propertyId: string, appointmentDetails: any = {}) {
+export async function incrementPropertyAppointments(propertyId: number, appointmentDetails: any = {}) {
   try {
     const { error } = await supabase.rpc('increment_property_appointments', {
       prop_id: propertyId,
@@ -1404,7 +1404,7 @@ export async function incrementPropertyAppointments(propertyId: string, appointm
 }
 
 // Función para obtener actividad reciente de una propiedad (usando property_appointments como alternativa)
-export async function getPropertyActivity(propertyId: string, limit: number = 10) {
+export async function getPropertyActivity(propertyId: number, limit: number = 10) {
   try {
     // Usamos property_appointments como tabla de actividad alternativa
     const { data, error } = await supabase
@@ -1424,10 +1424,9 @@ export async function getPropertyActivity(propertyId: string, limit: number = 10
 
 // Función para registrar actividad personalizada
 export async function logPropertyActivity(
-  propertyId: string, 
+  propertyId: number, 
   activityType: string, 
-  details: any = {}, 
-  userInfo: any = {}
+  details: any = {}
 ) {
   try {
     // TEMPORAL: Tabla property_activity no existe aún
@@ -1535,7 +1534,7 @@ function normalizePropertyStatus(s: string): Property['status'] {
   return 'available';
 }
 
-export async function updateProperty(propertyId: string, propertyData: Partial<Property>) {
+export async function updateProperty(propertyId: number, propertyData: Partial<Property>) {
   try {
     // Validar que exista al menos un campo para actualizar
     const updateFields = Object.keys(propertyData).filter(key => 
@@ -1630,7 +1629,7 @@ export async function updateProperty(propertyId: string, propertyData: Partial<P
 }
 
 // Función para actualizar la imagen de portada de una propiedad
-export async function updatePropertyCoverImage(propertyId: string, coverImageUrl: string) {
+export async function updatePropertyCoverImage(propertyId: number, coverImageUrl: string) {
   try {
     console.log(`📸 Actualizando imagen de portada para propiedad ${propertyId}:`, coverImageUrl);
     
@@ -1658,7 +1657,7 @@ export async function updatePropertyCoverImage(propertyId: string, coverImageUrl
 }
 
 // Función para eliminar una propiedad
-export async function deleteProperty(propertyId: string) {
+export async function deleteProperty(propertyId: number) {
   try {
     console.log(`🗑️ Iniciando eliminación de propiedad: ${propertyId}`);
 
@@ -1770,7 +1769,7 @@ export async function getPropertiesByStatus(status: string) {
 }
 
 // Función para cambiar estado de propiedad
-export async function updatePropertyStatus(propertyId: string, newStatus: string, reason?: string) {
+export async function updatePropertyStatus(propertyId: number, newStatus: string, reason?: string) {
   try {
     const normalized = normalizePropertyStatus(newStatus);
     const { data, error } = await supabase

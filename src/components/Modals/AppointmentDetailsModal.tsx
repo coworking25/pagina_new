@@ -11,8 +11,7 @@ import {
   MessageSquare,
   CheckCircle,
   AlertCircle,
-  XCircle,
-  ExternalLink
+  XCircle
 } from 'lucide-react';
 import Modal from '../UI/Modal';
 import { PropertyAppointment, Advisor, Property } from '../../types';
