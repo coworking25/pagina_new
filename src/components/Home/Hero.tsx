@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, ArrowRight, Play } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../UI/Button';
 
@@ -8,10 +8,22 @@ const Hero: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentSlogan, setCurrentSlogan] = useState(0);
+  const [currentBackground, setCurrentBackground] = useState(0);
 
   const slogans = [
     "La luz te guía a casa",
     "y la calidez te mantiene en ella"
+  ];
+
+  // Local background images from public/img folder - Medellín properties
+  const backgroundImages = [
+    '/img/medellin.jpg',           // Medellín city view
+    '/img/Paisaje_Medellin.jpg',   // Medellín landscape
+    '/img/apar.jpg',               // Apartment building
+    '/img/casa.jpg',               // House/Residence
+    '/img/1.mede.jpg',             // Medellín view 1
+    '/img/2.mede.jpg',             // Medellín view 2
+    '/img/pentho.jpg'              // Penthouse/High-end property
   ];
 
   useEffect(() => {
@@ -20,7 +32,16 @@ const Hero: React.FC = () => {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [slogans.length]);
+
+  // Background image rotation
+  useEffect(() => {
+    const bgInterval = setInterval(() => {
+      setCurrentBackground((prev) => (prev + 1) % backgroundImages.length);
+    }, 8000); // Change every 8 seconds
+
+    return () => clearInterval(bgInterval);
+  }, [backgroundImages.length]);
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -38,10 +59,25 @@ const Hero: React.FC = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background */}
+      {/* Dynamic Background with Multiple Images */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-        <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg')] bg-cover bg-center opacity-20"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+        {/* Rotating Background Images - More transparent for subtle background */}
+        {backgroundImages.map((image, index) => (
+          <motion.div
+            key={image}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${image})`,
+              opacity: index === currentBackground ? 0.12 : 0
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: index === currentBackground ? 0.12 : 0 }}
+            transition={{ duration: 2, ease: "easeInOut" }}
+          />
+        ))}
+        {/* Enhanced overlay for better logo contrast - More subtle */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-black/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-900/10 via-transparent to-purple-900/10"></div>
       </div>
 
       {/* Animated Background Elements */}
@@ -69,40 +105,51 @@ const Hero: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Logo with Glow Effect */}
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Logo - Clean and Simple */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          className="mb-8"
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="mb-12"
         >
           <div className="relative inline-block">
-            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl">
-              <span className="text-white font-bold text-3xl">CI</span>
-            </div>
-            <div className="absolute inset-0 bg-green-400 rounded-2xl blur-xl opacity-40 animate-pulse"></div>
+            <img
+              src="/logo-13962586_transparent (1).png"
+              alt="Coworking Inmobiliario"
+              className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 object-contain drop-shadow-2xl transition-all duration-500 hover:scale-105"
+              onError={(e) => {
+                // Fallback to CSS logo if image fails
+                e.currentTarget.style.display = 'none';
+                const fallback = document.createElement('div');
+                fallback.className = 'w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl';
+                fallback.innerHTML = `<span class="text-white font-bold text-6xl md:text-7xl lg:text-8xl">CI</span>`;
+                const blurDiv = document.createElement('div');
+                blurDiv.className = 'absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl blur-xl opacity-30';
+                fallback.appendChild(blurDiv);
+                e.currentTarget.parentNode?.appendChild(fallback);
+              }}
+            />
           </div>
         </motion.div>
 
-        {/* Main Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
+        {/* Company Name - Smaller below logo */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6"
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-8"
         >
-          Coworking{' '}
           <span className="bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
-            Inmobiliario
+            Coworking Inmobiliario
           </span>
-        </motion.h1>
+        </motion.h2>
 
         {/* Animated Slogan */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
           className="mb-8 h-16 flex items-center justify-center"
         >
           <motion.p

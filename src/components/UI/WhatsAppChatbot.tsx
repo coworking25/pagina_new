@@ -536,11 +536,25 @@ const WhatsAppChatbot: React.FC = () => {
       >
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
-          className="bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:shadow-xl whatsapp-pulse"
-          whileHover={{ scale: 1.1 }}
+          className="relative bg-gradient-to-r from-cyan-500 via-green-500 to-purple-500 hover:from-cyan-600 hover:via-green-600 hover:to-purple-600 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:shadow-cyan-500/25 glow-cyan group"
+          whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
         >
-          {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity duration-300 animate-pulse-slow"></div>
+          <div className="relative z-10">
+            {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
+          </div>
+          {/* Indicador de mensajes no leídos */}
+          {!isOpen && (
+            <motion.div
+              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 3, type: "spring" }}
+            >
+              ?
+            </motion.div>
+          )}
         </motion.button>
       </motion.div>
 

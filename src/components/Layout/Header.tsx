@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Sun, Moon, Monitor, Home, Building, Users, FileText, Phone } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
+import Logo from '../UI/Logo';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,21 +32,8 @@ const Header: React.FC = () => {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-green-500/25 transition-all duration-300">
-                <span className="text-white font-bold text-lg">CI</span>
-              </div>
-              <div className="absolute inset-0 bg-green-400 rounded-lg blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300 animate-pulse"></div>
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Coworking Inmobiliario
-              </h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400 -mt-1">
-                La luz te guía a casa
-              </p>
-            </div>
+          <Link to="/" className="flex items-center">
+            <Logo variant="header" size="header" animated={false} />
           </Link>
 
           {/* Desktop Navigation */}

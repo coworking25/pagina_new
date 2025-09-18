@@ -5,6 +5,7 @@ import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import AdminLayout from './components/Layout/AdminLayout';
 import WhatsAppChatbot from './components/UI/WhatsAppChatbot';
+import ScrollToTop from './components/UI/ScrollToTop';
 import Home from './pages/Home';
 import Properties from './pages/Properties';
 import PropertyDetail from './pages/PropertyDetail';
@@ -107,6 +108,9 @@ const AppLayout = () => {
         
         {/* Chatbot flotante de WhatsApp - solo en rutas públicas */}
         {!isAdminRoute && !isLoginPage && <WhatsAppChatbot />}
+        
+        {/* Botón flotante para volver arriba - solo en rutas públicas */}
+        {!isAdminRoute && !isLoginPage && <ScrollToTop />}
       </div>
     );
   } catch (error) {

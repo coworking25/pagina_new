@@ -159,18 +159,23 @@ function AdminLayout() {
     >
       {/* Logo */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <img 
-            src="/logo-13962586_transparent (1).png" 
-            alt="Logo" 
-            className="w-10 h-10"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+        <div className="flex items-center space-x-3 group">
+          <div className="relative">
+            <img
+              src="/logo-13962586_transparent (1).png"
+              alt="Coworking Inmobiliario"
+              className="w-12 h-12 object-contain transition-all duration-300 group-hover:scale-110 drop-shadow-lg"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-green-400 to-purple-500 rounded-lg blur-md opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+          </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Inmobiliaria</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+              Admin Panel
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Coworking Inmobiliario</p>
           </div>
         </div>
       </div>

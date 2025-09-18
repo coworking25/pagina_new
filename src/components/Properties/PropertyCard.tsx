@@ -388,7 +388,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             size="sm"
             icon={Calendar}
             onClick={() => onSchedule(property)}
-            className="text-xs"
+            className="text-xs bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 border-0 glow-cyan"
           >
             Cita
           </Button>
