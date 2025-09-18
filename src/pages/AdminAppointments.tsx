@@ -260,6 +260,11 @@ function AdminAppointments() {
         return;
       }
 
+      if (advisors.length === 0) {
+        alert('No se pudieron cargar los asesores. Inténtalo de nuevo.');
+        return;
+      }
+
       console.log('🔍 Enviando confirmación para cita:', {
         appointment_id: appointment.id,
         property_id: appointment.property_id,
@@ -268,10 +273,10 @@ function AdminAppointments() {
       });
 
       // Buscar la propiedad y asesor para el mensaje
-      const property = appointment.property_id ? properties.find(p => p.id === appointment.property_id) : null;
+      const property = appointment.property_id ? properties.find(p => p.id == appointment.property_id) : null;
       const advisor = advisors.find(a => {
         if (!appointment.advisor_id) return false;
-        return a.id === appointment.advisor_id;
+        return a.id == appointment.advisor_id;
       });
 
       console.log('🎯 Enviando confirmación:', {
@@ -365,11 +370,11 @@ function AdminAppointments() {
         const property = properties.find(p => {
           const pId = String(p.id);
           const formId = String(appointmentData.property_id);
-          const match = pId === formId;
+          const match = pId == formId;
           console.log('🔍 Comparando propiedad:', { pId, formId, match, title: p.title });
           return match;
         });
-        const advisor = advisors.find(a => a.id === appointmentData.advisor_id!);
+        const advisor = advisors.find(a => a.id == appointmentData.advisor_id!);
 
         console.log('🎯 Resultados de búsqueda:', {
           property_found: !!property,
@@ -665,8 +670,9 @@ function AdminAppointments() {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => handleSendConfirmation(appointment)}
-                            className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-                            title="Enviar confirmación por WhatsApp"
+                            disabled={additionalDataLoading}
+                            className={`p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors ${additionalDataLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title={additionalDataLoading ? 'Cargando datos...' : 'Enviar confirmación por WhatsApp'}
                           >
                             <MessageCircle className="w-4 h-4" />
                           </motion.button>

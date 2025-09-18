@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import Button from '../UI/Button';
+import TimeSlotSelector from '../UI/TimeSlotSelector';
 import { savePropertyAppointmentSimple } from '../../lib/supabase';
 
 interface ScheduleAppointmentModalProps {
@@ -178,7 +179,7 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
     { id: 'mixta', label: 'Mixta', icon: Users, description: 'Combinación de ambas' }
   ];
 
-  const timeSlots = ['08:00', '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+  const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
 
   const updateFormData = (field: keyof AppointmentForm, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -196,7 +197,7 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
         client_name: formData.name,
         client_email: formData.email,
         client_phone: formData.phone,
-        property_id: parseInt(property.id), // Convertir string a number
+        property_id: property.id,
         advisor_id: advisor.id,
         appointment_date: appointmentDateTime.toISOString(),
         appointment_type: formData.appointmentType,
@@ -513,33 +514,12 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Selecciona la hora
                   </h3>
-                  {formData.preferredDate ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {timeSlots.map((time) => (
-                        <button
-                          key={time}
-                          type="button"
-                          onClick={() => updateFormData('preferredTime', time)}
-                          className={`
-                            px-4 py-3 rounded-lg border text-sm font-medium transition-all duration-200
-                            ${formData.preferredTime === time
-                              ? 'bg-blue-600 border-blue-600 text-white'
-                              : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-300'
-                            }
-                          `}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
-                      <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400">
-                        Selecciona una fecha para ver horarios disponibles
-                      </p>
-                    </div>
-                  )}
+                  <TimeSlotSelector
+                    selectedTime={formData.preferredTime}
+                    onTimeSelect={(time) => updateFormData('preferredTime', time)}
+                    disabled={!formData.preferredDate}
+                    availableSlots={timeSlots}
+                  />
                 </div>
               </div>
 
