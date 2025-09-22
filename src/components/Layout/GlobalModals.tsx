@@ -2,6 +2,7 @@ import React from 'react';
 import { useModalStore } from '../../store/modalStore';
 import PropertyDetailsModal from '../Modals/PropertyDetailsModal';
 import ScheduleAppointmentModalEnhanced from '../Modals/ScheduleAppointmentModalEnhanced';
+import ServiceInquiryModal from '../Modals/ServiceInquiryModal';
 
 const GlobalModals: React.FC = () => {
   const {
@@ -16,6 +17,7 @@ const GlobalModals: React.FC = () => {
     closeAppointmentModal,
     closeAdvisorModal,
     closeServiceInquiryModal,
+    selectedService,
   } = useModalStore();
 
   return (
@@ -54,23 +56,11 @@ const GlobalModals: React.FC = () => {
         />
       )}
 
-      {/* Service Inquiry Modal - TODO: Fix props */}
-      {isServiceInquiryModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-semibold mb-4">Nueva Consulta</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Modal de consulta en desarrollo...
-            </p>
-            <button
-              onClick={closeServiceInquiryModal}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
+      <ServiceInquiryModal
+        service={selectedService}
+        isOpen={isServiceInquiryModalOpen}
+        onClose={closeServiceInquiryModal}
+      />
 
       {/* TODO: Crear estos modales cuando estén listos */}
       {/* Client Modal */}

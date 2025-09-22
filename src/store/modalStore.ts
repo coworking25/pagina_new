@@ -14,6 +14,7 @@ interface ModalState {
   selectedClient: any | null;
   selectedAppointment: any | null;
   selectedAdvisor: any | null;
+  selectedService: any | null;
   
   // Navigation
   modalHistory: string[];
@@ -28,7 +29,7 @@ interface ModalState {
   closeAppointmentModal: () => void;
   openAdvisorModal: (advisor?: any) => void;
   closeAdvisorModal: () => void;
-  openServiceInquiryModal: () => void;
+  openServiceInquiryModal: (service?: any) => void;
   closeServiceInquiryModal: () => void;
   openNavigationModal: () => void;
   closeNavigationModal: () => void;
@@ -52,6 +53,7 @@ export const useModalStore = create<ModalState>((set, get) => ({
   selectedClient: null,
   selectedAppointment: null,
   selectedAdvisor: null,
+  selectedService: null,
   
   // Navigation
   modalHistory: [],
@@ -118,16 +120,18 @@ export const useModalStore = create<ModalState>((set, get) => ({
     currentModal: null
   }),
   
-  openServiceInquiryModal: () => {
+  openServiceInquiryModal: (service?: any) => {
     const state = get();
     set({ 
       isServiceInquiryModalOpen: true,
+      selectedService: service || null,
       modalHistory: state.currentModal ? [...state.modalHistory, state.currentModal] : state.modalHistory,
       currentModal: 'serviceInquiry'
     });
   },
   closeServiceInquiryModal: () => set({ 
     isServiceInquiryModalOpen: false,
+    selectedService: null,
     currentModal: null
   }),
   

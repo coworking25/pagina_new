@@ -2,7 +2,7 @@
 // API FUNCIONAL PARA EL SISTEMA DE CLIENTES
 // =====================================================
 
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 import type { 
   Client, 
   Contract, 
@@ -18,15 +18,7 @@ import type {
 } from '../types/clients';
 import { updatePropertyStatus } from './supabase';
 
-// Crear cliente de Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Variables de entorno de Supabase no configuradas');
-}
-
-const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
+// Usar el cliente singleton exportado desde src/lib/supabase.ts
 
 // =====================================================
 // FUNCIONES PARA CLIENTES

@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 import { Property, Advisor } from '../types';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Función para obtener la URL pública de imágenes de asesores
 export function getAdvisorImageUrl(photoUrl: string | null): string {
@@ -257,6 +252,7 @@ export async function getProperties(): Promise<Property[]> {
             processedImages = [getPublicImageUrl(prop.images)];
           }
         } catch {
+          console.warn('supabaseNew.getProperties: failed to parse prop.images, using raw string as single image', prop.images);
           processedImages = [getPublicImageUrl(prop.images)];
         }
       }

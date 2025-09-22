@@ -250,10 +250,17 @@ const DocumentationEnhanced: React.FC = () => {
   useEffect(() => {
     const savedData = localStorage.getItem('documentationState');
     if (savedData) {
-      const { tenantChecklist: savedTenant, ownerChecklist: savedOwner, userUploads: savedUploads } = JSON.parse(savedData);
-      if (savedTenant) setTenantChecklist(savedTenant);
-      if (savedOwner) setOwnerChecklist(savedOwner);
-      if (savedUploads) setUserUploads(savedUploads);
+      try {
+        const parsed = JSON.parse(savedData);
+        const { tenantChecklist: savedTenant, ownerChecklist: savedOwner, userUploads: savedUploads } = parsed || {};
+        if (savedTenant) setTenantChecklist(savedTenant);
+        if (savedOwner) setOwnerChecklist(savedOwner);
+        if (savedUploads) setUserUploads(savedUploads);
+      } catch (err) {
+        console.warn('Invalid JSON in localStorage key "documentationState". Clearing corrupted value.', { savedData, err });
+        // Remove the corrupt value so subsequent loads won't fail
+        try { localStorage.removeItem('documentationState'); } catch (e) { /* ignore */ }
+      }
     }
   }, []);
 

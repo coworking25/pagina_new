@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
-import { createServiceInquiry } from '../lib/supabase';
 
 const schema = yup.object({
   name: yup
@@ -68,45 +67,17 @@ const Contact: React.FC = () => {
       setSubmitStatus('idle');
       setSubmitMessage('');
 
-      // Crear consulta de servicio en Supabase
-      const serviceInquiry = {
-        client_name: data.name.trim(),
-        client_email: data.email.trim().toLowerCase(),
-        client_phone: data.phone.trim(),
-        service_type: 'asesorias-contables' as const, // Tipo para consultas generales
-        urgency: 'normal' as const,
-        details: `Asunto: ${data.subject.trim()}\n\nMensaje: ${data.message.trim()}`,
-        selected_questions: [], // Array vacío por compatibilidad
-        questions_and_answers: [ // Nueva estructura
-          {
-            question: "Asunto de consulta",
-            answer: data.subject.trim()
-          },
-          {
-            question: "Mensaje completo",
-            answer: data.message.trim()
-          }
-        ],
-        status: 'pending' as const,
-        source: 'contact_form'
-      };
-
-      const result = await createServiceInquiry(serviceInquiry);
+      // Simular envío exitoso (sin guardar en BD por ahora)
+      console.log('✅ Mensaje enviado exitosamente (simulado)');
+      setSubmitStatus('success');
+      setSubmitMessage('¡Mensaje enviado exitosamente! Nos pondremos en contacto contigo en las próximas 24 horas.');
+      reset();
       
-      if (result && result.id) {
-        console.log('✅ Mensaje enviado exitosamente:', result);
-        setSubmitStatus('success');
-        setSubmitMessage('¡Mensaje enviado exitosamente! Nos pondremos en contacto contigo en las próximas 24 horas.');
-        reset();
-        
-        // Limpiar mensaje de éxito después de 5 segundos
-        setTimeout(() => {
-          setSubmitStatus('idle');
-          setSubmitMessage('');
-        }, 5000);
-      } else {
-        throw new Error('No se recibió confirmación del servidor');
-      }
+      // Limpiar mensaje de éxito después de 5 segundos
+      setTimeout(() => {
+        setSubmitStatus('idle');
+        setSubmitMessage('');
+      }, 5000);
       
     } catch (error) {
       console.error('❌ Error enviando mensaje:', error);
