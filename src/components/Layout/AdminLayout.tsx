@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { getCurrentUser } from '../../lib/supabase';
 import { useAdminBadges } from '../../contexts/AdminBadgeContext';
+import QuickActions from './QuickActions';
 
 interface MenuItem {
   id: string;
@@ -304,6 +305,9 @@ function AdminLayout() {
           </motion.div>
         </main>
       </div>
+
+      {/* Quick Actions Floating Button */}
+      <QuickActions />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Calendar, 
@@ -74,6 +75,7 @@ function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadDashboardData();
@@ -299,49 +301,75 @@ function AdminDashboard() {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
+          className="relative"
         >
-          <FloatingCard hover elevation="high" className="p-6">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+          <FloatingCard hover elevation="high" className="relative p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
               <ArrowUpRight className="w-6 h-6 mr-2 text-green-600" />
               Acciones Rápidas
             </h2>
-          <div className="space-y-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-            >
-              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
-              <span className="text-gray-900 dark:text-white">Ver Citas del Día</span>
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-            >
-              <Home className="w-5 h-5 text-green-600 dark:text-green-400 mr-3" />
-              <span className="text-gray-900 dark:text-white">Agregar Propiedad</span>
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-            >
-              <Users className="w-5 h-5 text-purple-600 dark:text-purple-400 mr-3" />
-              <span className="text-gray-900 dark:text-white">Gestionar Asesores</span>
-            </motion.button>
-            
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
-            >
-              <BarChart3 className="w-5 h-5 text-orange-600 dark:text-orange-400 mr-3" />
-              <span className="text-gray-900 dark:text-white">Ver Reportes</span>
-            </motion.button>
-          </div>
+            <div className="grid grid-cols-1 gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/admin/appointments')}
+                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-blue-200/50 dark:border-blue-700/50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 relative z-10" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10">Ver Citas del Día</span>
+                <ArrowUpRight className="w-4 h-4 ml-auto text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/admin/properties')}
+                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-green-200/50 dark:border-green-700/50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-green-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Home className="w-5 h-5 text-green-600 dark:text-green-400 mr-3 relative z-10" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10">Agregar Propiedad</span>
+                <ArrowUpRight className="w-4 h-4 ml-auto text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/admin/service-inquiries')}
+                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-emerald-200/50 dark:border-emerald-700/50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <MessageSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mr-3 relative z-10" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10">Consultas de Servicio</span>
+                <ArrowUpRight className="w-4 h-4 ml-auto text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/admin/advisors')}
+                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-purple-200/50 dark:border-purple-700/50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Users className="w-5 h-5 text-purple-600 dark:text-purple-400 mr-3 relative z-10" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10">Gestionar Asesores</span>
+                <ArrowUpRight className="w-4 h-4 ml-auto text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/admin/reports')}
+                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-orange-200/50 dark:border-orange-700/50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-orange-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <BarChart3 className="w-5 h-5 text-orange-600 dark:text-orange-400 mr-3 relative z-10" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10">Ver Reportes</span>
+                <ArrowUpRight className="w-4 h-4 ml-auto text-orange-600 dark:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+              </motion.button>
+            </div>
           </FloatingCard>
         </motion.div>
       </div>
