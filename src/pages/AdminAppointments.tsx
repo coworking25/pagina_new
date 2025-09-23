@@ -22,6 +22,7 @@ import AppointmentDetailsModal from '../components/Modals/AppointmentDetailsModa
 import EditAppointmentModal from '../components/Modals/EditAppointmentModal';
 import CreateAppointmentModal from '../components/Modals/CreateAppointmentModal';
 import { PropertyAppointment, Advisor, Property } from '../types';
+import { useNotificationContext } from '../contexts/NotificationContext';
 
 function AdminAppointments() {
   const [appointments, setAppointments] = useState<PropertyAppointment[]>([]);
@@ -43,6 +44,8 @@ function AdminAppointments() {
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [additionalDataLoading, setAdditionalDataLoading] = useState(false);
+
+  const { addNotification } = useNotificationContext();
 
   useEffect(() => {
     loadAppointments();
@@ -115,8 +118,30 @@ function AdminAppointments() {
     }
 
     try {
+      // Obtener la cita antes de eliminarla para la notificación
+      const appointment = appointments.find(a => a.id === appointmentId);
+      
       await deleteAppointment(appointmentId);
       alert('Cita eliminada exitosamente');
+      
+      // Generar notificación del sistema
+      if (appointment) {
+        const property = properties.find(p => p.id === appointment.property_id);
+        addNotification({
+          type: 'appointment_deleted',
+          priority: 'high',
+          title: 'Cita Eliminada',
+          message: `La cita de ${appointment.client_name} para la propiedad "${property?.title || 'Propiedad'}" ha sido eliminada del sistema.`,
+          action: '/admin/appointments',
+          data: { 
+            type: 'appointment_deleted',
+            appointmentId,
+            clientName: appointment.client_name,
+            propertyTitle: property?.title
+          }
+        });
+      }
+      
       loadAppointments(); // Recargar la lista
     } catch (error) {
       console.error('Error eliminando cita:', error);
@@ -196,6 +221,35 @@ function AdminAppointments() {
         pending: 'actualizada'
       };
       alert(`Cita ${statusMessages[status] || 'actualizada'} exitosamente`);
+      
+      // Generar notificación del sistema
+      const appointment = appointments.find(a => a.id === appointmentId);
+      if (appointment) {
+        const property = properties.find(p => p.id === appointment.property_id);
+        const statusLabels = {
+          confirmed: 'Confirmada',
+          completed: 'Completada',
+          pending: 'Pendiente',
+          cancelled: 'Cancelada',
+          no_show: 'No asistió',
+          rescheduled: 'Reprogramada'
+        };
+        
+        addNotification({
+          type: 'appointment_status_change',
+          priority: 'medium',
+          title: `Cita ${statusLabels[status] || 'Actualizada'}`,
+          message: `La cita de ${appointment.client_name} para la propiedad "${property?.title || 'Propiedad'}" ha sido ${statusLabels[status]?.toLowerCase() || 'actualizada'}.`,
+          action: '/admin/appointments',
+          data: { 
+            type: 'appointment_status_change',
+            appointmentId,
+            oldStatus: appointment.status,
+            newStatus: status
+          }
+        });
+      }
+      
       loadAppointments(); // Recargar la lista
     } catch (error) {
       console.error('Error cambiando estado de cita:', error);
@@ -233,6 +287,32 @@ function AdminAppointments() {
       };
 
       alert(`Cita ${statusMessages[pendingStatusChange.status as keyof typeof statusMessages] || 'actualizada'} exitosamente`);
+      
+      // Generar notificación del sistema
+      const appointment = appointments.find(a => a.id === pendingStatusChange.appointmentId);
+      if (appointment) {
+        const property = properties.find(p => p.id === appointment.property_id);
+        const statusLabels = {
+          cancelled: 'Cancelada',
+          no_show: 'Marcada como no asistió',
+          rescheduled: 'Reprogramada'
+        };
+        
+        addNotification({
+          type: 'appointment_status_change',
+          priority: pendingStatusChange.status === 'cancelled' ? 'high' : 'medium',
+          title: `Cita ${statusLabels[pendingStatusChange.status as keyof typeof statusLabels] || 'Actualizada'}`,
+          message: `La cita de ${appointment.client_name} para la propiedad "${property?.title || 'Propiedad'}" ha sido ${statusLabels[pendingStatusChange.status as keyof typeof statusLabels]?.toLowerCase() || 'actualizada'}.`,
+          action: '/admin/appointments',
+          data: { 
+            type: 'appointment_status_change',
+            appointmentId: pendingStatusChange.appointmentId,
+            oldStatus: appointment.status,
+            newStatus: pendingStatusChange.status
+          }
+        });
+      }
+      
       loadAppointments(); // Recargar la lista
 
       // Limpiar estado

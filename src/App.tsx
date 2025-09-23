@@ -23,6 +23,7 @@ import AdminSettings from './pages/AdminSettings';
 import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AdminBadgeProvider } from './contexts/AdminBadgeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import './utils/debug';
 
 // Componente para manejar el layout según la ruta
@@ -163,11 +164,13 @@ function App() {
 
   try {
     return (
-      <AdminBadgeProvider>
-        <Router>
-          <AppLayout />
-        </Router>
-      </AdminBadgeProvider>
+      <NotificationProvider>
+        <AdminBadgeProvider>
+          <Router>
+            <AppLayout />
+          </Router>
+        </AdminBadgeProvider>
+      </NotificationProvider>
     );
   } catch (error) {
     console.error('❌ Error crítico en App:', error);

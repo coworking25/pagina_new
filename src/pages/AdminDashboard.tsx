@@ -9,7 +9,6 @@ import {
   MessageSquare, 
   BarChart3, 
   Settings,
-  Bell,
   TrendingUp,
   TrendingDown,
   Eye,
@@ -22,12 +21,19 @@ import {
   AlertCircle,
   Star,
   ArrowUpRight,
-  Activity
+  Activity,
+  DollarSign,
+  ExternalLink,
+  Check,
+  X
 } from 'lucide-react';
+import { useNotificationContext } from '../contexts/NotificationContext';
 import { 
   getDashboardStats, 
   getAllPropertyAppointments,
-  getServiceInquiries
+  getServiceInquiries,
+  getRevenueTrends,
+  getSmartAlerts
 } from '../lib/supabase';
 import FloatingCard from '../components/UI/FloatingCard';
 
@@ -60,6 +66,17 @@ interface DashboardStats {
     unique: number;
     thisMonth: number;
   };
+  financial: {
+    monthlyRevenue: number;
+    annualRevenue: number;
+    commissionsThisMonth: number;
+    commissionsThisYear: number;
+    pendingPayments: number;
+    overduePayments: number;
+    averagePropertyROI: number;
+    salesPipeline: number;
+    leadConversionRate: number;
+  };
 }
 
 interface RecentActivity {
@@ -71,11 +88,40 @@ interface RecentActivity {
   status: 'pending' | 'completed' | 'cancelled';
 }
 
+interface RevenueTrend {
+  month: string;
+  revenue: number;
+  commissions: number;
+}
+
+interface SmartAlert {
+  id: string;
+  type: 'overdue_payment' | 'expiring_contract' | 'unfollowed_lead' | 'maintenance_due' | 'upcoming_payment' | 'contract_renewal' | 'inactive_property' | 'property_no_views' | 'lead_no_contact';
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  actionRequired: string;
+  data: any;
+}
+
+interface SmartAlertsData {
+  critical: SmartAlert[];
+  warnings: SmartAlert[];
+  totalCount: number;
+}
+
 function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [revenueTrends, setRevenueTrends] = useState<RevenueTrend[]>([]);
+  const [smartAlerts, setSmartAlerts] = useState<SmartAlertsData | null>(null);
   const navigate = useNavigate();
+
+  // Usar el contexto de notificaciones
+  const {
+    updateNotifications
+  } = useNotificationContext();
 
   useEffect(() => {
     loadDashboardData();
@@ -85,13 +131,49 @@ function AdminDashboard() {
     try {
       console.log('📊 Cargando datos del dashboard...');
       
-      // Cargar estadísticas reales desde Supabase
-      const dashboardStats = await getDashboardStats();
-      const recentAppointments = await getAllPropertyAppointments();
+      // Cargar datos en paralelo
+      const [dashboardStats, recentAppointments, trends, alerts] = await Promise.all([
+        getDashboardStats(),
+        getAllPropertyAppointments(),
+        getRevenueTrends(),
+        getSmartAlerts()
+      ]);
       
       console.log('📈 Estadísticas obtenidas:', dashboardStats);
+      console.log('📊 Tendencias de ingresos:', trends);
+      console.log('🚨 Alertas inteligentes:', alerts);
       
       setStats(dashboardStats);
+      setRevenueTrends(trends);
+      setSmartAlerts(alerts);
+      
+      // Convertir alertas en notificaciones para el sistema de notificaciones
+      const alertNotifications = [
+        ...alerts.critical.map(alert => ({
+          id: alert.id,
+          type: 'alert',
+          priority: 'high' as const,
+          title: alert.title,
+          message: alert.description,
+          action: alert.actionRequired,
+          timestamp: new Date(),
+          read: false,
+          data: alert
+        })),
+        ...alerts.warnings.map(alert => ({
+          id: alert.id,
+          type: 'alert',
+          priority: 'low' as const,
+          title: alert.title,
+          message: alert.description,
+          action: alert.actionRequired,
+          timestamp: new Date(),
+          read: false,
+          data: alert
+        }))
+      ];
+      
+      updateNotifications(alertNotifications);
       
       // Convertir citas recientes en actividad reciente
       const recentActivities: RecentActivity[] = recentAppointments
@@ -117,12 +199,90 @@ function AdminDashboard() {
         appointments: { total: 0, pending: 0, confirmed: 0, completed: 0 },
         inquiries: { total: 0, pending: 0, thisMonth: 0, byService: {} },
         advisors: { total: 0, active: 0 },
-        clients: { unique: 0, thisMonth: 0 }
+        clients: { unique: 0, thisMonth: 0 },
+        financial: {
+          monthlyRevenue: 0,
+          annualRevenue: 0,
+          commissionsThisMonth: 0,
+          commissionsThisYear: 0,
+          pendingPayments: 0,
+          overduePayments: 0,
+          averagePropertyROI: 0,
+          salesPipeline: 0,
+          leadConversionRate: 0
+        }
       });
       setRecentActivity([]);
       setLoading(false);
     }
   };
+
+  const handleAlertAction = (alert: SmartAlert) => {
+    switch (alert.type) {
+      case 'overdue_payment':
+      case 'upcoming_payment':
+        // Ir a la página de clientes/contratos con filtro
+        navigate('/admin/clients', { 
+          state: { 
+            tab: 'contracts',
+            filter: 'payments',
+            highlightId: alert.data?.id 
+          }
+        });
+        break;
+      
+      case 'expiring_contract':
+      case 'contract_renewal':
+        // Ir a contratos con filtro de próximos a vencer
+        navigate('/admin/clients', { 
+          state: { 
+            tab: 'contracts',
+            filter: 'expiring',
+            highlightId: alert.data?.id 
+          }
+        });
+        break;
+      
+      case 'inactive_property':
+        // Ir a propiedades con filtro de inactivas
+        navigate('/admin/properties', { 
+          state: { 
+            filter: 'inactive',
+            highlightId: alert.data?.id 
+          }
+        });
+        break;
+      
+      case 'unfollowed_lead':
+      case 'lead_no_contact':
+        // Ir a consultas de servicio con filtro de pendientes
+        navigate('/admin/service-inquiries', { 
+          state: { 
+            filter: 'pending',
+            highlightId: alert.data?.id 
+          }
+        });
+        break;
+      
+      default:
+        console.log('Tipo de alerta no reconocido:', alert.type);
+    }
+  };
+
+  const dismissAlert = async (alertId: string) => {
+    // Aquí podríamos implementar lógica para marcar alertas como leídas/descartadas
+    // Por ahora solo removemos del estado local
+    if (smartAlerts) {
+      const updatedAlerts = {
+        critical: smartAlerts.critical.filter(alert => alert.id !== alertId),
+        warnings: smartAlerts.warnings.filter(alert => alert.id !== alertId),
+        totalCount: smartAlerts.totalCount - 1
+      };
+      setSmartAlerts(updatedAlerts);
+    }
+  };
+
+
 
   const StatCard = ({ icon: Icon, title, value, subtitle, trend, color }: {
     icon: any;
@@ -228,53 +388,296 @@ function AdminDashboard() {
               whileTap={{ scale: 0.95 }}
               className="p-3 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
             >
-              <Bell className="w-6 h-6" />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="p-3 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
-            >
               <Settings className="w-6 h-6" />
             </motion.button>
           </div>
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          icon={Users}
-          title="Total de Clientes"
-          value={stats?.clients.unique || 0}
-          subtitle="Clientes únicos"
-          trend={15.3}
-          color="bg-blue-500"
-        />
-        <StatCard
-          icon={Calendar}
-          title="Citas Agendadas"
-          value={stats?.appointments.total || 0}
-          subtitle={`${stats?.appointments.pending || 0} pendientes`}
-          trend={8.2}
-          color="bg-green-500"
-        />
-        <StatCard
-          icon={Home}
-          title="Propiedades"
-          value={stats?.properties.total || 0}
-          subtitle="En catálogo"
-          trend={12.5}
-          color="bg-purple-500"
-        />
-        <StatCard
-          icon={MessageSquare}
-          title="Consultas Activas"
-          value={stats?.inquiries.pending || 0}
-          subtitle="Requieren atención"
-          color="bg-orange-500"
-        />
-      </div>
+      {/* Financial Stats Grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 text-white"
+      >
+        <div className="flex items-center mb-4">
+          <TrendingUp className="w-6 h-6 mr-3" />
+          <h2 className="text-xl font-bold">Métricas Financieras</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white/10 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Ingresos Mensuales</p>
+                <p className="text-2xl font-bold">${(stats?.financial.monthlyRevenue || 0).toLocaleString()}</p>
+              </div>
+              <DollarSign className="w-8 h-8 text-green-200" />
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Comisiones del Mes</p>
+                <p className="text-2xl font-bold">${(stats?.financial.commissionsThisMonth || 0).toLocaleString()}</p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-green-200" />
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Pipeline de Ventas</p>
+                <p className="text-2xl font-bold">${(stats?.financial.salesPipeline || 0).toLocaleString()}</p>
+              </div>
+              <BarChart3 className="w-8 h-8 text-green-200" />
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Pagos Pendientes</p>
+                <p className="text-2xl font-bold text-yellow-300">${(stats?.financial.pendingPayments || 0).toLocaleString()}</p>
+              </div>
+              <Clock className="w-8 h-8 text-yellow-200" />
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Pagos Vencidos</p>
+                <p className="text-2xl font-bold text-red-300">${(stats?.financial.overduePayments || 0).toLocaleString()}</p>
+              </div>
+              <AlertCircle className="w-8 h-8 text-red-200" />
+            </div>
+          </div>
+          <div className="bg-white/10 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm">Conversión de Leads</p>
+                <p className="text-2xl font-bold">{(stats?.financial.leadConversionRate || 0).toFixed(1)}%</p>
+              </div>
+              <Activity className="w-8 h-8 text-green-200" />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Revenue Trends Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg"
+      >
+        <div className="flex items-center mb-4">
+          <BarChart3 className="w-6 h-6 mr-3 text-blue-600" />
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tendencias de Ingresos (12 meses)</h2>
+        </div>
+        <div className="h-64">
+          <div className="flex items-end justify-between h-full space-x-2">
+            {revenueTrends.map((trend, index) => {
+              const maxRevenue = Math.max(...revenueTrends.map(t => t.revenue));
+              const revenueHeight = maxRevenue > 0 ? (trend.revenue / maxRevenue) * 100 : 0;
+              const maxCommission = Math.max(...revenueTrends.map(t => t.commissions));
+              const commissionHeight = maxCommission > 0 ? (trend.commissions / maxCommission) * 100 : 0;
+
+              return (
+                <div key={index} className="flex-1 flex flex-col items-center">
+                  <div className="relative w-full flex items-end justify-center space-x-1 mb-2">
+                    {/* Barra de ingresos */}
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${revenueHeight}%` }}
+                      transition={{ delay: index * 0.1, duration: 0.5 }}
+                      className="w-3 bg-blue-500 rounded-t"
+                      title={`Ingresos: $${trend.revenue.toLocaleString()}`}
+                    />
+                    {/* Barra de comisiones */}
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${commissionHeight}%` }}
+                      transition={{ delay: index * 0.1 + 0.2, duration: 0.5 }}
+                      className="w-3 bg-green-500 rounded-t"
+                      title={`Comisiones: $${trend.commissions.toLocaleString()}`}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400 transform -rotate-45 origin-top">
+                    {trend.month}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex justify-center space-x-6 mt-4">
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Ingresos</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Comisiones</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Smart Alerts Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <AlertCircle className="w-6 h-6 mr-3 text-orange-600" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Alertas Inteligentes</h2>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Críticas ({smartAlerts ? smartAlerts.critical.length : 0})</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Advertencias ({smartAlerts ? smartAlerts.warnings.length : 0})</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Critical Alerts */}
+        {smartAlerts && smartAlerts.critical.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-3 flex items-center">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              Alertas Críticas
+            </h3>
+            <div className="space-y-3">
+              {smartAlerts.critical.slice(0, 3).map((alert) => (
+                <motion.div
+                  key={alert.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-start p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer group"
+                  onClick={() => handleAlertAction(alert)}
+                >
+                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-red-800 dark:text-red-200">{alert.title}</h4>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">{alert.description}</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-2 font-medium">{alert.actionRequired}</p>
+                  </div>
+                  <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">
+                      Alta Prioridad
+                    </span>
+                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAlertAction(alert);
+                        }}
+                        className="p-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                        title="Ir a revisar"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dismissAlert(alert.id);
+                        }}
+                        className="p-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                        title="Descartar alerta"
+                      >
+                        <X className="w-3 h-3" />
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Warning Alerts */}
+        {smartAlerts && smartAlerts.warnings.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-yellow-600 dark:text-yellow-400 mb-3 flex items-center">
+              <Clock className="w-5 h-5 mr-2" />
+              Advertencias
+            </h3>
+            <div className="space-y-3">
+              {smartAlerts.warnings.slice(0, 3).map((alert) => (
+                <motion.div
+                  key={alert.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="flex items-start p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors cursor-pointer group"
+                  onClick={() => handleAlertAction(alert)}
+                >
+                  <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">{alert.title}</h4>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">{alert.description}</p>
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2 font-medium">{alert.actionRequired}</p>
+                  </div>
+                  <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      alert.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200' :
+                      alert.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200' :
+                      'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200'
+                    }`}>
+                      {alert.priority === 'high' ? 'Alta' : alert.priority === 'medium' ? 'Media' : 'Baja'} Prioridad
+                    </span>
+                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAlertAction(alert);
+                        }}
+                        className="p-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
+                        title="Ir a revisar"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dismissAlert(alert.id);
+                        }}
+                        className="p-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                        title="Descartar alerta"
+                      >
+                        <X className="w-3 h-3" />
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No alerts message */}
+        {smartAlerts && !smartAlerts.critical.length && !smartAlerts.warnings.length && (
+          <div className="text-center py-8">
+            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">¡Todo en orden!</h3>
+            <p className="text-gray-600 dark:text-gray-400">No hay alertas activas en este momento.</p>
+          </div>
+        )}
+      </motion.div>
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

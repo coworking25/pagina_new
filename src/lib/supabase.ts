@@ -1112,8 +1112,458 @@ export async function getServiceInquiriesStats(): Promise<{
 }
 
 /**
- * Obtener estadísticas completas del dashboard
+ * Obtener tendencias de ingresos de los últimos 12 meses
  */
+export async function getRevenueTrends(): Promise<{
+  month: string;
+  revenue: number;
+  commissions: number;
+}[]> {
+  try {
+    const trends = [];
+    const currentDate = new Date();
+
+    for (let i = 11; i >= 0; i--) {
+      const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+      const monthEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 1);
+
+      // Ingresos de arriendo del mes
+      const { data: monthlyPayments } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('status', 'paid')
+        .eq('payment_type', 'rent')
+        .gte('payment_date', monthStart.toISOString())
+        .lt('payment_date', monthEnd.toISOString());
+
+      const revenue = monthlyPayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+      // Comisiones del mes
+      const { data: monthlySales } = await supabase
+        .from('contracts')
+        .select('sale_price')
+        .eq('contract_type', 'sale')
+        .eq('status', 'active')
+        .gte('signature_date', monthStart.toISOString())
+        .lt('signature_date', monthEnd.toISOString());
+
+      const commissionRate = 0.03;
+      const commissions = monthlySales?.reduce((sum, contract) =>
+        sum + ((contract.sale_price || 0) * commissionRate), 0) || 0;
+
+      trends.push({
+        month: targetDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }),
+        revenue,
+        commissions
+      });
+    }
+
+    return trends;
+
+  } catch (error) {
+    console.error('❌ Error obteniendo tendencias de ingresos:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtener alertas inteligentes del sistema
+ */
+export async function getSmartAlerts(): Promise<{
+  critical: Array<{
+    id: string;
+    type: 'overdue_payment' | 'expiring_contract' | 'unfollowed_lead' | 'maintenance_due';
+    title: string;
+    description: string;
+    priority: 'high' | 'medium' | 'low';
+    actionRequired: string;
+    data: any;
+  }>;
+  warnings: Array<{
+    id: string;
+    type: 'upcoming_payment' | 'contract_renewal' | 'inactive_property' | 'property_no_views' | 'lead_no_contact';
+    title: string;
+    description: string;
+    priority: 'medium' | 'low';
+    actionRequired: string;
+    data: any;
+  }>;
+  totalCount: number;
+}> {
+  try {
+    const currentDate = new Date();
+    const sevenDaysFromNow = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const fifteenDaysFromNow = new Date(currentDate.getTime() + 15 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const twoDaysAgo = new Date(currentDate.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+    const critical: Array<{
+      id: string;
+      type: 'overdue_payment' | 'expiring_contract' | 'unfollowed_lead' | 'maintenance_due';
+      title: string;
+      description: string;
+      priority: 'high' | 'medium' | 'low';
+      actionRequired: string;
+      data: any;
+    }> = [];
+
+    const warnings: Array<{
+      id: string;
+      type: 'upcoming_payment' | 'contract_renewal' | 'inactive_property' | 'property_no_views' | 'lead_no_contact';
+      title: string;
+      description: string;
+      priority: 'medium' | 'low';
+      actionRequired: string;
+      data: any;
+    }> = [];
+
+    // 1. Pagos vencidos (CRÍTICO)
+    const { data: overduePayments } = await supabase
+      .from('payments')
+      .select(`
+        id,
+        amount,
+        due_date,
+        contracts!inner (
+          clients!inner (
+            full_name
+          ),
+          properties!inner (
+            title,
+            code
+          )
+        )
+      `)
+      .eq('status', 'pending')
+      .lt('due_date', currentDate.toISOString());
+
+    overduePayments?.forEach((payment: any) => {
+      const clientName = payment.contracts?.clients?.full_name || 'Cliente desconocido';
+      const propertyName = payment.contracts?.properties?.title || payment.contracts?.properties?.code || 'Propiedad sin nombre';
+      critical.push({
+        id: `overdue_payment_${payment.id}`,
+        type: 'overdue_payment',
+        title: 'Pago Vencido',
+        description: `${clientName} - ${propertyName} - $${payment.amount?.toLocaleString()}`,
+        priority: 'high',
+        actionRequired: 'Contactar al cliente inmediatamente',
+        data: payment
+      });
+    });
+
+    // 2. Contratos próximos a vencer (CRÍTICO - 7 días)
+    const { data: expiringContracts } = await supabase
+      .from('contracts')
+      .select(`
+        id,
+        end_date,
+        clients!inner (
+          full_name
+        ),
+        properties!inner (
+          title,
+          code
+        )
+      `)
+      .eq('status', 'active')
+      .gte('end_date', currentDate.toISOString())
+      .lte('end_date', sevenDaysFromNow.toISOString());
+
+    expiringContracts?.forEach((contract: any) => {
+      const daysUntilExpiry = Math.ceil((new Date(contract.end_date).getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      const clientName = contract.clients?.full_name || 'Cliente desconocido';
+      const propertyName = contract.properties?.title || contract.properties?.code || 'Propiedad sin nombre';
+      critical.push({
+        id: `expiring_contract_${contract.id}`,
+        type: 'expiring_contract',
+        title: 'Contrato Vence Pronto',
+        description: `${clientName} - ${propertyName} vence en ${daysUntilExpiry} días`,
+        priority: 'high',
+        actionRequired: 'Renovar o notificar al cliente',
+        data: contract
+      });
+    });
+
+    // 3. Propiedades sin visitas en 30 días (WARNING)
+    const { data: inactiveProperties } = await supabase
+      .from('properties')
+      .select('id, title, code, created_at')
+      .eq('status', 'available')
+      .lt('created_at', thirtyDaysAgo.toISOString())
+      .limit(10); // Limitar para no sobrecargar
+
+    inactiveProperties?.forEach((property: any) => {
+      warnings.push({
+        id: `inactive_property_${property.id}`,
+        type: 'inactive_property',
+        title: 'Propiedad Sin Actividad',
+        description: `${property.title || property.code} no ha tenido visitas en más de 30 días`,
+        priority: 'medium',
+        actionRequired: 'Revisar precio o promoción',
+        data: property
+      });
+    });
+
+    // 4. Leads sin seguimiento en 48 horas (CRÍTICO)
+    const { data: unfollowedLeads } = await supabase
+      .from('service_inquiries')
+      .select('id, client_name, service_type, created_at')
+      .eq('status', 'pending')
+      .lt('created_at', twoDaysAgo.toISOString());
+
+    unfollowedLeads?.forEach((lead: any) => {
+      critical.push({
+        id: `unfollowed_lead_${lead.id}`,
+        type: 'unfollowed_lead',
+        title: 'Lead Sin Seguimiento',
+        description: `${lead.client_name} - ${lead.service_type} - Sin contacto desde hace 48+ horas`,
+        priority: 'high',
+        actionRequired: 'Contactar inmediatamente',
+        data: lead
+      });
+    });
+
+    // 5. Pagos próximos a vencer (WARNING - 7 días)
+    const { data: upcomingPayments } = await supabase
+      .from('payments')
+      .select(`
+        id,
+        amount,
+        due_date,
+        contracts!inner (
+          clients!inner (
+            full_name
+          ),
+          properties!inner (
+            title,
+            code
+          )
+        )
+      `)
+      .eq('status', 'pending')
+      .gte('due_date', currentDate.toISOString())
+      .lte('due_date', sevenDaysFromNow.toISOString());
+
+    upcomingPayments?.forEach((payment: any) => {
+      const daysUntilDue = Math.ceil((new Date(payment.due_date).getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      const clientName = payment.contracts?.clients?.full_name || 'Cliente desconocido';
+      const propertyName = payment.contracts?.properties?.title || payment.contracts?.properties?.code || 'Propiedad sin nombre';
+      warnings.push({
+        id: `upcoming_payment_${payment.id}`,
+        type: 'upcoming_payment',
+        title: 'Pago Próximo',
+        description: `${clientName} - ${propertyName} vence en ${daysUntilDue} días`,
+        priority: 'medium',
+        actionRequired: 'Recordar al cliente',
+        data: payment
+      });
+    });
+
+    // 6. Contratos para renovación (WARNING - 15 días)
+    const { data: renewalContracts } = await supabase
+      .from('contracts')
+      .select(`
+        id,
+        end_date,
+        clients!inner (
+          full_name
+        ),
+        properties!inner (
+          title,
+          code
+        )
+      `)
+      .eq('status', 'active')
+      .gte('end_date', sevenDaysFromNow.toISOString())
+      .lte('end_date', fifteenDaysFromNow.toISOString());
+
+    renewalContracts?.forEach((contract: any) => {
+      const daysUntilExpiry = Math.ceil((new Date(contract.end_date).getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      const clientName = contract.clients?.full_name || 'Cliente desconocido';
+      const propertyName = contract.properties?.title || contract.properties?.code || 'Propiedad sin nombre';
+      warnings.push({
+        id: `contract_renewal_${contract.id}`,
+        type: 'contract_renewal',
+        title: 'Renovación Próxima',
+        description: `${clientName} - ${propertyName} requiere renovación en ${daysUntilExpiry} días`,
+        priority: 'low',
+        actionRequired: 'Preparar renovación',
+        data: contract
+      });
+    });
+
+    return {
+      critical,
+      warnings,
+      totalCount: critical.length + warnings.length
+    };
+
+  } catch (error) {
+    console.error('❌ Error obteniendo alertas inteligentes:', error);
+    return {
+      critical: [],
+      warnings: [],
+      totalCount: 0
+    };
+  }
+}
+export async function getFinancialStats(): Promise<{
+  monthlyRevenue: number;
+  annualRevenue: number;
+  commissionsThisMonth: number;
+  commissionsThisYear: number;
+  pendingPayments: number;
+  overduePayments: number;
+  averagePropertyROI: number;
+  salesPipeline: number;
+  leadConversionRate: number;
+}> {
+  try {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    // Calcular ingresos mensuales (pagos de arriendo recibidos este mes)
+    const { data: monthlyPayments } = await supabase
+      .from('payments')
+      .select('amount')
+      .eq('status', 'paid')
+      .eq('payment_type', 'rent')
+      .gte('payment_date', new Date(currentYear, currentMonth, 1).toISOString())
+      .lt('payment_date', new Date(currentYear, currentMonth + 1, 1).toISOString());
+
+    const monthlyRevenue = monthlyPayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+    // Calcular ingresos anuales
+    const { data: annualPayments } = await supabase
+      .from('payments')
+      .select('amount')
+      .eq('status', 'paid')
+      .eq('payment_type', 'rent')
+      .gte('payment_date', new Date(currentYear, 0, 1).toISOString())
+      .lt('payment_date', new Date(currentYear + 1, 0, 1).toISOString());
+
+    const annualRevenue = annualPayments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+    // Calcular comisiones de ventas este mes
+    const { data: monthlySales } = await supabase
+      .from('contracts')
+      .select('sale_price')
+      .eq('contract_type', 'sale')
+      .eq('status', 'active')
+      .gte('signature_date', new Date(currentYear, currentMonth, 1).toISOString())
+      .lt('signature_date', new Date(currentYear, currentMonth + 1, 1).toISOString());
+
+    // Asumiendo comisión del 3% para ventas
+    const commissionRate = 0.03;
+    const commissionsThisMonth = monthlySales?.reduce((sum, contract) =>
+      sum + ((contract.sale_price || 0) * commissionRate), 0) || 0;
+
+    // Comisiones del año
+    const { data: annualSales } = await supabase
+      .from('contracts')
+      .select('sale_price')
+      .eq('contract_type', 'sale')
+      .eq('status', 'active')
+      .gte('signature_date', new Date(currentYear, 0, 1).toISOString())
+      .lt('signature_date', new Date(currentYear + 1, 0, 1).toISOString());
+
+    const commissionsThisYear = annualSales?.reduce((sum, contract) =>
+      sum + ((contract.sale_price || 0) * commissionRate), 0) || 0;
+
+    // Pagos pendientes
+    const { data: pendingPaymentsData } = await supabase
+      .from('payments')
+      .select('amount')
+      .eq('status', 'pending')
+      .lt('due_date', currentDate.toISOString());
+
+    const pendingPayments = pendingPaymentsData?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+    // Pagos vencidos
+    const { data: overduePaymentsData } = await supabase
+      .from('payments')
+      .select('amount')
+      .eq('status', 'overdue');
+
+    const overduePayments = overduePaymentsData?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+    // Calcular ROI promedio de propiedades (ingreso mensual / precio de venta * 100)
+    const { data: properties } = await supabase
+      .from('properties')
+      .select('price')
+      .eq('status', 'rented');
+
+    const { data: rentalContracts } = await supabase
+      .from('contracts')
+      .select('monthly_rent')
+      .eq('contract_type', 'rental')
+      .eq('status', 'active');
+
+    const averageMonthlyRent = rentalContracts?.reduce((sum, contract) =>
+      sum + (contract.monthly_rent || 0), 0) || 0;
+    const averagePropertyPrice = properties?.reduce((sum, property) =>
+      sum + (property.price || 0), 0) || 0;
+
+    const averagePropertyROI = properties && properties.length > 0 && rentalContracts && rentalContracts.length > 0
+      ? ((averageMonthlyRent / rentalContracts.length) / (averagePropertyPrice / properties.length)) * 100 * 12
+      : 0;
+
+    // Pipeline de ventas (valor de propiedades en negociación)
+    const { data: pipelineProperties } = await supabase
+      .from('properties')
+      .select('price')
+      .eq('status', 'reserved');
+
+    const salesPipeline = pipelineProperties?.reduce((sum, property) =>
+      sum + (property.price || 0), 0) || 0;
+
+    // Tasa de conversión de leads (consultas que resultaron en contratos)
+    const { data: totalInquiries } = await supabase
+      .from('service_inquiries')
+      .select('id')
+      .gte('created_at', new Date(currentYear, 0, 1).toISOString());
+
+    const { data: convertedInquiries } = await supabase
+      .from('service_inquiries')
+      .select('id')
+      .eq('status', 'completed')
+      .gte('created_at', new Date(currentYear, 0, 1).toISOString());
+
+    const leadConversionRate = totalInquiries && totalInquiries.length > 0
+      ? (convertedInquiries?.length || 0) / totalInquiries.length * 100
+      : 0;
+
+    return {
+      monthlyRevenue,
+      annualRevenue,
+      commissionsThisMonth,
+      commissionsThisYear,
+      pendingPayments,
+      overduePayments,
+      averagePropertyROI,
+      salesPipeline,
+      leadConversionRate
+    };
+
+  } catch (error) {
+    console.error('❌ Error obteniendo estadísticas financieras:', error);
+
+    // Retornar valores por defecto en caso de error
+    return {
+      monthlyRevenue: 0,
+      annualRevenue: 0,
+      commissionsThisMonth: 0,
+      commissionsThisYear: 0,
+      pendingPayments: 0,
+      overduePayments: 0,
+      averagePropertyROI: 0,
+      salesPipeline: 0,
+      leadConversionRate: 0
+    };
+  }
+}
 export async function getDashboardStats(): Promise<{
   properties: {
     total: number;
@@ -1143,30 +1593,43 @@ export async function getDashboardStats(): Promise<{
     unique: number;
     thisMonth: number;
   };
+  financial: {
+    monthlyRevenue: number;
+    annualRevenue: number;
+    commissionsThisMonth: number;
+    commissionsThisYear: number;
+    pendingPayments: number;
+    overduePayments: number;
+    averagePropertyROI: number;
+    salesPipeline: number;
+    leadConversionRate: number;
+  };
 }> {
   try {
-    
+
     // Obtener datos en paralelo
     const [
       properties,
       advisors,
       appointments,
-      inquiriesStats
+      inquiriesStats,
+      financialStats
     ] = await Promise.all([
       getProperties(),
       getAdvisors(),
       getAllPropertyAppointments(),
-      getServiceInquiriesStats()
+      getServiceInquiriesStats(),
+      getFinancialStats()
     ]);
 
     // Procesar estadísticas de propiedades
     const propertiesStats = {
       total: properties.length,
-      forSale: properties.filter(p => p.status === 'sale').length,
-      forRent: properties.filter(p => p.status === 'rent').length,
-      sold: properties.filter(p => p.status === 'sold').length,
-      rented: properties.filter(p => p.status === 'rented').length,
-      featured: properties.filter(p => p.featured).length
+      forSale: properties.filter((p: Property) => p.status === 'sale').length,
+      forRent: properties.filter((p: Property) => p.status === 'rent').length,
+      sold: properties.filter((p: Property) => p.status === 'sold').length,
+      rented: properties.filter((p: Property) => p.status === 'rented').length,
+      featured: properties.filter((p: Property) => p.featured).length
     };
 
     // Procesar estadísticas de citas
@@ -1192,7 +1655,7 @@ export async function getDashboardStats(): Promise<{
     appointments.forEach((apt: any) => {
       if (apt.client_email) {
         uniqueClients.add(apt.client_email);
-        
+
         const aptDate = new Date(apt.created_at);
         if (aptDate.getMonth() === currentMonth && aptDate.getFullYear() === currentYear) {
           clientsThisMonth++;
@@ -1215,11 +1678,12 @@ export async function getDashboardStats(): Promise<{
         byService: inquiriesStats.by_service
       },
       advisors: advisorsStats,
-      clients: clientsStats
+      clients: clientsStats,
+      financial: financialStats
     };
 
     return dashboardStats;
-    
+
   } catch (error) {
     console.error('❌ Error en getDashboardStats:', error);
     throw error;

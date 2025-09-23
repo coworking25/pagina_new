@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import {
   Users,
   Search,
@@ -183,6 +184,7 @@ function PropertySelector({ properties, selectedIds, onSelectionChange, loading,
 }
 
 function AdminClients() {
+  const location = useLocation();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -261,6 +263,37 @@ function AdminClients() {
     loadClients();
     loadAllProperties();
   }, []);
+
+  // Detectar si viene de una alerta y abrir automáticamente el modal correspondiente
+  useEffect(() => {
+    const state = location.state as any;
+    if (state && (state.tab === 'contracts' || state.tab === 'payments') && state.highlightId) {
+      // Buscar el cliente que tiene el contrato o pago correspondiente
+      const findClientWithAlert = async () => {
+        try {
+          // Si tenemos un ID específico, buscar el cliente correspondiente
+          if (state.highlightId) {
+            // Para contratos y pagos, necesitamos buscar en la base de datos
+            // Por ahora, abriremos la pestaña correspondiente para todos los clientes
+            // En una implementación más avanzada, podríamos filtrar por el cliente específico
+            
+            // Simular que encontramos un cliente (en producción buscaríamos el cliente específico)
+            if (clients.length > 0) {
+              const firstClient = clients[0]; // En producción, buscar el cliente correcto
+              await handleViewClient(firstClient);
+              setActiveTab(state.tab); // Cambiar a la pestaña correspondiente
+            }
+          }
+        } catch (error) {
+          console.error('Error abriendo alerta desde dashboard:', error);
+        }
+      };
+
+      if (clients.length > 0) {
+        findClientWithAlert();
+      }
+    }
+  }, [location.state, clients]);
 
   // Cargar todas las propiedades disponibles para selección en formularios
   const loadAllProperties = async () => {

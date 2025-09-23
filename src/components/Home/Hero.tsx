@@ -68,20 +68,30 @@ const Hero: React.FC = () => {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Dynamic Background with Multiple Images */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-        {/* Rotating Background Images - More transparent for subtle background */}
-        {backgroundImages.map((image, index) => (
-          <motion.div
-            key={image}
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${image})`,
-              opacity: index === currentBackground ? 0.12 : 0
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: index === currentBackground ? 0.12 : 0 }}
-            transition={{ duration: 2, ease: "easeInOut" }}
-          />
-        ))}
+        {/* Rotating Background Images - Smooth transitions without gaps */}
+        {backgroundImages.map((image, index) => {
+          const isCurrent = index === currentBackground;
+          const isPrevious = index === ((currentBackground - 1 + backgroundImages.length) % backgroundImages.length);
+
+          return (
+            <motion.div
+              key={image}
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${image})`,
+              }}
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: isCurrent ? 0.12 : isPrevious ? 0.06 : 0
+              }}
+              transition={{
+                duration: 3,
+                ease: "easeInOut",
+                delay: isCurrent ? 0 : 0.5
+              }}
+            />
+          );
+        })}
         {/* Enhanced overlay for better logo contrast - More subtle */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-black/30"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-900/10 via-transparent to-purple-900/10"></div>

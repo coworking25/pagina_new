@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import {
   Home,
   Search,
@@ -88,6 +89,7 @@ import { CoverImageSelector } from '../components/CoverImageSelector';
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
   
+  const location = useLocation();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -253,6 +255,18 @@ function AdminProperties() {
       console.error('❌ Error en useEffect:', error);
     }
   }, []);
+
+  // Detectar si viene de una alerta y aplicar filtros automáticamente
+  useEffect(() => {
+    const state = location.state as any;
+    if (state && state.filter === 'inactive' && state.highlightId) {
+      // Aplicar filtro de propiedades inactivas
+      setStatusFilter('inactive');
+      
+      // Si tenemos un ID específico, podríamos resaltarlo (en futuras implementaciones)
+      console.log('🚨 Viniendo de alerta de propiedad inactiva:', state.highlightId);
+    }
+  }, [location.state]);
 
   const loadAdvisors = async () => {
     try {

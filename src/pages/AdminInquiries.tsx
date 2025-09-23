@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import {
   MessageSquare,
   Search,
@@ -25,6 +26,7 @@ import { supabase, updateServiceInquiry, deleteServiceInquiry } from '../lib/sup
 import type { ServiceInquiry } from '../types';
 
 function AdminInquiries() {
+  const location = useLocation();
   const [inquiries, setInquiries] = useState<ServiceInquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,6 +40,18 @@ function AdminInquiries() {
   useEffect(() => {
     fetchInquiries();
   }, []);
+
+  // Detectar si viene de una alerta y aplicar filtros automáticamente
+  useEffect(() => {
+    const state = location.state as any;
+    if (state && state.filter === 'pending' && state.highlightId) {
+      // Aplicar filtro de consultas pendientes
+      setStatusFilter('pending');
+      
+      // Si tenemos un ID específico, podríamos abrir el modal de detalles (en futuras implementaciones)
+      console.log('🚨 Viniendo de alerta de lead sin seguimiento:', state.highlightId);
+    }
+  }, [location.state]);
 
   const fetchInquiries = async () => {
     try {
