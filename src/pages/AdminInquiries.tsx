@@ -609,6 +609,8 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    setIsEditing(false);
+                    setEditForm({});
                     setSelectedInquiry(inquiry);
                   }}
                   className="flex items-center justify-center w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-colors"
@@ -702,7 +704,11 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
                   </>
                 )}
                 <button
-                  onClick={() => setSelectedInquiry(null)}
+                  onClick={() => {
+                    setSelectedInquiry(null);
+                    setIsEditing(false);
+                    setEditForm({});
+                  }}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   title="Cerrar"
                 >
@@ -921,47 +927,49 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
 
               {/* Acciones Rápidas - Respuesta del Cliente */}
               {!isEditing && (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    📝 Acciones Rápidas - Actualizar según respuesta del cliente:
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <button
-                      onClick={() => handleClientResponse(selectedInquiry, 'interested')}
-                      className="flex items-center justify-center space-x-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-colors"
-                      title="Cliente interesado - Mover a En Progreso"
-                    >
-                      <CheckCircle className="w-3 h-3" />
-                      <span>Interesado</span>
-                    </button>
-                    <button
-                      onClick={() => handleClientResponse(selectedInquiry, 'scheduled')}
-                      className="flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors"
-                      title="Reunión agendada - Mover a En Progreso"
-                    >
-                      <Clock className="w-3 h-3" />
-                      <span>Agendado</span>
-                    </button>
-                    <button
-                      onClick={() => handleClientResponse(selectedInquiry, 'needs_more_info')}
-                      className="flex items-center justify-center space-x-1 px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-xs rounded-lg transition-colors"
-                      title="Necesita más info - Mantener como Contactado"
-                    >
-                      <MessageSquare className="w-3 h-3" />
-                      <span>Más Info</span>
-                    </button>
-                    <button
-                      onClick={() => handleClientResponse(selectedInquiry, 'not_interested')}
-                      className="flex items-center justify-center space-x-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-colors"
-                      title="No interesado - Cancelar consulta"
-                    >
-                      <XCircle className="w-3 h-3" />
-                      <span>No Interesado</span>
-                    </button>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-6">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      📝 Acciones Rápidas - Actualizar según respuesta del cliente:
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <button
+                        onClick={() => handleClientResponse(selectedInquiry, 'interested')}
+                        className="flex flex-col items-center justify-center space-y-1 p-3 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-all duration-200 hover:scale-105"
+                        title="Cliente interesado - Mover a En Progreso"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                        <span className="font-medium">Interesado</span>
+                      </button>
+                      <button
+                        onClick={() => handleClientResponse(selectedInquiry, 'scheduled')}
+                        className="flex flex-col items-center justify-center space-y-1 p-3 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-all duration-200 hover:scale-105"
+                        title="Reunión agendada - Mover a En Progreso"
+                      >
+                        <Clock className="w-5 h-5" />
+                        <span className="font-medium">Agendado</span>
+                      </button>
+                      <button
+                        onClick={() => handleClientResponse(selectedInquiry, 'needs_more_info')}
+                        className="flex flex-col items-center justify-center space-y-1 p-3 bg-yellow-600 hover:bg-yellow-700 text-white text-xs rounded-lg transition-all duration-200 hover:scale-105"
+                        title="Necesita más info - Mantener como Contactado"
+                      >
+                        <MessageSquare className="w-5 h-5" />
+                        <span className="font-medium">Más Info</span>
+                      </button>
+                      <button
+                        onClick={() => handleClientResponse(selectedInquiry, 'not_interested')}
+                        className="flex flex-col items-center justify-center space-y-1 p-3 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-all duration-200 hover:scale-105"
+                        title="No interesado - Cancelar consulta"
+                      >
+                        <XCircle className="w-5 h-5" />
+                        <span className="font-medium">No Interesado</span>
+                      </button>
+                    </div>
+                    <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
+                      <strong>💡 Tip:</strong> Usa estos botones para actualizar rápidamente el estado según la respuesta del cliente. Cada acción registra automáticamente una nota con fecha y hora.
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    💡 Usa estos botones para actualizar rápidamente el estado según la respuesta del cliente
-                  </p>
                 </div>
               )}
             </div>
