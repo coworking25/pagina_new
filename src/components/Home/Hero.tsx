@@ -23,7 +23,14 @@ const Hero: React.FC = () => {
     '/img/casa.jpg',               // House/Residence
     '/img/1.mede.jpg',             // Medellín view 1
     '/img/2.mede.jpg',             // Medellín view 2
-    '/img/pentho.jpg'              // Penthouse/High-end property
+    '/img/pentho.jpg',
+    '/img/mede.1.jpg',
+    '/img/mede.2.jpg',
+    '/img/nuev.1.jpg',
+    '/img/nuev.2.jpg',
+    '/img/nuev.3.jpg',
+    '/img/nuev.4.jpg'
+            // Penthouse/High-end property
   ];
 
   useEffect(() => {
