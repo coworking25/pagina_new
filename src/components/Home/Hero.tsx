@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Search, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../UI/Button';
+// @ts-ignore
+import GradientText from '../../../@/components/GradientText';
 
 const Hero: React.FC = () => {
   const navigate = useNavigate();
@@ -155,11 +157,16 @@ const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-8"
+          className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-8"
         >
-          <span className="bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
+          <GradientText
+            colors={["#14532d", "#1145b8ff", "#15803d", "#166534", "#0b576eff"]}
+            animationSpeed={3}
+            showBorder={false}
+            className="custom-class"
+          >
             Coworking Inmobiliario
-          </span>
+          </GradientText>
         </motion.h2>
 
         {/* Animated Slogan */}

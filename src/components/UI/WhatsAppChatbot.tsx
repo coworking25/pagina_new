@@ -536,11 +536,11 @@ const WhatsAppChatbot: React.FC = () => {
       >
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
-          className="relative bg-gradient-to-r from-cyan-500 via-green-500 to-purple-500 hover:from-cyan-600 hover:via-green-600 hover:to-purple-600 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:shadow-cyan-500/25 glow-cyan group"
+          className="relative bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:shadow-green-500/50 glow-green hover:scale-105 group"
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity duration-300 animate-pulse-slow"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-500 rounded-full blur-md opacity-50 group-hover:opacity-75 transition-opacity duration-300 animate-pulse-slow"></div>
           <div className="relative z-10">
             {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
           </div>

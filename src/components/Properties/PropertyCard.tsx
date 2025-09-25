@@ -370,7 +370,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             size="sm"
             icon={Eye}
             onClick={() => onViewDetails(property)}
-            className="text-xs"
+            className="text-xs hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
           >
             Ver
           </Button>
@@ -379,7 +379,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             size="sm"
             icon={MessageCircle}
             onClick={() => onContact(property)}
-            className="text-xs"
+            className="text-xs hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
           >
             Contacto
           </Button>
@@ -388,7 +388,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             size="sm"
             icon={Calendar}
             onClick={() => onSchedule(property)}
-            className="text-xs bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 border-0 glow-cyan"
+            className="text-xs bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border-0 glow-green hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
           >
             Cita
           </Button>
