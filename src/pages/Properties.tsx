@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Grid, Map, LayoutGrid } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { Property } from '../types';
 import { getProperties, getAdvisorById, isAdmin } from '../lib/supabase';
 import { diagnosticImageUrls, testMultipleUrls } from '../lib/diagnostics';
@@ -15,7 +16,10 @@ import Button from '../components/UI/Button';
 
 interface FilterState {
   search: string;
+  zone: string;
+  neighborhood: string;
   type: string;
+  transactionType: string;
   status: string;
   minPrice: string;
   maxPrice: string;
@@ -25,6 +29,7 @@ interface FilterState {
 }
 
 const Properties: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,11 +41,14 @@ const Properties: React.FC = () => {
   const [selectedAdvisor, setSelectedAdvisor] = useState(advisors[0]);
 
   const [filters, setFilters] = useState<FilterState>({
-    search: '',
-    type: '',
+    search: searchParams.get('search') || '',
+    zone: searchParams.get('zone') || '',
+    neighborhood: searchParams.get('neighborhood') || '',
+    type: searchParams.get('type') || '',
+    transactionType: searchParams.get('transaction') || '',
     status: '',
-    minPrice: '',
-    maxPrice: '',
+    minPrice: searchParams.get('minPrice') || '',
+    maxPrice: searchParams.get('maxPrice') || '',
     bedrooms: '',
     bathrooms: '',
     featured: false,
@@ -58,10 +66,10 @@ const Properties: React.FC = () => {
     if (import.meta.env.DEV) {
       diagnosticImageUrls();
       
-      // Probar algunas URLs del nuevo bucket
+      // Probar algunas URLs del bucket correcto
       const testUrls = [
         'https://gfczfjpyyyyvteyrvhgt.supabase.co/storage/v1/object/public/property-images/CA-001/CA-001-(1).jpeg',
-        'https://gfczfjpyyyyvteyrvhgt.supabase.co/storage/v1/object/public/imagenes/imagenes/CA-001/CA-001-(1).jpeg'
+        'https://gfczfjpyyyyvteyrvhgt.supabase.co/storage/v1/object/public/property-images/CA-004/CA-004-(1).jpeg'
       ];
       testMultipleUrls(testUrls);
     }
@@ -207,23 +215,45 @@ const Properties: React.FC = () => {
 
       let filtered = [...properties];
 
-      // Search filter - buscar en título y tipo
+      // Search filter - buscar en título, ubicación y tipo
       if (filters.search && filters.search.trim()) {
         const searchLower = filters.search.toLowerCase().trim();
         filtered = filtered.filter(property => {
           if (!property) return false;
           
           const title = property.title?.toLowerCase() || '';
+          const location = property.location?.toLowerCase() || '';
           const type = property.type?.toLowerCase() || '';
           
-          return title.includes(searchLower) || type.includes(searchLower);
+          return title.includes(searchLower) || location.includes(searchLower) || type.includes(searchLower);
         });
+      }
+
+      // Zone filter
+      if (filters.zone && filters.zone.trim()) {
+        filtered = filtered.filter(property =>
+          property && property.location && property.location.toLowerCase().includes(filters.zone.toLowerCase())
+        );
+      }      // Neighborhood filter
+      if (filters.neighborhood && filters.neighborhood.trim()) {
+        filtered = filtered.filter(property => 
+          property && property.location && property.location.toLowerCase().includes(filters.neighborhood.toLowerCase())
+        );
       }
 
       // Type filter
       if (filters.type && filters.type.trim()) {
         filtered = filtered.filter(property => 
           property && property.type && property.type === filters.type
+        );
+      }
+
+      // Transaction Type filter
+      if (filters.transactionType && filters.transactionType.trim()) {
+        filtered = filtered.filter(property => 
+          property && property.status && 
+          ((filters.transactionType === 'Arriendo' && property.status === 'rent') ||
+           (filters.transactionType === 'Venta' && property.status === 'sale'))
         );
       }
 
@@ -304,7 +334,10 @@ const Properties: React.FC = () => {
   const clearFilters = () => {
     setFilters({
       search: '',
+      zone: '',
+      neighborhood: '',
       type: '',
+      transactionType: '',
       status: '',
       minPrice: '',
       maxPrice: '',

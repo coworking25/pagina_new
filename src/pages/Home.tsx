@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import Hero from '../components/Home/Hero';
-import Services from '../components/Home/Services';
+import CompanyPresentation from '../components/Home/CompanyPresentation';
 import FeaturedProperties from '../components/Home/FeaturedProperties';
+import Services from '../components/Home/Services';
 
 const Home: React.FC = () => {
   useEffect(() => {
@@ -10,8 +11,9 @@ const Home: React.FC = () => {
     // Verificar que los componentes estén disponibles
     const components = {
       Hero: Boolean(Hero),
-      Services: Boolean(Services),
-      FeaturedProperties: Boolean(FeaturedProperties)
+      CompanyPresentation: Boolean(CompanyPresentation),
+      FeaturedProperties: Boolean(FeaturedProperties),
+      Services: Boolean(Services)
     };
     
     console.log('📦 Componentes de Home:', components);
@@ -36,8 +38,9 @@ const Home: React.FC = () => {
     return (
       <div className="min-h-screen">
         <Hero />
-        <Services />
+        <CompanyPresentation />
         <FeaturedProperties />
+        <Services />
       </div>
     );
   } catch (error) {

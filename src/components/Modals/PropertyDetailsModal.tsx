@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail, Edit, Trash2, Settings } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail, Edit, Trash2, Building } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import { getAdvisorById } from '../../lib/supabase';
 import Button from '../UI/Button';
@@ -380,6 +380,16 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                         <div className="flex items-center text-gray-600 dark:text-gray-400 mb-2">
                           <MapPin className="w-4 h-4 mr-2" />
                           <span>{property.location}</span>
+                        </div>
+                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-4">
+                          <Building className="w-4 h-4 mr-2" />
+                          <span className="capitalize">
+                            {property.type === 'apartment' ? 'Apartamento' :
+                             property.type === 'house' ? 'Casa' :
+                             property.type === 'office' ? 'Oficina' :
+                             property.type === 'commercial' ? 'Local Comercial' :
+                             property.type || 'Propiedad'}
+                          </span>
                         </div>
                         <div className="mb-4">
                           <span className="text-3xl font-bold text-green-600 dark:text-green-400">

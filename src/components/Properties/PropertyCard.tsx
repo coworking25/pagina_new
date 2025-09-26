@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2, Building } from 'lucide-react';
 import { Property } from '../../types';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
@@ -348,7 +348,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </div>
 
         {/* Property Details */}
-        <div className="flex items-center justify-between mb-6 text-sm text-gray-600 dark:text-gray-400">
+        <div className="flex items-center justify-between mb-4 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center space-x-1">
+            <Building className="w-4 h-4" />
+            <span className="capitalize">
+              {property.type === 'apartment' ? 'Apartamento' :
+               property.type === 'house' ? 'Casa' :
+               property.type || 'Propiedad'}
+            </span>
+          </div>
           <div className="flex items-center space-x-1">
             <Bed className="w-4 h-4" />
             <span>{property.bedrooms}</span>

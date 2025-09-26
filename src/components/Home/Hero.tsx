@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../UI/Button';
 // @ts-ignore
 import GradientText from '../../../@/components/GradientText';
+import AdvancedSearch from './AdvancedSearch';
 
 const Hero: React.FC = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentSlogan, setCurrentSlogan] = useState(0);
   const [currentBackground, setCurrentBackground] = useState(0);
 
@@ -52,22 +51,8 @@ const Hero: React.FC = () => {
     return () => clearInterval(bgInterval);
   }, [backgroundImages.length]);
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      navigate(`/properties?search=${encodeURIComponent(searchQuery)}`);
-    } else {
-      navigate('/properties');
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen lg:min-h-[120vh] flex items-center justify-center overflow-hidden">
       {/* Dynamic Background with Multiple Images */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         {/* Rotating Background Images - Smooth transitions without gaps */}
@@ -124,25 +109,25 @@ const Hero: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-8 lg:py-16">
         {/* Logo - Clean and Simple */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-12"
+          className="mb-16 lg:mb-20"
         >
           <div className="relative inline-block">
             <img
               src="/logo-13962586_transparent (1).png"
               alt="Coworking Inmobiliario"
-              className="w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 object-contain drop-shadow-2xl transition-all duration-500 hover:scale-105"
+              className="w-56 h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-2xl transition-all duration-500 hover:scale-105"
               onError={(e) => {
                 // Fallback to CSS logo if image fails
                 e.currentTarget.style.display = 'none';
                 const fallback = document.createElement('div');
-                fallback.className = 'w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl';
-                fallback.innerHTML = `<span class="text-white font-bold text-6xl md:text-7xl lg:text-8xl">CI</span>`;
+                fallback.className = 'w-56 h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl';
+                fallback.innerHTML = `<span class="text-white font-bold text-7xl md:text-8xl lg:text-9xl">CI</span>`;
                 const blurDiv = document.createElement('div');
                 blurDiv.className = 'absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl blur-xl opacity-30';
                 fallback.appendChild(blurDiv);
@@ -157,7 +142,7 @@ const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-8"
+          className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-12 lg:mb-16"
         >
           <GradientText
             colors={["#14532d", "#1145b8ff", "#15803d", "#166534", "#0b576eff"]}
@@ -174,7 +159,7 @@ const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mb-8 h-16 flex items-center justify-center"
+          className="mb-12 lg:mb-16 h-16 flex items-center justify-center"
         >
           <motion.p
             key={currentSlogan}
@@ -188,34 +173,22 @@ const Hero: React.FC = () => {
           </motion.p>
         </motion.div>
 
-        {/* Search Bar */}
+        {/* Advanced Search */}
+        <AdvancedSearch />
+
+        {/* Call to Action */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mb-8"
+          transition={{ duration: 0.8, delay: 0.8 }}
+          className="mt-8 lg:mt-12 mb-12 lg:mb-16 text-center"
         >
-          <div className="relative max-w-2xl mx-auto">
-            <div className="flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2">
-              <Search className="w-5 h-5 text-gray-400 ml-3" />
-              <input
-                type="text"
-                placeholder="¿Qué tipo de propiedad buscas? Ej: Apartamento en Medellín..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="flex-1 px-4 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none"
-              />
-              <Button
-                onClick={handleSearch}
-                variant="primary"
-                icon={ArrowRight}
-                iconPosition="right"
-              >
-                Buscar
-              </Button>
-            </div>
-          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+            Encuentra tu próximo hogar
+          </h2>
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            Con más de 10 años de experiencia, te ayudamos a encontrar la propiedad perfecta para ti
+          </p>
         </motion.div>
 
         {/* CTA Buttons */}
@@ -223,7 +196,7 @@ const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6"
+          className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-12 lg:mb-16"
         >
           <Button
             onClick={() => navigate('/properties')}
@@ -241,32 +214,6 @@ const Hero: React.FC = () => {
           >
             Hablar con un Asesor
           </Button>
-        </motion.div>
-
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1 }}
-          className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8"
-        >
-          {[
-            { number: '500+', label: 'Propiedades' },
-            { number: '1000+', label: 'Clientes Satisfechos' },
-            { number: '10+', label: 'Años de Experiencia' },
-          ].map((stat, index) => (
-            <div key={index} className="text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 1.2 + index * 0.1 }}
-                className="text-3xl sm:text-4xl font-bold text-green-400 mb-2"
-              >
-                {stat.number}
-              </motion.div>
-              <p className="text-gray-300">{stat.label}</p>
-            </div>
-          ))}
         </motion.div>
       </div>
 

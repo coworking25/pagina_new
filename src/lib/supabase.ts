@@ -619,10 +619,10 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
     console.log('🔍 getProperties called with onlyAvailable:', onlyAvailable);
     let query = supabase.from('properties').select('*').order('created_at', { ascending: false });
 
-    // Si solo queremos propiedades disponibles, excluir estados que indican ocupación/vendida
+    // Si solo queremos propiedades disponibles, incluir solo estados que indican disponibilidad
     if (onlyAvailable) {
-      // Excluir propiedades con status 'rented' o 'sold'
-      query = query.neq('status', 'rented').neq('status', 'sold');
+      // Incluir solo propiedades con status 'rent' o 'sale' (disponibles para arriendo o venta)
+      query = query.or('status.eq.rent,status.eq.sale');
     }
 
     const { data, error } = await query;

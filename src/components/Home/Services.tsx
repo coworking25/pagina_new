@@ -14,8 +14,8 @@ import Card from '../UI/Card';
 import Button from '../UI/Button';
 import ServiceInquiryModal from '../Modals/ServiceInquiryModal';
 import ServiceStats from './ServiceStats';
-import ServiceTestimonials from './ServiceTestimonials';
 import ServiceProcess from './ServiceProcess';
+import TestimonialsCarousel from './TestimonialsCarousel';
 
 const Services: React.FC = () => {
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -254,7 +254,7 @@ const Services: React.FC = () => {
           <ServiceStats />
         </motion.div>
 
-        {/* Service Testimonials */}
+        {/* Testimonials Carousel */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -262,7 +262,7 @@ const Services: React.FC = () => {
           viewport={{ once: true }}
           className="mb-12"
         >
-          <ServiceTestimonials />
+          <TestimonialsCarousel />
         </motion.div>
 
         {/* Service Process */}
