@@ -2,10 +2,11 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Send, Phone, MessageCircle } from 'lucide-react';
+import { Send, Phone, MessageCircle, MapPin, Clock } from 'lucide-react';
 import { Property } from '../../types';
 import Button from '../UI/Button';
 import Modal from '../UI/Modal';
+import { CONTACT_INFO } from '../../constants/contact';
 
 interface ContactModalProps {
   property: Property | null;
@@ -116,6 +117,47 @@ const ContactModal: React.FC<ContactModalProps> = ({
           >
             Llamar Ahora
           </Button>
+        </div>
+
+        {/* Office Location */}
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <MapPin className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h4 className="font-medium text-gray-900 dark:text-white mb-1">
+                Nuestra Oficina
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                {CONTACT_INFO.address.street}<br />
+                {CONTACT_INFO.address.building}<br />
+                {CONTACT_INFO.address.plusCode}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(CONTACT_INFO.urls.maps, '_blank')}
+                className="text-xs"
+              >
+                Ver en Google Maps
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Business Hours */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-1">
+                Horarios de Atención
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {CONTACT_INFO.schedule.weekdays}<br />
+                {CONTACT_INFO.schedule.weekend}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="relative">

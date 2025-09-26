@@ -6,7 +6,7 @@ export const CONTACT_INFO = {
     building: 'Edificio Emporio Local 306',
     city: 'Envigado, Antioquia, Colombia',
     coordinates: '6.168766, -75.586844',
-    plusCode: '5C97+F6 Envigado, Antioquia, Colombia'
+    plusCode: '5C97+F6 Envigado, Antioquia'
   },
   
   // Teléfonos
@@ -33,7 +33,7 @@ export const CONTACT_INFO = {
       `https://wa.me/573148860404?text=${encodeURIComponent(message)}`,
     phone: '+573148860404',
     email: 'mailto:inmobiliariocoworking5@gmail.com',
-    maps: 'https://maps.app.goo.gl/4B28YNWDEBy2kEkj8'
+    maps: 'https://www.google.com/maps/place/Coworking+Inmobiliario/@6.1686946,-75.5895142,17z/data=!3m1!4b1!4m6!3m5!1s0x8e46830032e68b5f:0xe291342f9e551bda!8m2!3d6.1686946!4d-75.5869393!16s%2Fg%2F11vrft7m55?entry=ttu&g_ep=EgoyMDI1MDkyMy4wIKXMDSoASAFQAw%3D%3D'
   }
 };
 

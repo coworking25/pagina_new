@@ -102,7 +102,7 @@ const Contact: React.FC = () => {
     {
       icon: MapPin,
       title: 'Ubicación',
-      details: ['Carrera 41 #38 Sur - 43', 'Edificio Emporio Local 306', 'Envigado, Antioquia'],
+      details: ['Carrera 41 #38 Sur - 43', 'Edificio Emporio Local 306', '5C97+F6 Envigado, Antioquia'],
       color: 'from-blue-500 to-blue-600'
     },
     {
@@ -390,7 +390,7 @@ const Contact: React.FC = () => {
             <Card className="p-0 overflow-hidden">
               <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3966.3!2d-75.586844!3d6.168766!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zNsKwMTAnMDcuNiJOIDc1wrAzNScxMi42Ilc!5e0!3m2!1ses!2sco!4v1725531234567"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.3!2d-75.5869393!3d6.1686946!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e46830032e68b5f%3A0xe291342f9e551bda!2sCoworking%20Inmobiliario!5e0!3m2!1ses!2sco!4v1725531234567!5m2!1ses!2sco"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -398,12 +398,12 @@ const Contact: React.FC = () => {
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   className="rounded-lg"
-                  title="Ubicación exacta: 6.168766, -75.586844"
+                  title="Ubicación exacta: 6.1686946, -75.5869393"
                 />
                 {/* Enlace para abrir el mapa completo */}
                 <div className="absolute bottom-2 right-2">
                   <button
-                    onClick={() => window.open('https://maps.app.goo.gl/4B28YNWDEBy2kEkj8', '_blank')}
+                    onClick={() => window.open('https://www.google.com/maps/place/Coworking+Inmobiliario/@6.1686946,-75.5895142,17z/data=!3m1!4b1!4m6!3m5!1s0x8e46830032e68b5f:0xe291342f9e551bda!8m2!3d6.1686946!4d-75.5869393!16s%2Fg%2F11vrft7m55?entry=ttu&g_ep=EgoyMDI1MDkyMy4wIKXMDSoASAFQAw%3D%3D', '_blank')}
                     className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-1 rounded-md text-xs font-medium shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-600"
                     title="Abrir en Google Maps"
                   >
@@ -413,7 +413,7 @@ const Contact: React.FC = () => {
                 {/* Coordenadas exactas */}
                 <div className="absolute top-2 left-2">
                   <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1 rounded text-xs font-mono border border-gray-200 dark:border-gray-600">
-                    6.168766, -75.586844
+                    6.1686946, -75.5869393
                   </div>
                 </div>
               </div>

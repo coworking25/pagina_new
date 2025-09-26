@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, Phone, Mail, Calendar, Clock, Send, User } from 'lucide-react';
+import { MessageCircle, Phone, Mail, Calendar, Clock, Send, User, MapPin } from 'lucide-react';
 import { Property, Advisor, ContactForm } from '../../types';
 import Button from '../UI/Button';
+import { CONTACT_INFO } from '../../constants/contact';
 
 interface ContactFormModalProps {
   property: Property;
@@ -190,6 +191,45 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
                   minimumFractionDigits: 0,
                 }).format(property.price)}
               </p>
+            </div>
+
+            {/* Información de Contacto de la Oficina */}
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6">
+              <h5 className="font-semibold text-gray-900 dark:text-white mb-3">
+                Información de Contacto
+              </h5>
+              <div className="space-y-3">
+                {/* Ubicación */}
+                <div className="flex items-start space-x-3">
+                  <MapPin className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {CONTACT_INFO.address.street}<br />
+                      {CONTACT_INFO.address.building}<br />
+                      {CONTACT_INFO.address.plusCode}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(CONTACT_INFO.urls.maps, '_blank')}
+                      className="mt-2 text-xs"
+                    >
+                      Ver en Google Maps
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Horarios */}
+                <div className="flex items-start space-x-3">
+                  <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {CONTACT_INFO.schedule.weekdays}<br />
+                      {CONTACT_INFO.schedule.weekend}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Formulario */}
