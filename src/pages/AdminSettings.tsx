@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { supabase } from '../lib/supabase';
 import {
   Settings,
   Save,
@@ -55,26 +56,162 @@ interface SystemSettings {
   };
 }
 
-function AdminSettings() {
-  const [settings, setSettings] = useState<SystemSettings>({
-    companyName: 'INMOBILIARIA NEXUS',
-    companyDescription: 'Tu mejor opción en bienes raíces',
+// Función para cargar configuraciones desde la base de datos
+async function loadSettings(): Promise<SystemSettings> {
+  try {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('key, value');
+
+    if (error) {
+      console.error('Error cargando configuraciones:', error);
+      return getDefaultSettings();
+    }
+
+    // Convertir los datos de la base de datos al formato SystemSettings
+    const settings: any = {};
+
+    data.forEach((row: any) => {
+      switch (row.key) {
+        case 'company_info':
+          settings.companyName = row.value.companyName || 'Coworking Inmobiliario';
+          settings.companyDescription = row.value.companyDescription || 'Expertos en bienes raíces con más de 10 años de experiencia. Te acompañamos en cada paso hacia tu nuevo hogar con servicios integrales de arriendos, ventas, avalúos y asesorías especializadas.';
+          settings.companyLogo = row.value.companyLogo || '';
+          settings.websiteUrl = row.value.websiteUrl || 'https://coworkinginmobiliario.com/';
+          break;
+        case 'contact_info':
+          settings.contactEmail = row.value.contactEmail || 'inmobiliariocoworking5@gmail.com';
+          settings.contactPhone = row.value.contactPhone || '+57 314 886 0404';
+          settings.contactWhatsapp = row.value.contactWhatsapp || '+57 314 886 0404';
+          settings.officeAddress = row.value.officeAddress || 'Carrera 41 #38 Sur - 43, Edificio Emporio Local 306, 5C97+F6 Envigado, Antioquia';
+          settings.officeHours = row.value.officeHours || 'Lun - Vie: 9:00 AM - 5:00 PM, Sáb - Dom sin atención al cliente';
+          break;
+        case 'social_media':
+          settings.socialMedia = {
+            facebook: row.value.facebook || '#',
+            instagram: row.value.instagram || 'https://www.instagram.com/coworking_inmobiliario?igsh=c3VnM29jN3oydmhj&utm_source=qr',
+            twitter: row.value.twitter || '#',
+            linkedin: row.value.linkedin || '#'
+          };
+          break;
+        case 'theme':
+          settings.theme = {
+            primaryColor: row.value.primaryColor || '#00D4FF',
+            secondaryColor: row.value.secondaryColor || '#39FF14',
+            darkMode: row.value.darkMode || false
+          };
+          break;
+        case 'notifications':
+          settings.notifications = {
+            emailNotifications: row.value.emailNotifications !== undefined ? row.value.emailNotifications : true,
+            pushNotifications: row.value.pushNotifications !== undefined ? row.value.pushNotifications : true,
+            smsNotifications: row.value.smsNotifications || false
+          };
+          break;
+        case 'database':
+          settings.database = {
+            backupFrequency: row.value.backupFrequency || 'daily',
+            lastBackup: row.value.lastBackup || '2024-01-15 10:30:00'
+          };
+          break;
+        case 'security':
+          settings.security = {
+            twoFactorAuth: row.value.twoFactorAuth || false,
+            sessionTimeout: row.value.sessionTimeout || 30,
+            passwordPolicy: row.value.passwordPolicy || 'medium'
+          };
+          break;
+      }
+    });
+
+    // Asegurar que todos los campos estén presentes
+    return { ...getDefaultSettings(), ...settings };
+  } catch (error) {
+    console.error('Error cargando configuraciones:', error);
+    return getDefaultSettings();
+  }
+}
+
+// Función para guardar configuraciones en la base de datos
+async function saveSettingsToDB(settings: SystemSettings): Promise<void> {
+  try {
+    const settingsData = [
+      {
+        key: 'company_info',
+        value: {
+          companyName: settings.companyName,
+          companyDescription: settings.companyDescription,
+          companyLogo: settings.companyLogo,
+          websiteUrl: settings.websiteUrl
+        }
+      },
+      {
+        key: 'contact_info',
+        value: {
+          contactEmail: settings.contactEmail,
+          contactPhone: settings.contactPhone,
+          contactWhatsapp: settings.contactWhatsapp,
+          officeAddress: settings.officeAddress,
+          officeHours: settings.officeHours
+        }
+      },
+      {
+        key: 'social_media',
+        value: settings.socialMedia
+      },
+      {
+        key: 'theme',
+        value: settings.theme
+      },
+      {
+        key: 'notifications',
+        value: settings.notifications
+      },
+      {
+        key: 'database',
+        value: settings.database
+      },
+      {
+        key: 'security',
+        value: settings.security
+      }
+    ];
+
+    // Usar upsert para insertar o actualizar
+    const { error } = await supabase
+      .from('settings')
+      .upsert(settingsData, { onConflict: 'key' });
+
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error guardando configuraciones:', error);
+    throw error;
+  }
+}
+
+// Función para obtener configuraciones por defecto
+function getDefaultSettings(): SystemSettings {
+  return {
+    companyName: 'Coworking Inmobiliario',
+    companyDescription: 'Expertos en bienes raíces con más de 10 años de experiencia. Te acompañamos en cada paso hacia tu nuevo hogar con servicios integrales de arriendos, ventas, avalúos y asesorías especializadas.',
     companyLogo: '',
-    contactEmail: 'info@inmobiliarianexus.com',
-    contactPhone: '+57 (315) 234-5678',
-    contactWhatsapp: '+57 315 234 5678',
-    officeAddress: 'Cra. 13 #85-32, Oficina 501, Bogotá, Colombia',
-    officeHours: 'Lunes a Viernes: 8:00 AM - 6:00 PM, Sábados: 9:00 AM - 4:00 PM',
-    websiteUrl: 'https://inmobiliarianexus.com',
+    contactEmail: 'inmobiliariocoworking5@gmail.com',
+    contactPhone: '+57 314 886 0404',
+    contactWhatsapp: '+57 314 886 0404',
+    officeAddress: 'Carrera 41 #38 Sur - 43, Edificio Emporio Local 306, 5C97+F6 Envigado, Antioquia',
+    officeHours: 'Lun - Vie: 9:00 AM - 5:00 PM, Sáb - Dom sin atención al cliente',
+    websiteUrl: 'https://coworkinginmobiliario.com/',
     socialMedia: {
-      facebook: 'https://facebook.com/inmobiliarianexus',
-      instagram: 'https://instagram.com/inmobiliarianexus',
-      twitter: 'https://twitter.com/inmobiliarianexus',
-      linkedin: 'https://linkedin.com/company/inmobiliarianexus'
+      facebook: '#',
+      instagram: 'https://www.instagram.com/coworking_inmobiliario?igsh=c3VnM29jN3oydmhj&utm_source=qr',
+      twitter: '#',
+      linkedin: '#'
     },
     theme: {
-      primaryColor: '#3b82f6',
-      secondaryColor: '#1e40af',
+      primaryColor: '#00D4FF',
+      secondaryColor: '#39FF14',
       darkMode: false
     },
     notifications: {
@@ -91,11 +228,33 @@ function AdminSettings() {
       sessionTimeout: 30,
       passwordPolicy: 'medium'
     }
-  });
-  
+  };
+}
+
+function AdminSettings() {
+  const [settings, setSettings] = useState<SystemSettings>(getDefaultSettings());
   const [loading, setLoading] = useState(false);
   const [savedMessage, setSavedMessage] = useState('');
   const [activeTab, setActiveTab] = useState('general');
+
+  // Cargar configuraciones al montar el componente
+  useEffect(() => {
+    const loadSettingsData = async () => {
+      setLoading(true);
+      try {
+        const loadedSettings = await loadSettings();
+        setSettings(loadedSettings);
+      } catch (error) {
+        console.error('Error cargando configuraciones:', error);
+        // Usar configuraciones por defecto si hay error
+        setSettings(getDefaultSettings());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettingsData();
+  }, []);
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
@@ -109,8 +268,7 @@ function AdminSettings() {
   const saveSettings = async () => {
     setLoading(true);
     try {
-      // Simular guardado
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await saveSettingsToDB(settings);
       
       setSavedMessage('Configuración guardada exitosamente');
       setTimeout(() => setSavedMessage(''), 3000);
@@ -118,6 +276,8 @@ function AdminSettings() {
       console.log('✅ Configuración guardada:', settings);
     } catch (error) {
       console.error('❌ Error guardando configuración:', error);
+      setSavedMessage('Error guardando configuración. Intente nuevamente.');
+      setTimeout(() => setSavedMessage(''), 3000);
     } finally {
       setLoading(false);
     }
