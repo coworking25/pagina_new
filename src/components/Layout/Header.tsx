@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sun, Moon, Monitor, Home, Building, Users, FileText, Phone } from 'lucide-react';
+import { Menu, X, Sun, Moon, Monitor, Home, Building, Users, Phone } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import Logo from '../UI/Logo';
 
@@ -15,7 +15,6 @@ const Header: React.FC = () => {
     { name: 'Inicio', href: '/', icon: Home },
     { name: 'Propiedades', href: '/properties', icon: Building },
     { name: 'Asesores', href: '/advisors', icon: Users },
-    { name: 'Documentación', href: '/documentation', icon: FileText },
     { name: 'Contacto', href: '/contact', icon: Phone },
   ];
 
@@ -30,33 +29,34 @@ const Header: React.FC = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/20 dark:border-gray-700/20">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center">
-            <Logo variant="header" size="header" animated={false} />
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive(item.href)
-                      ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
-                      : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
+        <div className="flex items-center h-16">
+          {location.pathname !== '/' && (
+            <Link to="/" className="flex items-center mr-8">
+              <Logo variant="header" size="header" animated={false} />
+            </Link>
+          )}
+          <div className="flex-1 flex justify-center">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      isActive(item.href)
+                        ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                        : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-
           {/* Theme Switcher & Login & Mobile Menu */}
           <div className="flex items-center space-x-4">
             {/* Admin Login Button */}
