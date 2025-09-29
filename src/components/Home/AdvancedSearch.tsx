@@ -73,12 +73,12 @@ const AdvancedSearch: React.FC = () => {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.6 }}
-      className="w-full max-w-6xl ml-0 lg:mx-0" // <---- quitar cualquier margen horizontal
+      className="w-full"
     >
       {/* Main Search Bar */}
       <div className="mb-6">
         <div className="relative">
-          <div className="flex items-center bg-gray-100 dark:bg-white/10 backdrop-blur-md border border-gray-300 dark:border-white/20 rounded-xl p-2">
+          <div className="flex items-center bg-gray-100 dark:bg-white/10 backdrop-blur-md border border-gray-300 dark:border-white/20 rounded-xl p-2 w-full">
             <Search className="w-5 h-5 text-gray-500 dark:text-gray-400 ml-3" />
             <input
               type="text"
@@ -101,9 +101,9 @@ const AdvancedSearch: React.FC = () => {
       </div>
 
       {/* Advanced Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 w-full">
         {/* Zone */}
-        <div className="relative">
+        <div className="relative col-span-1">
           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
           <select
             value={filters.zone}
@@ -118,7 +118,7 @@ const AdvancedSearch: React.FC = () => {
         </div>
 
         {/* Property Type */}
-        <div className="relative">
+        <div className="relative col-span-1">
           <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
           <select
             value={filters.propertyType}
@@ -132,7 +132,7 @@ const AdvancedSearch: React.FC = () => {
         </div>
 
         {/* Transaction Type */}
-        <div className="relative">
+        <div className="relative col-span-1">
           <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
           <select
             value={filters.transactionType}
@@ -145,11 +145,40 @@ const AdvancedSearch: React.FC = () => {
             ))}
           </select>
         </div>
-      </div>
 
-      {/* Price Range */}
-      <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-        <div className="relative">
+        {/* Bedrooms */}
+        <div className="relative col-span-1">
+          <Bed className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <select
+            value={filters.bedrooms}
+            onChange={(e) => handleFilterChange('bedrooms', e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-white/10 backdrop-blur-md border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+          >
+            <option value="" className="text-gray-900">Habitaciones</option>
+            <option value="1" className="text-gray-900">1+</option>
+            <option value="2" className="text-gray-900">2+</option>
+            <option value="3" className="text-gray-900">3+</option>
+            <option value="4" className="text-gray-900">4+</option>
+          </select>
+        </div>
+
+        {/* Bathrooms */}
+        <div className="relative col-span-1">
+          <Bath className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <select
+            value={filters.bathrooms}
+            onChange={(e) => handleFilterChange('bathrooms', e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-white/10 backdrop-blur-md border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
+          >
+            <option value="" className="text-gray-900">Baños</option>
+            <option value="2" className="text-gray-900">2+</option>
+            <option value="3" className="text-gray-900">3+</option>
+            <option value="4" className="text-gray-900">4+</option>
+          </select>
+        </div>
+
+        {/* Precio mínimo */}
+        <div className="relative col-span-1">
           <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
           <input
             type="number"
@@ -159,7 +188,9 @@ const AdvancedSearch: React.FC = () => {
             className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-white/10 backdrop-blur-md border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
           />
         </div>
-        <div className="relative">
+
+        {/* Precio máximo */}
+        <div className="relative col-span-1">
           <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
           <input
             type="number"
@@ -168,37 +199,6 @@ const AdvancedSearch: React.FC = () => {
             onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-white/10 backdrop-blur-md border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
           />
-        </div>
-      </div>
-
-      {/* Advanced Filters - Bedrooms and Bathrooms */}
-      <div className="mt-2 flex flex-wrap gap-2 justify-center">
-        <div className="relative min-w-[120px]">
-          <Bed className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <select
-            value={filters.bedrooms}
-            onChange={(e) => handleFilterChange('bedrooms', e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
-          >
-            <option value="" className="text-gray-900">Habitaciones</option>
-            <option value="1" className="text-gray-900">1+</option>
-            <option value="2" className="text-gray-900">2+</option>
-            <option value="3" className="text-gray-900">3+</option>
-            <option value="4" className="text-gray-900">4+</option>
-          </select>
-        </div>
-        <div className="relative min-w-[120px]">
-          <Bath className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <select
-            value={filters.bathrooms}
-            onChange={(e) => handleFilterChange('bathrooms', e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
-          >
-            <option value="" className="text-gray-900">Baños</option>
-            <option value="2" className="text-gray-900">2+</option>
-            <option value="3" className="text-gray-900">3+</option>
-            <option value="4" className="text-gray-900">4+</option>
-          </select>
         </div>
       </div>
     </motion.div>

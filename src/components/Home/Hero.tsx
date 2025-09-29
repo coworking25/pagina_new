@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 // @ts-ignore
 import GradientText from '../../../@/components/GradientText';
 import AdvancedSearch from './AdvancedSearch';
+import FeaturedPropertiesSlider from './FeaturedPropertiesSlider';
 
 const Hero: React.FC = () => {
   return (
-    <section className="relative min-h-screen lg:min-h-[120vh] flex items-start justify-center overflow-hidden bg-white dark:bg-gray-900">
+    <section className="relative min-h-screen lg:min-h-[120vh] flex flex-col items-start justify-center overflow-hidden bg-white dark:bg-gray-900">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(20)].map((_, i) => (
@@ -29,55 +30,61 @@ const Hero: React.FC = () => {
         ))}
       </div>
 
-      {/* Content - Centrado y distribución horizontal, alineado arriba */}
-      {/* La siguiente línea es donde se modifica la altura vertical del bloque */}
-      {/* Cambia el valor de pt-8 para bajarlo más o menos */}
-      <div className="relative z-10 w-full max-w-[1700px] mx-auto px-4 sm:px-10 lg:px-10 pt-20 pb-2 lg:pb-10 flex flex-col lg:flex-row items-start justify-center">
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="flex-shrink-0 flex items-center justify-center"
-          style={{ minWidth: 260, minHeight: 260 }}
-        >
-          <div className="relative inline-block">
-            <img
-              src="/logo-13962586_transparent (1).png"
-              alt="Coworking Inmobiliario"
-              className="w-44 h-44 lg:w-56 lg:h-56 object-contain drop-shadow-2xl transition-all duration-500 hover:scale-105 dark:hidden"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const fallback = document.createElement('div');
-                fallback.className = 'w-56 h-56 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl';
-                fallback.innerHTML = `<span class="text-white font-bold text-7xl">CI</span>`;
-                const blurDiv = document.createElement('div');
-                blurDiv.className = 'absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl blur-xl opacity-30';
-                fallback.appendChild(blurDiv);
-                e.currentTarget.parentNode?.appendChild(fallback);
-              }}
-            />
-            <img
-              src="/LogoEnBlancoo.png"
-              alt="Coworking Inmobiliario"
-              className="w-44 h-44 lg:w-56 lg:h-56 object-contain drop-shadow-2xl transition-all duration-500 hover:scale-105 hidden dark:block"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const fallback = document.createElement('div');
-                fallback.className = 'w-56 h-56 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl';
-                fallback.innerHTML = `<span class="text-white font-bold text-7xl">CI</span>`;
-                const blurDiv = document.createElement('div');
-                blurDiv.className = 'absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl blur-xl opacity-30';
-                fallback.appendChild(blurDiv);
-                e.currentTarget.parentNode?.appendChild(fallback);
-              }}
-            />
-          </div>
-        </motion.div>
+      {/* Content */}
+      <div className="relative z-10 w-full pt-2 pb-2 lg:pb-10 flex flex-col items-start justify-center">
+        {/* Logo and Search Row */}
+        <div className="flex flex-col lg:flex-row items-start justify-center w-full max-w-[1700px] mx-auto px-4 sm:px-10 lg:px-10">
+          {/* Logo */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="flex-shrink-0 flex items-center justify-center"
+            style={{ minWidth: 260, minHeight: 260 }}
+          >
+            <div className="relative inline-block">
+              <img
+                src="/logo-13962586_transparent (1).png"
+                alt="Coworking Inmobiliario"
+                className="w-44 h-44 lg:w-56 lg:h-56 object-contain drop-shadow-2xl transition-all duration-500 hover:scale-105 dark:hidden"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = document.createElement('div');
+                  fallback.className = 'w-56 h-56 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl';
+                  fallback.innerHTML = `<span class="text-white font-bold text-7xl">CI</span>`;
+                  const blurDiv = document.createElement('div');
+                  blurDiv.className = 'absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl blur-xl opacity-30';
+                  fallback.appendChild(blurDiv);
+                  e.currentTarget.parentNode?.appendChild(fallback);
+                }}
+              />
+              <img
+                src="/LogoEnBlancoo.png"
+                alt="Coworking Inmobiliario"
+                className="w-44 h-44 lg:w-56 lg:h-56 object-contain drop-shadow-2xl transition-all duration-500 hover:scale-105 hidden dark:block"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = document.createElement('div');
+                  fallback.className = 'w-56 h-56 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-2xl';
+                  fallback.innerHTML = `<span class="text-white font-bold text-7xl">CI</span>`;
+                  const blurDiv = document.createElement('div');
+                  blurDiv.className = 'absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl blur-xl opacity-30';
+                  fallback.appendChild(blurDiv);
+                  e.currentTarget.parentNode?.appendChild(fallback);
+                }}
+              />
+            </div>
+          </motion.div>
 
-        {/* Advanced Search */}
-        <div className="flex-1 flex items-center justify-center lg:justify-start ml-8">
-          <AdvancedSearch />
+          {/* Advanced Search */}
+          <div className="flex-1 flex items-center justify-center lg:justify-start ml-8">
+            <AdvancedSearch />
+          </div>
+        </div>
+
+        {/* Featured Properties Slider - FULL WIDTH */}
+        <div className="w-full px-0 mt-8">
+          <FeaturedPropertiesSlider />
         </div>
       </div>
 
