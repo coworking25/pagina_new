@@ -176,12 +176,24 @@ const Services: React.FC = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <motion.h2 
+            className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
             Nuestros Servicios
-          </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          </motion.h2>
+          <motion.p 
+            className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={{ once: true }}
+          >
             Ofrecemos una gama completa de servicios inmobiliarios para satisfacer todas tus necesidades
-          </p>
+          </motion.p>
         </motion.div>
 
         {/* Services Grid */}
@@ -319,13 +331,31 @@ const Services: React.FC = () => {
           className="text-center"
         >
           <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-8 text-white">
-            <h3 className="text-2xl font-bold mb-4">
+            <motion.h3 
+              className="text-2xl font-bold mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
               ¿Necesitas ayuda personalizada?
-            </h3>
-            <p className="text-green-100 mb-6 max-w-2xl mx-auto">
+            </motion.h3>
+            <motion.p 
+              className="text-green-100 mb-6 max-w-2xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+            >
               Nuestros asesores expertos están listos para ayudarte a encontrar la solución perfecta para tus necesidades inmobiliarias.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            </motion.p>
+            <motion.div 
+              className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              viewport={{ once: true }}
+            >
               <Button
                 variant="secondary"
                 onClick={() => window.location.href = '/advisors'}
@@ -340,7 +370,7 @@ const Services: React.FC = () => {
               >
                 Contactar Ahora
               </Button>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
 

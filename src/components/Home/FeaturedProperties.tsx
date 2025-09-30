@@ -181,12 +181,24 @@ const FeaturedProperties: React.FC = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <motion.h2 
+              className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
               Propiedades Destacadas
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+            </motion.h2>
+            <motion.p 
+              className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+            >
               Descubre las mejores oportunidades inmobiliarias seleccionadas especialmente para ti
-            </p>
+            </motion.p>
           </motion.div>
 
           {/* Properties Grid */}
@@ -194,10 +206,12 @@ const FeaturedProperties: React.FC = () => {
             {properties.slice(0, 6).map((property, index) => (
               <motion.div
                 key={property.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="cursor-pointer"
               >
                 <PropertyCard
                   property={property}
@@ -214,19 +228,24 @@ const FeaturedProperties: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
             viewport={{ once: true }}
             className="text-center"
           >
-            <Button
-              onClick={() => navigate('/properties')}
-              variant="primary"
-              icon={Eye}
-              iconPosition="right"
-              size="lg"
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              Ver Todas las Propiedades
-            </Button>
+              <Button
+                onClick={() => navigate('/properties')}
+                variant="primary"
+                icon={Eye}
+                iconPosition="right"
+                size="lg"
+              >
+                Ver Todas las Propiedades
+              </Button>
+            </motion.div>
           </motion.div>
         </div>
       </section>

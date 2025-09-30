@@ -33,12 +33,17 @@ const Hero: React.FC = () => {
       {/* Content */}
       <div className="relative z-10 w-full pt-2 pb-2 lg:pb-10 flex flex-col items-start justify-center">
         {/* Logo and Search Row */}
-        <div className="flex flex-col lg:flex-row items-start justify-center w-full max-w-[1700px] mx-auto px-4 sm:px-10 lg:px-10">
+        <motion.div 
+          className="flex flex-col lg:flex-row items-start justify-center w-full max-w-[1700px] mx-auto px-4 sm:px-10 lg:px-10"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        >
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
             className="flex-shrink-0 flex items-center justify-center"
             style={{ minWidth: 260, minHeight: 260 }}
           >
@@ -77,15 +82,25 @@ const Hero: React.FC = () => {
           </motion.div>
 
           {/* Advanced Search */}
-          <div className="flex-1 flex items-center justify-center lg:justify-start ml-8">
+          <motion.div 
+            className="flex-1 flex items-center justify-center lg:justify-start ml-8"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+          >
             <AdvancedSearch />
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Featured Properties Slider - FULL WIDTH */}
-        <div className="w-full px-0 mt-8">
+        <motion.div 
+          className="w-full px-0 mt-8"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.1 }}
+        >
           <FeaturedPropertiesSlider />
-        </div>
+        </motion.div>
       </div>
 
       {/* Scroll Indicator */}
