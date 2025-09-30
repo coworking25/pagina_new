@@ -55,39 +55,48 @@ const ServiceTestimonials: React.FC = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.2 }}
             viewport={{ once: true }}
-            className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
+            className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 bg-cover bg-center bg-no-repeat relative overflow-hidden"
+            style={{
+              backgroundImage: "url('/img/pentho.jpg')"
+            }}
           >
-            {/* Quote Icon */}
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                <Quote className="w-6 h-6 text-green-600 dark:text-green-400" />
+            {/* Overlay para legibilidad */}
+            <div className="absolute inset-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-[0.5px]"></div>
+            
+            {/* Contenido */}
+            <div className="relative z-10">
+              {/* Quote Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <Quote className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
               </div>
-            </div>
 
-            {/* Rating */}
-            <div className="flex justify-center mb-4">
-              {[...Array(testimonial.rating)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-              ))}
-            </div>
-
-            {/* Comment */}
-            <p className="text-gray-600 dark:text-gray-400 text-center mb-6 italic">
-              "{testimonial.comment}"
-            </p>
-
-            {/* User Info */}
-            <div className="flex items-center justify-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">{testimonial.avatar}</span>
+              {/* Rating */}
+              <div className="flex justify-center mb-4">
+                {[...Array(testimonial.rating)].map((_, i) => (
+                  <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                ))}
               </div>
-              <div className="text-center">
-                <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                  {testimonial.name}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Cliente de {testimonial.service}
-                </p>
+
+              {/* Comment */}
+              <p className="text-gray-600 dark:text-gray-400 text-center mb-6 italic">
+                "{testimonial.comment}"
+              </p>
+
+              {/* User Info */}
+              <div className="flex items-center justify-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold text-sm">{testimonial.avatar}</span>
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                    {testimonial.name}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Cliente de {testimonial.service}
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>
