@@ -59,7 +59,7 @@ const Advisors: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+      <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -70,7 +70,7 @@ const Advisors: React.FC = () => {
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Nuestros Asesores
             </h1>
-            <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-teal-100 max-w-3xl mx-auto">
               Conoce a nuestro equipo de expertos inmobiliarios, 
               comprometidos con encontrar la propiedad perfecta para ti
             </p>
@@ -80,17 +80,17 @@ const Advisors: React.FC = () => {
 
       {/* Advisors Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="flex flex-wrap justify-center gap-8">
           {advisors.map((advisor, index) => (
             <motion.div
               key={advisor.id}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 w-full max-w-sm"
             >
               {/* Advisor Photo */}
-              <div className="relative h-72 bg-gradient-to-br from-blue-400 to-blue-600 overflow-hidden rounded-t-2xl">
+              <div className="relative h-72 bg-gradient-to-br from-teal-400 to-teal-600 overflow-hidden rounded-t-2xl">
                 <img
                   src={advisor.photo}
                   alt={advisor.name}
@@ -118,7 +118,7 @@ const Advisors: React.FC = () => {
                 </div>
 
                 {/* Experience Badge */}
-                <div className="absolute top-4 left-4 bg-blue-600/90 backdrop-blur-sm rounded-full px-3 py-1">
+                <div className="absolute top-4 left-4 bg-teal-600/90 backdrop-blur-sm rounded-full px-3 py-1">
                   <div className="flex items-center space-x-1">
                     <Award className="w-4 h-4 text-white" />
                     <span className="text-sm font-semibold text-white">
@@ -134,7 +134,7 @@ const Advisors: React.FC = () => {
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                     {advisor.name}
                   </h3>
-                  <p className="text-blue-600 dark:text-blue-400 font-medium mb-3">
+                  <p className="text-teal-600 dark:text-teal-400 font-medium mb-3">
                     {advisor.specialty}
                   </p>
                   
@@ -167,7 +167,7 @@ const Advisors: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="flex items-center justify-center mb-1">
-                      <Briefcase className="w-4 h-4 text-blue-600" />
+                      <Briefcase className="w-4 h-4 text-teal-600" />
                     </div>
                     <div className="text-lg font-bold text-gray-900 dark:text-white">
                       {advisor.experience_years}
@@ -178,7 +178,7 @@ const Advisors: React.FC = () => {
                   </div>
                   <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="flex items-center justify-center mb-1">
-                      <Users className="w-4 h-4 text-green-600" />
+                      <Users className="w-4 h-4 text-teal-600" />
                     </div>
                     <div className="text-lg font-bold text-gray-900 dark:text-white">
                       {advisor.reviews}
@@ -226,7 +226,7 @@ const Advisors: React.FC = () => {
                       href={`tel:${advisor.phone}`}
                       className="flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
-                      <Phone className="w-4 h-4 mr-2 text-blue-600" />
+                      <Phone className="w-4 h-4 mr-2 text-teal-600" />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Llamar
                       </span>
@@ -236,7 +236,7 @@ const Advisors: React.FC = () => {
                       href={`mailto:${advisor.email}`}
                       className="flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
-                      <Mail className="w-4 h-4 mr-2 text-blue-600" />
+                      <Mail className="w-4 h-4 mr-2 text-teal-600" />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Email
                       </span>
@@ -248,7 +248,7 @@ const Advisors: React.FC = () => {
                       href={advisor.calendar_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                      className="w-full flex items-center justify-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors"
                     >
                       <Calendar className="w-4 h-4 mr-2" />
                       Agendar Cita
@@ -267,17 +267,17 @@ const Advisors: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-16 text-center"
         >
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white">
+          <div className="bg-gradient-to-r from-teal-500 to-teal-600 rounded-2xl p-8 text-white">
             <h2 className="text-3xl font-bold mb-4">
               ¿Necesitas asesoría personalizada?
             </h2>
-            <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+            <p className="text-teal-100 mb-6 max-w-2xl mx-auto">
               Nuestros asesores están listos para ayudarte a encontrar la propiedad perfecta. 
               Contáctanos y recibe atención especializada.
             </p>
             <Button
               onClick={() => window.open(CONTACT_INFO.urls.whatsapp(WHATSAPP_MESSAGES.advisory), '_blank')}
-              className="bg-white text-blue-600 hover:bg-gray-100"
+              className="bg-white text-teal-600 hover:bg-gray-100"
             >
               <MessageSquare className="w-5 h-5 mr-2" />
               Contactar Equipo

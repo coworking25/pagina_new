@@ -8,7 +8,9 @@ import {
   Hammer, 
   Wrench, 
   Building,
-  ArrowRight 
+  ArrowRight,
+  CreditCard,
+  Scissors
 } from 'lucide-react';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
@@ -43,7 +45,7 @@ const Services: React.FC = () => {
       icon: DollarSign,
       title: 'Ventas',
       description: 'Compra o vende tu propiedad con la asesoría de nuestros expertos en el mercado inmobiliario.',
-      color: 'from-indigo-500 to-indigo-600',
+      color: 'from-teal-500 to-teal-600',
       features: ['Avalúo gratuito', 'Marketing digital', 'Negociación experta'],
       estimatedTime: '30-90 días',
       priceRange: 'Comisión competitiva',
@@ -78,29 +80,48 @@ const Services: React.FC = () => {
       ]
     },
     {
-      icon: Calculator,
-      title: 'Asesorías Contables',
-      description: 'Servicios contables y tributarios especializados para el sector inmobiliario.',
-      color: 'from-purple-500 to-purple-600',
-      features: ['Declaración de renta', 'Optimización tributaria', 'Consultoría legal'],
-      estimatedTime: '5-15 días hábiles',
-      priceRange: '$200,000 - $1,500,000',
+      icon: CreditCard,
+      title: 'Hipotecas',
+      description: 'Asesoría completa en créditos hipotecarios para la compra de tu vivienda o inversión.',
+      color: 'from-indigo-500 to-indigo-600',
+      features: ['Pre-aprobación rápida', 'Comparación de tasas', 'Acompañamiento completo'],
+      estimatedTime: '7-15 días hábiles',
+      priceRange: 'Sin costo adicional',
       whatsappQuestions: [
-        '¿Qué tipo de asesoría contable necesitas?',
-        '¿Eres persona natural o jurídica?',
-        '¿Tienes propiedades en arriendo?',
-        '¿Has vendido alguna propiedad este año?',
-        '¿Necesitas ayuda con la declaración de renta?',
-        '¿Tienes dudas sobre impuestos inmobiliarios?',
-        '¿Manejas inversiones en finca raíz?',
-        '¿Necesitas constitución de empresa inmobiliaria?'
+        '¿Cuál es el valor de la propiedad que quieres comprar?',
+        '¿Cuánto tienes ahorrado para la cuota inicial?',
+        '¿Cuál es tu ingreso mensual?',
+        '¿Tienes codeudor o aval?',
+        '¿Has revisado tu historial crediticio?',
+        '¿Qué plazo de financiación prefieres?',
+        '¿Necesitas asesoría para mejorar tu score crediticio?',
+        '¿Quieres comparar opciones de diferentes bancos?'
+      ]
+    },
+    {
+      icon: Scissors,
+      title: 'Desenglobes',
+      description: 'Servicios de subdivisión y desenglobe de propiedades para optimizar tu inversión inmobiliaria.',
+      color: 'from-purple-500 to-purple-600',
+      features: ['Tramitología completa', 'Planos actualizados', 'Registro en notarías'],
+      estimatedTime: '30-60 días hábiles',
+      priceRange: '$5,000,000 - $15,000,000',
+      whatsappQuestions: [
+        '¿Qué tipo de propiedad quieres desenglobar?',
+        '¿Dónde está ubicada la propiedad?',
+        '¿Cuántas unidades quieres crear?',
+        '¿Tienes planos arquitectónicos actualizados?',
+        '¿La propiedad está inscrita en el registro?',
+        '¿Necesitas asesoría legal para el proceso?',
+        '¿Quieres vender las unidades por separado?',
+        '¿Tienes restricciones urbanísticas?'
       ]
     },
     {
       icon: Hammer,
       title: 'Remodelación',
       description: 'Transforma tu espacio con nuestros servicios de remodelación y diseño interior.',
-      color: 'from-indigo-500 to-indigo-600',
+      color: 'from-teal-500 to-teal-600',
       features: ['Diseño personalizado', 'Materiales de calidad', 'Garantía extendida'],
       estimatedTime: '15-60 días',
       priceRange: '$2,000,000 - $50,000,000',
@@ -153,6 +174,25 @@ const Services: React.FC = () => {
         '¿Tienes especificaciones técnicas específicas?'
       ]
     },
+    {
+      icon: Calculator,
+      title: 'Asesorías Contables',
+      description: 'Servicios contables y tributarios especializados para el sector inmobiliario.',
+      color: 'from-purple-500 to-purple-600',
+      features: ['Declaración de renta', 'Optimización tributaria', 'Consultoría legal'],
+      estimatedTime: '5-15 días hábiles',
+      priceRange: '$200,000 - $1,500,000',
+      whatsappQuestions: [
+        '¿Qué tipo de asesoría contable necesitas?',
+        '¿Eres persona natural o jurídica?',
+        '¿Tienes propiedades en arriendo?',
+        '¿Has vendido alguna propiedad este año?',
+        '¿Necesitas ayuda con la declaración de renta?',
+        '¿Tienes dudas sobre impuestos inmobiliarios?',
+        '¿Manejas inversiones en finca raíz?',
+        '¿Necesitas constitución de empresa inmobiliaria?'
+      ]
+    },
   ];
 
   const openServiceModal = (service: any) => {
@@ -197,8 +237,8 @@ const Services: React.FC = () => {
         </motion.div>
 
         {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {services.slice(0, 6).map((service, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          {services.map((service, index) => {
             const Icon = service.icon;
             return (
               <motion.div
@@ -207,64 +247,6 @@ const Services: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-              >
-                <Card className="p-6 h-full group cursor-pointer" hover>
-                  {/* Icon and Title */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="relative">
-                      <div className={`w-12 h-12 bg-gradient-to-r ${service.color} rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className={`absolute inset-0 bg-gradient-to-r ${service.color} rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300`}></div>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {service.title}
-                    </h3>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                    {service.description}
-                  </p>
-
-                  {/* Features */}
-                  <ul className="space-y-2 mb-6">
-                    {service.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-3"></div>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA */}
-                  <div className="mt-auto">
-                    <Button
-                      variant="ghost"
-                      icon={ArrowRight}
-                      iconPosition="right"
-                      className="w-full group-hover:text-green-600 dark:group-hover:text-green-400"
-                      onClick={() => openServiceModal(service)}
-                    >
-                      Más Información
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Centered Construction Card */}
-        <div className="flex justify-center mb-12">
-          {services.slice(6).map((service) => {
-            const Icon = service.icon;
-            return (
-              <motion.div
-                key={service.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                viewport={{ once: true }}
-                className="max-w-md w-full"
               >
                 <Card className="p-6 h-full group cursor-pointer" hover>
                   {/* Icon and Title */}
