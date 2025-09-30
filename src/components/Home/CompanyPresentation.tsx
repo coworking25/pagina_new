@@ -76,7 +76,7 @@ const CompanyPresentation: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-12"
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
@@ -84,17 +84,41 @@ const CompanyPresentation: React.FC = () => {
               <div className="text-gray-600 dark:text-gray-300">Propiedades Gestionadas</div>
             </div>
             <div>
-              <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-2">1000+</div>
+              <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-2">800+</div>
               <div className="text-gray-600 dark:text-gray-300">Clientes Satisfechos</div>
             </div>
             <div>
-              <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-2">10+</div>
+              <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-2">7+</div>
               <div className="text-gray-600 dark:text-gray-300">Años de Experiencia</div>
             </div>
             <div>
               <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-2">24/7</div>
               <div className="text-gray-600 dark:text-gray-300">Soporte Disponible</div>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Call to Action */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          viewport={{ once: true }}
+          className="text-center"
+        >
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white max-w-2xl mx-auto">
+            <h3 className="text-xl font-bold mb-3">
+              ¿Listo para hacer realidad tu proyecto inmobiliario?
+            </h3>
+            <p className="text-green-100 mb-4 text-sm">
+              Con más de 10 años de experiencia y miles de clientes satisfechos, estamos aquí para guiarte en cada paso.
+            </p>
+            <button
+              onClick={() => window.location.href = '/contact'}
+              className="bg-white text-green-600 px-6 py-2 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors duration-300 shadow-lg hover:shadow-xl"
+            >
+              Contactar Ahora
+            </button>
           </div>
         </motion.div>
       </div>

@@ -47,23 +47,23 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-8">
       {/* Search Bar */}
       <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         <input
           type="text"
           placeholder="Buscar propiedades por ubicación, tipo..."
           value={filters.search}
           onChange={(e) => handleInputChange('search', e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+          className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
         />
       </div>
 
       {/* Filter Toggle */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <Button
           variant="ghost"
           icon={Filter}
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-gray-600 dark:text-gray-400"
+          className="text-gray-600 dark:text-gray-400 justify-center sm:justify-start py-3 px-4"
         >
           Filtros Avanzados
         </Button>
@@ -73,7 +73,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
             variant="ghost"
             icon={X}
             onClick={onClearFilters}
-            className="text-red-600 dark:text-red-400"
+            className="text-red-600 dark:text-red-400 justify-center sm:justify-start py-3 px-4"
           >
             Limpiar Filtros
           </Button>
@@ -88,16 +88,16 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
         className="overflow-hidden"
       >
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Zone */}
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* Zona y Barrio en móviles */}
+            <div className="sm:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Zona
               </label>
               <select
                 value={filters.zone}
                 onChange={(e) => handleInputChange('zone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todas</option>
                 <option value="El Poblado">El Poblado</option>
@@ -106,8 +106,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               </select>
             </div>
 
-            {/* Neighborhood */}
-            <div>
+            <div className="sm:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Barrio
               </label>
@@ -116,11 +115,11 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
                 placeholder="Ej: Laureles, Poblado..."
                 value={filters.neighborhood}
                 onChange={(e) => handleInputChange('neighborhood', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
 
-            {/* Property Type */}
+            {/* Tipo de Propiedad y Transacción */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tipo de Propiedad
@@ -128,7 +127,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               <select
                 value={filters.type}
                 onChange={(e) => handleInputChange('type', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todos</option>
                 <option value="apartment">Apartamento</option>
@@ -138,7 +137,6 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               </select>
             </div>
 
-            {/* Transaction Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tipo de Transacción
@@ -146,7 +144,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               <select
                 value={filters.transactionType}
                 onChange={(e) => handleInputChange('transactionType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todos</option>
                 <option value="Arriendo">Arriendo</option>
@@ -154,7 +152,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               </select>
             </div>
 
-            {/* Status */}
+            {/* Estado y Habitaciones */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Estado
@@ -162,7 +160,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               <select
                 value={filters.status}
                 onChange={(e) => handleInputChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todos</option>
                 <option value="available">Disponible</option>
@@ -176,7 +174,6 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               </select>
             </div>
 
-            {/* Bedrooms */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Habitaciones
@@ -184,7 +181,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               <select
                 value={filters.bedrooms}
                 onChange={(e) => handleInputChange('bedrooms', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Cualquiera</option>
                 <option value="1">1+</option>
@@ -194,7 +191,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               </select>
             </div>
 
-            {/* Bathrooms */}
+            {/* Baños */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Baños
@@ -202,7 +199,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               <select
                 value={filters.bathrooms}
                 onChange={(e) => handleInputChange('bathrooms', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Cualquiera</option>
                 <option value="1">1+</option>
@@ -211,40 +208,40 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               </select>
             </div>
 
-            {/* Price Range */}
-            <div className="md:col-span-2">
+            {/* Rango de Precio - Ocupa toda la fila en móviles */}
+            <div className="sm:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Rango de Precio
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="number"
-                  placeholder="Precio mínimo"
+                  placeholder="Mínimo"
                   value={filters.minPrice}
                   onChange={(e) => handleInputChange('minPrice', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
                 <input
                   type="number"
-                  placeholder="Precio máximo"
+                  placeholder="Máximo"
                   value={filters.maxPrice}
                   onChange={(e) => handleInputChange('maxPrice', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
             </div>
 
-            {/* Featured Only */}
-            <div className="flex items-center">
-              <label className="flex items-center space-x-2 cursor-pointer">
+            {/* Checkbox destacado - Centrado en móviles */}
+            <div className="sm:col-span-2 lg:col-span-4 flex justify-center items-center py-2">
+              <label className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={filters.featured}
                   onChange={(e) => handleInputChange('featured', e.target.checked)}
-                  className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                 />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Solo Destacados
+                <span className="text-base font-medium text-gray-700 dark:text-gray-300">
+                  Solo Propiedades Destacadas
                 </span>
               </label>
             </div>
