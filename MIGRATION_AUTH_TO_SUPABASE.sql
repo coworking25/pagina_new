@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   phone TEXT,
   avatar_url TEXT,
   department TEXT,
-  position TEXT,
+  "position" TEXT,
   is_active BOOLEAN DEFAULT true,
   last_login_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -110,7 +110,7 @@ RETURNS TABLE (
   phone TEXT,
   avatar_url TEXT,
   department TEXT,
-  position TEXT,
+  "position" TEXT,
   is_active BOOLEAN
 ) AS $$
 BEGIN
@@ -123,7 +123,7 @@ BEGIN
     up.phone,
     up.avatar_url,
     up.department,
-    up.position,
+    up."position",
     up.is_active
   FROM public.user_profiles up
   WHERE up.id = auth.uid();
@@ -407,7 +407,7 @@ SELECT
   up.phone,
   up.avatar_url,
   up.department,
-  up.position,
+  up."position",
   up.last_login_at,
   up.created_at,
   au.last_sign_in_at

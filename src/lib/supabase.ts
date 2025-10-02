@@ -73,6 +73,122 @@ export async function savePropertyAppointmentSimple(appointmentData: {
   }
 }
 
+// ==========================================
+// VALIDACIÓN DE DISPONIBILIDAD DE ASESORES
+// ==========================================
+
+/**
+ * Verifica si un asesor está disponible en una fecha y hora específica
+ * @param advisorId ID del asesor
+ * @param appointmentDate Fecha y hora de la cita propuesta
+ * @param excludeAppointmentId ID de cita a excluir (para ediciones)
+ * @returns true si está disponible, false si ya tiene una cita
+ */
+export async function checkAdvisorAvailability(
+  advisorId: string,
+  appointmentDate: string,
+  excludeAppointmentId?: number
+): Promise<{ available: boolean; conflictingAppointment?: any }> {
+  try {
+    console.log('🔍 Verificando disponibilidad del asesor:', advisorId, 'para:', appointmentDate);
+
+    // Convertir la fecha propuesta a objeto Date
+    const proposedDate = new Date(appointmentDate);
+
+    // Calcular el rango de tiempo (la cita dura aproximadamente 1 hora)
+    const startTime = new Date(proposedDate);
+    const endTime = new Date(proposedDate);
+    endTime.setHours(endTime.getHours() + 1); // Asumimos que las citas duran 1 hora
+
+    console.log('⏰ Rango de tiempo:', {
+      start: startTime.toISOString(),
+      end: endTime.toISOString()
+    });
+
+    // Consultar citas existentes del asesor en ese rango de tiempo
+    let query = supabase
+      .from('property_appointments')
+      .select('*')
+      .eq('advisor_id', advisorId)
+      .neq('status', 'cancelled') // Excluir citas canceladas
+      .or(`appointment_date.gte.${startTime.toISOString()},appointment_date.lt.${endTime.toISOString()}`);
+
+    // Si estamos editando una cita existente, excluirla de la verificación
+    if (excludeAppointmentId) {
+      query = query.neq('id', excludeAppointmentId);
+    }
+
+    const { data: conflictingAppointments, error } = await query;
+
+    if (error) {
+      console.error('❌ Error al verificar disponibilidad:', error);
+      throw new Error('Error al verificar disponibilidad del asesor');
+    }
+
+    console.log('📅 Citas encontradas en el rango:', conflictingAppointments);
+
+    // Si hay citas en el mismo horario, el asesor no está disponible
+    if (conflictingAppointments && conflictingAppointments.length > 0) {
+      console.log('❌ Asesor NO disponible - conflicto con cita existente');
+      return {
+        available: false,
+        conflictingAppointment: conflictingAppointments[0] // Retornar la primera cita conflictiva
+      };
+    }
+
+    console.log('✅ Asesor disponible');
+    return { available: true };
+
+  } catch (error) {
+    console.error('❌ Error en checkAdvisorAvailability:', error);
+    throw error;
+  }
+}
+
+/**
+ * Función mejorada para guardar citas con validación de disponibilidad
+ */
+export async function savePropertyAppointmentWithValidation(appointmentData: {
+  client_name: string;
+  client_email: string;
+  client_phone?: string;
+  property_id: number;
+  advisor_id: string;
+  appointment_date: string;
+  appointment_type: string;
+  visit_type: string;
+  attendees: number;
+  special_requests?: string;
+  contact_method: string;
+  marketing_consent: boolean;
+}) {
+  try {
+    console.log('🔍 Validando disponibilidad antes de guardar cita...');
+
+    // Verificar disponibilidad del asesor
+    const availabilityCheck = await checkAdvisorAvailability(
+      appointmentData.advisor_id,
+      appointmentData.appointment_date
+    );
+
+    if (!availabilityCheck.available) {
+      const conflictDate = new Date(availabilityCheck.conflictingAppointment.appointment_date);
+      throw new Error(
+        `El asesor no está disponible en este horario. Ya tiene una cita programada para el ${conflictDate.toLocaleDateString('es-CO')} a las ${conflictDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}.`
+      );
+    }
+
+    console.log('✅ Disponibilidad confirmada, guardando cita...');
+
+    // Si está disponible, guardar la cita normalmente
+    return await savePropertyAppointmentSimple(appointmentData);
+
+  } catch (error) {
+    console.error('❌ Error en savePropertyAppointmentWithValidation:', error);
+    throw error;
+  }
+}
+
 export async function savePropertyAppointment(appointmentData: {
   client_name: string;
   client_email: string;
@@ -2769,12 +2885,6 @@ export async function debugUsers() {
   } catch (error) {
     console.error('❌ Error en debugUsers:', error);
   }
-}
-
-// Función para limpiar completamente la autenticación
-export function clearAuth() {
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('user_data');
 }
 
 // ==========================================

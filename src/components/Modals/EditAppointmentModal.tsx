@@ -5,10 +5,14 @@ import {
   Users,
   FileText,
   MessageSquare,
-  Save
+  Save,
+  CheckCircle,
+  XCircle,
+  Clock
 } from 'lucide-react';
 import Modal from '../UI/Modal';
 import { PropertyAppointment, Advisor, Property } from '../../types';
+import { checkAdvisorAvailability } from '../../lib/supabase';
 
 interface EditAppointmentModalProps {
   appointment: PropertyAppointment | null;
@@ -59,6 +63,64 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availabilityStatus, setAvailabilityStatus] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    message: string;
+  }>({
+    checking: false,
+    available: null,
+    message: ''
+  });
+
+  // Función para verificar disponibilidad del asesor
+  const checkAvailability = async (advisorId: string, appointmentDate: string) => {
+    if (!advisorId || !appointmentDate) {
+      setAvailabilityStatus({ checking: false, available: null, message: '' });
+      return;
+    }
+
+    setAvailabilityStatus({ checking: true, available: null, message: 'Verificando disponibilidad...' });
+
+    try {
+      const availability = await checkAdvisorAvailability(
+        advisorId,
+        appointmentDate,
+        appointment?.id ? parseInt(appointment.id) : undefined // Excluir la cita actual al verificar
+      );
+
+      if (availability.available) {
+        setAvailabilityStatus({
+          checking: false,
+          available: true,
+          message: '✅ Horario disponible'
+        });
+      } else {
+        const conflictDate = new Date(availability.conflictingAppointment.appointment_date);
+        setAvailabilityStatus({
+          checking: false,
+          available: false,
+          message: `❌ Horario ocupado - Cita existente: ${conflictDate.toLocaleDateString('es-CO')} ${conflictDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}`
+        });
+      }
+    } catch (error) {
+      console.error('Error verificando disponibilidad:', error);
+      setAvailabilityStatus({
+        checking: false,
+        available: null,
+        message: '⚠️ Error al verificar disponibilidad'
+      });
+    }
+  };
+
+  // Verificar disponibilidad cuando cambien fecha, hora o asesor
+  useEffect(() => {
+    if (formData.advisor_id && formData.appointment_date) {
+      checkAvailability(formData.advisor_id, formData.appointment_date);
+    } else {
+      setAvailabilityStatus({ checking: false, available: null, message: '' });
+    }
+  }, [formData.advisor_id, formData.appointment_date]);
 
   useEffect(() => {
     if (appointment && isOpen) {
@@ -105,6 +167,11 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
     if (formData.attendees < 1) {
       (newErrors as any).attendees = 'Debe haber al menos 1 asistente';
+    }
+
+    // Validar disponibilidad del asesor
+    if (availabilityStatus.available === false) {
+      (newErrors as any).appointment_date = 'El asesor no está disponible en este horario. ' + availabilityStatus.message;
     }
 
     setErrors(newErrors);
@@ -307,6 +374,34 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
                   </option>
                 ))}
               </select>
+              
+              {/* Indicador de disponibilidad */}
+              {formData.advisor_id && formData.appointment_date && (
+                <div className="mt-2 flex items-center space-x-2">
+                  {availabilityStatus.checking ? (
+                    <>
+                      <Clock className="w-4 h-4 text-blue-500 animate-spin" />
+                      <span className="text-sm text-blue-600 dark:text-blue-400">
+                        Verificando disponibilidad...
+                      </span>
+                    </>
+                  ) : availabilityStatus.available ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-sm text-green-600 dark:text-green-400">
+                        Asesor disponible
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-4 h-4 text-red-500" />
+                      <span className="text-sm text-red-600 dark:text-red-400">
+                        {availabilityStatus.message || 'Asesor no disponible'}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

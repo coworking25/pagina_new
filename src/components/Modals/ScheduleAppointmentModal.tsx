@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Clock, 
@@ -14,12 +14,14 @@ import {
   Users,
   FileText,
   MessageSquare,
-  ChevronDown
+  ChevronDown,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import Button from '../UI/Button';
 import TimeSlotSelector from '../UI/TimeSlotSelector';
-import { savePropertyAppointmentSimple } from '../../lib/supabase';
+import { savePropertyAppointmentWithValidation, checkAdvisorAvailability } from '../../lib/supabase';
 
 interface ScheduleAppointmentModalProps {
   property: Property;
@@ -152,6 +154,15 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availabilityStatus, setAvailabilityStatus] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    message: string;
+  }>({
+    checking: false,
+    available: null,
+    message: ''
+  });
   const [formData, setFormData] = useState<AppointmentForm>({
     name: '',
     email: '',
@@ -181,11 +192,74 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
 
   const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
 
+  // Función para verificar disponibilidad del asesor
+  const checkAvailability = async (date: string, time: string) => {
+    if (!date || !time) return;
+
+    setAvailabilityStatus({ checking: true, available: null, message: 'Verificando disponibilidad...' });
+
+    try {
+      const appointmentDateTime = new Date(`${date}T${time}:00`);
+      const availability = await checkAdvisorAvailability(
+        advisor.id,
+        appointmentDateTime.toISOString()
+      );
+
+      if (availability.available) {
+        setAvailabilityStatus({
+          checking: false,
+          available: true,
+          message: '✅ Horario disponible'
+        });
+      } else {
+        const conflictDate = new Date(availability.conflictingAppointment.appointment_date);
+        setAvailabilityStatus({
+          checking: false,
+          available: false,
+          message: `❌ Horario ocupado - Cita existente: ${conflictDate.toLocaleDateString('es-CO')} ${conflictDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}`
+        });
+      }
+    } catch (error) {
+      console.error('Error verificando disponibilidad:', error);
+      setAvailabilityStatus({
+        checking: false,
+        available: null,
+        message: '⚠️ Error al verificar disponibilidad'
+      });
+    }
+  };
+
+  // Verificar disponibilidad cuando cambien fecha o hora
+  useEffect(() => {
+    if (formData.preferredDate && formData.preferredTime) {
+      checkAvailability(formData.preferredDate, formData.preferredTime);
+    } else {
+      setAvailabilityStatus({ checking: false, available: null, message: '' });
+    }
+  }, [formData.preferredDate, formData.preferredTime]);
+
   const updateFormData = (field: keyof AppointmentForm, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
+    // Validar que todos los campos requeridos estén completos
+    if (!formData.name || !formData.email || !formData.preferredDate || !formData.preferredTime) {
+      alert('Por favor completa todos los campos requeridos.');
+      return;
+    }
+
+    // Validar disponibilidad antes de enviar
+    if (availabilityStatus.available === false) {
+      alert('El asesor no está disponible en el horario seleccionado. Por favor elige otro horario.');
+      return;
+    }
+
+    if (availabilityStatus.available !== true) {
+      alert('Verificando disponibilidad del asesor. Por favor espera.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -211,8 +285,8 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
       // Intentar guardar en la base de datos (usando versión simplificada)
       console.log('💾 Guardando cita en la base de datos...', appointmentData);
       
-      // Usar directamente la versión simplificada que funciona con la tabla creada
-      const savedAppointment = await savePropertyAppointmentSimple(appointmentData);
+      // Usar la función con validación de disponibilidad
+      const savedAppointment = await savePropertyAppointmentWithValidation(appointmentData);
       
       console.log('✅ Cita guardada exitosamente:', savedAppointment);
 
@@ -520,6 +594,32 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                     disabled={!formData.preferredDate}
                     availableSlots={timeSlots}
                   />
+
+                  {/* Indicador de disponibilidad */}
+                  {formData.preferredDate && formData.preferredTime && (
+                    <div className={`mt-4 p-3 rounded-lg border ${
+                      availabilityStatus.available === true
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : availabilityStatus.available === false
+                        ? 'bg-red-50 border-red-200 text-red-800'
+                        : 'bg-blue-50 border-blue-200 text-blue-800'
+                    }`}>
+                      <div className="flex items-center space-x-2">
+                        {availabilityStatus.checking ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        ) : availabilityStatus.available === true ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : availabilityStatus.available === false ? (
+                          <XCircle className="h-5 w-5 text-red-600" />
+                        ) : (
+                          <Clock className="h-5 w-5 text-blue-600" />
+                        )}
+                        <span className="text-sm font-medium">
+                          {availabilityStatus.message}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
