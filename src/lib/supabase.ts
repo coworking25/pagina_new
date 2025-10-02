@@ -110,6 +110,7 @@ export async function checkAdvisorAvailability(
       .from('property_appointments')
       .select('*')
       .eq('advisor_id', advisorId)
+      .is('deleted_at', null)
       .neq('status', 'cancelled') // Excluir citas canceladas
       .or(`appointment_date.gte.${startTime.toISOString()},appointment_date.lt.${endTime.toISOString()}`);
 
@@ -729,12 +730,12 @@ export async function updateAppointment(appointmentId: string, appointmentData: 
   }
 }
 
-// Eliminar una cita
+// Eliminar una cita (soft delete)
 export async function deleteAppointment(appointmentId: string): Promise<void> {
   try {
     const { error } = await supabase
       .from('property_appointments')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', appointmentId);
 
     if (error) {
@@ -742,7 +743,7 @@ export async function deleteAppointment(appointmentId: string): Promise<void> {
       throw error;
     }
 
-    console.log('✅ Cita eliminada exitosamente');
+    console.log('✅ Cita eliminada exitosamente (soft delete)');
   } catch (error) {
     console.error('❌ Error en deleteAppointment:', error);
     throw error;
@@ -843,7 +844,7 @@ export async function getAdvisors(): Promise<Advisor[]> {
     const { data, error } = await supabase
       .from('advisors')
       .select('*')
-      .eq('is_active', true)
+      .is('deleted_at', null)
       .order('name');
     
     if (error) {
@@ -1012,7 +1013,11 @@ export function getPublicImageUrl(path: string) {
 export async function getProperties(onlyAvailable: boolean = false): Promise<Property[]> {
   try {
     console.log('🔍 getProperties called with onlyAvailable:', onlyAvailable);
-    let query = supabase.from('properties').select('*').order('created_at', { ascending: false });
+    let query = supabase
+      .from('properties')
+      .select('*')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
 
     // Si solo queremos propiedades disponibles, incluir solo estados que indican disponibilidad
     if (onlyAvailable) {
@@ -1101,6 +1106,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       .from('properties')
       .select('*')
       .eq('featured', true)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(6);
     
@@ -1115,6 +1121,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       const { data: recentData, error: recentError } = await supabase
         .from('properties')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(6);
         
@@ -1411,22 +1418,22 @@ export async function markInquiryAsWhatsAppSent(id: string): Promise<boolean> {
 }
 
 /**
- * Eliminar una consulta de servicio
+ * Eliminar una consulta de servicio (soft delete)
  */
 export async function deleteServiceInquiry(id: string): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('service_inquiries')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
-    
+
     if (error) {
       console.error('❌ [SUPABASE] Error al eliminar consulta de servicio:', error);
       console.error('❌ [SUPABASE] ID a eliminar:', id);
       throw error;
     }
-    
-    console.log('✅ [SUPABASE] Consulta de servicio eliminada correctamente:', id);
+
+    console.log('✅ [SUPABASE] Consulta de servicio eliminada correctamente (soft delete):', id);
     return true;
     
   } catch (error) {
@@ -2555,36 +2562,23 @@ export async function deleteProperty(propertyId: number) {
     }
 
     // Registrar actividad antes de eliminar
-    await logPropertyActivity(propertyId, 'deleted', { 
+    await logPropertyActivity(propertyId, 'deleted', {
       property: property,
-      deleted_at: new Date().toISOString() 
+      deleted_at: new Date().toISOString()
     });
 
-    // Eliminar las imágenes asociadas si existen
-    if (property.images && Array.isArray(property.images) && property.images.length > 0) {
-      console.log(`🖼️ Eliminando ${property.images.length} imágenes asociadas...`);
-      for (const imageUrl of property.images) {
-        try {
-          await deletePropertyImage(imageUrl);
-        } catch (imageError) {
-          console.warn('⚠️ Error al eliminar imagen:', imageUrl, imageError);
-          // No fallar por errores de imágenes
-        }
-      }
-    }
-    
-    // Eliminar la propiedad
+    // Soft delete - marcar como eliminada en lugar de eliminar físicamente
     const { error } = await supabase
       .from('properties')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', propertyId);
-    
+
     if (error) {
       console.error('❌ Error al eliminar propiedad:', error);
       throw new Error(`Error al eliminar la propiedad: ${error.message}`);
     }
-    
-    console.log('✅ Propiedad eliminada exitosamente:', propertyId);
+
+    console.log('✅ Propiedad eliminada exitosamente (soft delete):', propertyId);
     return true;
   } catch (error) {
     console.error('❌ Error en deleteProperty:', error);
@@ -3021,21 +3015,21 @@ export async function updateAdvisor(id: string, advisorData: Partial<Advisor>): 
 export async function deleteAdvisor(id: string): Promise<boolean> {
   try {
     console.log('🗑️ Eliminando asesor:', id);
-    
-    // Soft delete - marcar como inactivo en lugar de eliminar
+
+    // Soft delete - marcar con deleted_at en lugar de cambiar is_active
     const { error } = await supabase
       .from('advisors')
-      .update({ is_active: false })
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
-    
+
     if (error) {
       console.error('❌ Error eliminando asesor:', error);
       throw error;
     }
-    
-    console.log('✅ Asesor eliminado exitosamente');
+
+    console.log('✅ Asesor eliminado exitosamente (soft delete)');
     return true;
-    
+
   } catch (error) {
     console.error('❌ Error en deleteAdvisor:', error);
     throw error;
@@ -3298,4 +3292,99 @@ Hola ${appointmentData.client_name},
   window.open(whatsappUrl, '_blank', 'width=400,height=600');
 
   console.log('📱 WhatsApp message sent to client:', phoneNumber);
+}
+
+// ==========================================
+// FUNCIONES DE SOFT DELETE ADICIONALES
+// ==========================================
+
+/**
+ * Restaurar un registro soft deleted
+ */
+export async function restoreRecord(tableName: string, recordId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from(tableName)
+      .update({ deleted_at: null })
+      .eq('id', recordId);
+
+    if (error) {
+      console.error(`❌ Error restaurando registro de ${tableName}:`, error);
+      throw error;
+    }
+
+    console.log(`✅ Registro restaurado exitosamente en ${tableName}:`, recordId);
+    return true;
+  } catch (error) {
+    console.error(`❌ Error en restoreRecord para ${tableName}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Hard delete permanente (solo administradores)
+ */
+export async function hardDeleteRecord(tableName: string, recordId: string): Promise<boolean> {
+  try {
+    // Verificar permisos de administrador
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', (await supabase.auth.getUser()).data.user?.id)
+      .single();
+
+    if (profileError || userProfile?.role !== 'admin') {
+      throw new Error('Solo administradores pueden hacer hard delete');
+    }
+
+    const { error } = await supabase
+      .from(tableName)
+      .delete()
+      .eq('id', recordId);
+
+    if (error) {
+      console.error(`❌ Error en hard delete de ${tableName}:`, error);
+      throw error;
+    }
+
+    console.log(`💀 Hard delete completado en ${tableName}:`, recordId);
+    return true;
+  } catch (error) {
+    console.error(`❌ Error en hardDeleteRecord para ${tableName}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener registros soft deleted (solo administradores)
+ */
+export async function getDeletedRecords(tableName: string) {
+  try {
+    // Verificar permisos de administrador
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', (await supabase.auth.getUser()).data.user?.id)
+      .single();
+
+    if (profileError || userProfile?.role !== 'admin') {
+      throw new Error('Solo administradores pueden ver registros eliminados');
+    }
+
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false });
+
+    if (error) {
+      console.error(`❌ Error obteniendo registros eliminados de ${tableName}:`, error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error(`❌ Error en getDeletedRecords para ${tableName}:`, error);
+    throw error;
+  }
 }
