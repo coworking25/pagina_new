@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
-import { loginUser, isAuthenticated } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
 
@@ -12,8 +12,10 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  
   const [formData, setFormData] = useState({
-    email: '', // Cambiar a vacío para forzar validación
+    email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -21,46 +23,17 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Verificar si ya está autenticado al cargar - SOLO verificar token válido
+  // Verificar si ya está autenticado al cargar
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        console.log('🔍 Login: Verificando autenticación existente...');
-        
-        // Primero limpiar cualquier dato inválido
-        const token = localStorage.getItem('auth_token');
-        const userData = localStorage.getItem('user_data');
-        
-        if (!token || !userData) {
-          console.log('❌ No hay datos de autenticación');
-          localStorage.clear(); // Limpiar todo por seguridad
-          return;
-        }
-        
-        const authenticated = await isAuthenticated();
-        console.log('🔐 Resultado autenticación:', authenticated);
-        
-        if (authenticated) {
-          console.log('✅ Usuario ya autenticado, redirigiendo...');
-          if (onLoginSuccess) {
-            onLoginSuccess();
-          } else {
-            navigate('/admin/dashboard');
-          }
-        } else {
-          console.log('❌ No hay autenticación válida, limpiando datos');
-          // Limpiar cualquier dato inválido del localStorage
-          localStorage.clear();
-        }
-      } catch (error) {
-        console.error('❌ Error verificando autenticación:', error);
-        // Limpiar localStorage en caso de error
-        localStorage.clear();
+    if (isAuthenticated && !authLoading) {
+      console.log('✅ Usuario ya autenticado, redirigiendo...');
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        navigate('/admin/dashboard');
       }
-    };
-    
-    checkAuth();
-  }, [onLoginSuccess, navigate]);
+    }
+  }, [isAuthenticated, authLoading, onLoginSuccess, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,16 +56,21 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
 
     try {
-      const result = await loginUser(formData.email, formData.password);
-      console.log('✅ Login exitoso:', result);
+      console.log('🔐 Intentando login con:', formData.email);
+      
+      await login(formData.email, formData.password);
+      
+      console.log('✅ Login exitoso');
+      
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {
         navigate('/admin/dashboard');
       }
+      
     } catch (error: any) {
       console.error('❌ Error en login:', error);
-      setError(error.message || 'Error al iniciar sesión');
+      setError(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
     } finally {
       setIsLoading(false);
     }

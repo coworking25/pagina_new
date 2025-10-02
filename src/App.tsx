@@ -22,6 +22,7 @@ import AdminInquiries from './pages/AdminInquiries';
 import AdminSettings from './pages/AdminSettings';
 import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
 import { AdminBadgeProvider } from './contexts/AdminBadgeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import './utils/debug';
@@ -164,13 +165,15 @@ function App() {
 
   try {
     return (
-      <NotificationProvider>
-        <AdminBadgeProvider>
-          <Router>
-            <AppLayout />
-          </Router>
-        </AdminBadgeProvider>
-      </NotificationProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <AdminBadgeProvider>
+            <Router>
+              <AppLayout />
+            </Router>
+          </AdminBadgeProvider>
+        </NotificationProvider>
+      </AuthProvider>
     );
   } catch (error) {
     console.error('❌ Error crítico en App:', error);

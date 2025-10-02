@@ -112,63 +112,110 @@ export async function savePropertyAppointment(appointmentData: {
 }
 
 // ==========================================
-// SISTEMA DE AUTENTICACIÓN
+// SISTEMA DE AUTENTICACIÓN CON SUPABASE AUTH
 // ==========================================
 
-// Función para login de usuario
-export async function loginUser(email: string, password: string) {
+// Interfaces para tipos de usuario
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: 'admin' | 'advisor' | 'user';
+  phone: string | null;
+  avatar_url: string | null;
+  department: string | null;
+  position: string | null;
+  is_active: boolean;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuthResponse {
+  user: UserProfile;
+  session: any;
+}
+
+// Función para login de usuario con Supabase Auth
+export async function loginUser(email: string, password: string): Promise<AuthResponse> {
   try {
-    // Verificación simple de credenciales hardcodeadas
-    const validCredentials = [
-      { email: 'admincoworkin@inmobiliaria.com', password: '21033384', name: 'Admin Coworkin', role: 'admin' },
-      { email: 'admin@inmobiliaria.com', password: 'admin123', name: 'Administrador', role: 'admin' }
-    ];
+    console.log('🔐 Intentando login con Supabase Auth:', email);
     
-    const user = validCredentials.find(cred => 
-      cred.email === email && cred.password === password
-    );
-    
-    if (!user) {
-      throw new Error('Credenciales incorrectas');
+    // Autenticar con Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      console.error('❌ Error en autenticación:', error);
+      throw new Error(error.message || 'Credenciales incorrectas');
     }
-    
-    // Crear sesión simple
-    const sessionToken = generateSessionToken();
-    const userData = {
-      id: 'user_' + Date.now(),
-      email: user.email,
-      full_name: user.name,
-      role: user.role
-    };
-    
-    // Guardar sesión en localStorage
-    localStorage.setItem('auth_token', sessionToken);
-    localStorage.setItem('user_data', JSON.stringify(userData));
-    
+
+    if (!data.user || !data.session) {
+      throw new Error('No se pudo obtener la sesión del usuario');
+    }
+
+    console.log('✅ Autenticación exitosa:', data.user.email);
+
+    // Obtener perfil del usuario desde user_profiles
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('❌ Error obteniendo perfil:', profileError);
+      throw new Error('No se pudo obtener el perfil del usuario');
+    }
+
+    console.log('✅ Perfil obtenido:', profile);
+
+    // Actualizar último login
+    await supabase.rpc('update_last_login');
+
+    // Log de autenticación
+    await logAuthEvent('login', data.user.id);
+
     return {
-      user: userData,
-      session: { token: sessionToken }
+      user: profile as UserProfile,
+      session: data.session
     };
-    
-  } catch (error) {
+
+  } catch (error: any) {
     console.error('❌ Error en login:', error);
+    
+    // Log de intento fallido
+    await logAuthEvent('failed_login', null, { error: error.message });
+    
     throw error;
   }
 }
 
 // Función para logout
-export async function logoutUser() {
+export async function logoutUser(): Promise<boolean> {
   try {
-    // Limpiar localStorage
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
+    console.log('🔓 Cerrando sesión...');
     
+    // Log de logout
+    const user = await getCurrentUser();
+    if (user) {
+      await logAuthEvent('logout', user.id);
+    }
+
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error('❌ Error en logout:', error);
+      return false;
+    }
+
+    console.log('✅ Sesión cerrada exitosamente');
     return true;
+
   } catch (error) {
     console.error('❌ Error en logout:', error);
-    // Limpiar localStorage aunque haya error
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
     return false;
   }
 }
@@ -176,23 +223,15 @@ export async function logoutUser() {
 // Función para verificar si el usuario está autenticado
 export async function isAuthenticated(): Promise<boolean> {
   try {
-    const token = localStorage.getItem('auth_token');
-    const userData = localStorage.getItem('user_data');
-    
-    if (!token || !userData) {
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error('❌ Error verificando sesión:', error);
       return false;
     }
-    
-    try {
-      JSON.parse(userData); // Validar que los datos sean válidos JSON
-      return true;
-    } catch (parseError) {
-      console.error('❌ Error parseando datos de usuario:', parseError);
-      // Limpiar datos corruptos
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_data');
-      return false;
-    }
+
+    return session !== null;
+
   } catch (error) {
     console.error('❌ Error verificando autenticación:', error);
     return false;
@@ -200,10 +239,28 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 // Función para obtener usuario actual
-export function getCurrentUser() {
+export async function getCurrentUser(): Promise<UserProfile | null> {
   try {
-    const userData = localStorage.getItem('user_data');
-    return userData ? JSON.parse(userData) : null;
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return null;
+    }
+
+    // Obtener perfil completo
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('❌ Error obteniendo perfil:', profileError);
+      return null;
+    }
+
+    return profile as UserProfile;
+
   } catch (error) {
     console.error('❌ Error obteniendo usuario actual:', error);
     return null;
@@ -211,14 +268,236 @@ export function getCurrentUser() {
 }
 
 // Función para verificar si el usuario es admin
-export function isAdmin(): boolean {
-  const user = getCurrentUser();
-  return user && user.role === 'admin';
+export async function isAdmin(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('is_admin');
+
+    if (error) {
+      console.error('❌ Error verificando admin:', error);
+      return false;
+    }
+
+    return data === true;
+
+  } catch (error) {
+    console.error('❌ Error verificando admin:', error);
+    return false;
+  }
 }
 
-// Función para generar token de sesión
-function generateSessionToken(): string {
-  return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+// Función para verificar si el usuario es asesor
+export async function isAdvisor(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('is_advisor');
+
+    if (error) {
+      console.error('❌ Error verificando advisor:', error);
+      return false;
+    }
+
+    return data === true;
+
+  } catch (error) {
+    console.error('❌ Error verificando advisor:', error);
+    return false;
+  }
+}
+
+// Función para registrar nuevo usuario (solo admins)
+export async function registerUser(userData: {
+  email: string;
+  password: string;
+  full_name: string;
+  role: 'admin' | 'advisor' | 'user';
+  phone?: string;
+  department?: string;
+  position?: string;
+}): Promise<AuthResponse> {
+  try {
+    console.log('👤 Registrando nuevo usuario:', userData.email);
+
+    // Verificar que el usuario actual es admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden crear usuarios');
+    }
+
+    // Crear usuario en Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          full_name: userData.full_name,
+          role: userData.role
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ Error creando usuario:', error);
+      throw new Error(error.message);
+    }
+
+    if (!data.user) {
+      throw new Error('No se pudo crear el usuario');
+    }
+
+    console.log('✅ Usuario creado:', data.user.email);
+
+    // Actualizar perfil con información adicional
+    if (userData.phone || userData.department || userData.position) {
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          phone: userData.phone,
+          department: userData.department,
+          position: userData.position
+        })
+        .eq('id', data.user.id);
+
+      if (updateError) {
+        console.error('⚠️ Error actualizando perfil:', updateError);
+      }
+    }
+
+    // Obtener perfil completo
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      throw new Error('Error obteniendo perfil del usuario creado');
+    }
+
+    return {
+      user: profile as UserProfile,
+      session: data.session
+    };
+
+  } catch (error: any) {
+    console.error('❌ Error en registro:', error);
+    throw error;
+  }
+}
+
+// Función para cambiar contraseña
+export async function changePassword(newPassword: string): Promise<boolean> {
+  try {
+    console.log('🔑 Cambiando contraseña...');
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      console.error('❌ Error cambiando contraseña:', error);
+      throw new Error(error.message);
+    }
+
+    // Log del cambio
+    const user = await getCurrentUser();
+    if (user) {
+      await logAuthEvent('password_reset', user.id);
+    }
+
+    console.log('✅ Contraseña cambiada exitosamente');
+    return true;
+
+  } catch (error: any) {
+    console.error('❌ Error cambiando contraseña:', error);
+    throw error;
+  }
+}
+
+// Función para solicitar reseteo de contraseña
+export async function requestPasswordReset(email: string): Promise<boolean> {
+  try {
+    console.log('📧 Solicitando reseteo de contraseña para:', email);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+
+    if (error) {
+      console.error('❌ Error solicitando reseteo:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('✅ Email de reseteo enviado');
+    return true;
+
+  } catch (error: any) {
+    console.error('❌ Error en reseteo:', error);
+    throw error;
+  }
+}
+
+// Función para actualizar perfil de usuario
+export async function updateUserProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
+  try {
+    console.log('📝 Actualizando perfil...');
+
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error('No hay usuario autenticado');
+    }
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update(updates)
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error actualizando perfil:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('✅ Perfil actualizado');
+    return data as UserProfile;
+
+  } catch (error: any) {
+    console.error('❌ Error actualizando perfil:', error);
+    throw error;
+  }
+}
+
+// Función auxiliar para logging de eventos de autenticación
+async function logAuthEvent(
+  action: 'login' | 'logout' | 'failed_login' | 'password_reset' | 'email_change',
+  userId: string | null,
+  metadata: any = {}
+): Promise<void> {
+  try {
+    await supabase.from('auth_logs').insert({
+      user_id: userId,
+      action,
+      ip_address: null, // Se puede obtener del cliente si es necesario
+      user_agent: navigator.userAgent,
+      metadata
+    });
+  } catch (error) {
+    console.error('⚠️ Error logging auth event:', error);
+    // No lanzar error para no interrumpir el flujo principal
+  }
+}
+
+// Función para escuchar cambios en la autenticación
+export function onAuthStateChange(callback: (event: string, session: any) => void) {
+  return supabase.auth.onAuthStateChange((event, session) => {
+    console.log('🔔 Auth state changed:', event);
+    callback(event, session);
+  });
+}
+
+// Función para limpiar autenticación (solo desarrollo)
+export async function clearAuth() {
+  await supabase.auth.signOut();
+  console.log('🧹 Autenticación limpiada');
 }
 
 // ==========================================
