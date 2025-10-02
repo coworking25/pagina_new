@@ -269,7 +269,7 @@ const Services: React.FC = () => {
                   <ul className="space-y-2 mb-6">
                     {service.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-3"></div>
+                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full mr-3"></div>
                         {feature}
                       </li>
                     ))}
@@ -281,7 +281,7 @@ const Services: React.FC = () => {
                       variant="ghost"
                       icon={ArrowRight}
                       iconPosition="right"
-                      className="w-full group-hover:text-green-600 dark:group-hover:text-green-400"
+                      className="w-full group-hover:text-green-700 dark:group-hover:text-green-500"
                       onClick={() => openServiceModal(service)}
                     >
                       Más Información
@@ -312,7 +312,7 @@ const Services: React.FC = () => {
           viewport={{ once: true }}
           className="text-center"
         >
-          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-8 text-white">
+          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-8 text-white">
             <motion.h3 
               className="text-2xl font-bold mb-4"
               initial={{ opacity: 0, y: 20 }}
@@ -323,7 +323,7 @@ const Services: React.FC = () => {
               ¿Necesitas ayuda personalizada?
             </motion.h3>
             <motion.p 
-              className="text-green-100 mb-6 max-w-2xl mx-auto"
+              className="text-green-200 mb-6 max-w-2xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}

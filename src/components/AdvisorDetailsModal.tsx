@@ -66,7 +66,7 @@ function AdvisorDetailsModal({ advisor, isOpen, onClose }: AdvisorDetailsModalPr
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+            <div className="relative bg-[#40534C] text-white p-6">
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-lg transition-colors"
