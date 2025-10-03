@@ -10,9 +10,6 @@ import {
   Clock, 
   MessageCircle, 
   Send,
-  Building,
-  Users,
-  Award,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
@@ -103,19 +100,33 @@ const Contact: React.FC = () => {
       icon: MapPin,
       title: 'Ubicación',
       details: ['Carrera 41 #38 Sur - 43', 'Edificio Emporio Local 306', '5C97+F6 Envigado, Antioquia'],
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-blue-500 to-blue-600',
+      action: () => window.open('https://www.google.com/maps/place/Coworking+Inmobiliario/@6.168695,-75.586939,15z/data=!4m6!3m5!1s0x8e46830032e68b5f:0xe291342f9e551bda!8m2!3d6.1686946!4d-75.5869393!16s%2Fg%2F11vrft7m55?hl=es&entry=ttu&g_ep=EgoyMDI1MDkzMC4wIKXMDSoASAFQAw%3D%3D', '_blank'),
+      actionLabel: 'Ver en Google Maps'
     },
     {
       icon: Phone,
       title: 'Teléfono',
       details: ['+57 314 886 0404', '604 202 63 83'],
-      color: 'from-green-500 to-green-600'
+      color: 'from-green-500 to-green-600',
+      action: () => window.open('tel:+573148860404'),
+      actionLabel: 'Llamar ahora'
     },
     {
       icon: Mail,
       title: 'Email',
       details: ['inmobiliariocoworking5@gmail.com'],
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-purple-500 to-purple-600',
+      action: () => window.open('mailto:inmobiliariocoworking5@gmail.com'),
+      actionLabel: 'Enviar correo'
+    },
+    {
+      icon: MessageCircle,
+      title: 'WhatsApp',
+      details: ['WhatsApp disponible', '+57 314 886 0404'],
+      color: 'from-emerald-500 to-emerald-600',
+      action: () => window.open('https://wa.me/573148860404?text=Hola, me gustaría obtener información sobre sus servicios', '_blank'),
+      actionLabel: 'Abrir WhatsApp'
     },
     {
       icon: Clock,
@@ -123,12 +134,6 @@ const Contact: React.FC = () => {
       details: ['Lun - Vie: 9:00 AM - 5:00 PM', 'Sáb - Dom sin atención al cliente'],
       color: 'from-orange-500 to-orange-600'
     }
-  ];
-
-  const stats = [
-    { icon: Building, number: '500+', label: 'Propiedades Gestionadas' },
-    { icon: Users, number: '1000+', label: 'Clientes Satisfechos' },
-    { icon: Award, number: '10+', label: 'Años de Experiencia' }
   ];
 
   return (
@@ -343,7 +348,7 @@ const Contact: React.FC = () => {
                         </div>
                         <div className={`absolute inset-0 bg-gradient-to-r ${info.color} rounded-xl blur-md opacity-30`}></div>
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                           {info.title}
                         </h3>
@@ -352,39 +357,20 @@ const Contact: React.FC = () => {
                             {detail}
                           </p>
                         ))}
+                        {info.action && (
+                          <button
+                            onClick={info.action}
+                            className={`mt-3 inline-flex items-center text-sm font-medium bg-gradient-to-r ${info.color} text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95`}
+                          >
+                            {info.actionLabel}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </Card>
                 </motion.div>
               );
             })}
-
-            {/* Stats */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
-                Nuestra Experiencia
-              </h3>
-              <div className="space-y-4">
-                {stats.map((stat, index) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div key={index} className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-xl font-bold text-gray-900 dark:text-white">
-                          {stat.number}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {stat.label}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
 
             {/* Map */}
             <Card className="p-0 overflow-hidden">

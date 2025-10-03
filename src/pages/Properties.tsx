@@ -470,11 +470,12 @@ const Properties: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 transform ${
                         currentPage === 1
                           ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'text-white hover:scale-105 hover:shadow-lg active:scale-95'
                       }`}
+                      style={currentPage !== 1 ? { backgroundColor: '#40534C' } : {}}
                     >
                       Anterior
                     </button>
@@ -498,11 +499,12 @@ const Properties: React.FC = () => {
                             <button
                               key={i}
                               onClick={() => setCurrentPage(i)}
-                              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 transform ${
                                 currentPage === i
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                  ? 'text-white scale-110 shadow-lg'
+                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 hover:scale-105 active:scale-95'
                               }`}
+                              style={currentPage === i ? { backgroundColor: '#40534C' } : {}}
                             >
                               {i}
                             </button>
@@ -516,11 +518,12 @@ const Properties: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredProperties.length / propertiesPerPage)))}
                       disabled={currentPage >= Math.ceil(filteredProperties.length / propertiesPerPage)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 transform ${
                         currentPage >= Math.ceil(filteredProperties.length / propertiesPerPage)
                           ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'text-white hover:scale-105 hover:shadow-lg active:scale-95'
                       }`}
+                      style={currentPage < Math.ceil(filteredProperties.length / propertiesPerPage) ? { backgroundColor: '#40534C' } : {}}
                     >
                       Siguiente
                     </button>
