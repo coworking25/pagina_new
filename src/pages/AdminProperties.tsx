@@ -78,45 +78,26 @@ import {
   Mountain,
   Sparkles
 } from 'lucide-react';
-import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getPropertiesPaginated } from '../lib/supabase';
+import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties } from '../lib/supabase';
 import { Property, Advisor } from '../types';
 import Modal from '../components/UI/Modal';
 import FloatingCard from '../components/UI/FloatingCard';
-import Pagination from '../components/UI/Pagination';
 import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
 import ContactModal from '../components/Modals/ContactModal';
 import { CoverImageSelector } from '../components/CoverImageSelector';
-import { usePagination } from '../hooks/usePagination';
 
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
 
   const location = useLocation();
 
-  // Hook de paginación para propiedades
-  const {
-    currentPage,
-    limit,
-    sortBy,
-    sortOrder,
-    search,
-    isLoading,
-    data: properties,
-    total,
-    totalPages,
-    hasNext,
-    hasPrev,
-    setPage,
-    setLimit,
-    setSort,
-    setSearch,
-    loadData
-  } = usePagination<Property>({
-    initialPage: 1,
-    initialLimit: 25,
-    initialSortBy: 'created_at',
-    initialSortOrder: 'desc'
-  });
+  // Estados para propiedades (sin paginación - mostrar todas)
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [allProperties, setAllProperties] = useState<Property[]>([]); // Todas las propiedades sin filtrar
+  const [isLoading, setIsLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -281,6 +262,56 @@ function AdminProperties() {
     }
   }, []);
 
+  // Aplicar filtros localmente cuando cambian los criterios de búsqueda
+  useEffect(() => {
+    if (allProperties.length === 0) return;
+
+    console.log('🔍 Aplicando filtros locales...');
+    let filtered = [...allProperties];
+
+    // Filtro por búsqueda
+    if (search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+      filtered = filtered.filter(p => 
+        p.title?.toLowerCase().includes(searchLower) ||
+        p.location?.toLowerCase().includes(searchLower) ||
+        p.code?.toLowerCase().includes(searchLower) ||
+        p.description?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filtro por estado
+    if (statusFilter && statusFilter !== 'all') {
+      if (statusFilter === 'inactive') {
+        filtered = filtered.filter(p => 
+          p.status === 'maintenance' || p.status === 'pending' || p.status === 'reserved'
+        );
+      } else {
+        filtered = filtered.filter(p => p.status === statusFilter);
+      }
+    }
+
+    // Filtro por tipo
+    if (typeFilter && typeFilter !== 'all') {
+      filtered = filtered.filter(p => p.type === typeFilter);
+    }
+
+    // Ordenamiento
+    filtered.sort((a, b) => {
+      const aVal = a[sortBy as keyof Property];
+      const bVal = b[sortBy as keyof Property];
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+
+    console.log(`✅ Propiedades filtradas: ${filtered.length} de ${allProperties.length} totales`);
+    setProperties(filtered);
+  }, [search, statusFilter, typeFilter, sortBy, sortOrder, allProperties]);
+
   // Detectar si viene de una alerta y aplicar filtros automáticamente
   useEffect(() => {
     const state = location.state as any;
@@ -306,41 +337,39 @@ function AdminProperties() {
   };
 
   const loadProperties = async () => {
-    console.log('🔄 AdminProperties: Cargando propiedades con paginación');
+    console.log('🔄 AdminProperties: Cargando TODAS las propiedades (sin límite)');
+    setIsLoading(true);
 
-    await loadData(async (options) => {
-      const response = await getPropertiesPaginated(options);
+    try {
+      // Cargar TODAS las propiedades sin límite de paginación
+      const allPropsData = await getProperties(false); // false = traer todas, no solo disponibles
+      
+      console.log(`✅ Total de propiedades cargadas: ${allPropsData.length}`);
+      
+      setAllProperties(allPropsData);
+      setProperties(allPropsData);
 
       // Cargar inquilinos activos para estas propiedades
       try {
-        const ids = response.data.map((p: any) => p.id);
+        const ids = allPropsData.map((p: any) => p.id);
         const tenants = await getActiveTenantsForProperties(ids);
         setTenantMap(tenants);
       } catch (tErr) {
         console.warn('⚠️ No se pudieron cargar inquilinos activos:', tErr);
       }
 
-      return response;
-    });
+    } catch (error) {
+      console.error('❌ Error cargando propiedades:', error);
+      setProperties([]);
+      setAllProperties([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const refreshProperties = async () => {
-    console.log('🔄 AdminProperties: Refrescando propiedades con paginación');
-
-    await loadData(async (options) => {
-      const response = await getPropertiesPaginated(options);
-
-      // Cargar inquilinos activos para estas propiedades
-      try {
-        const ids = response.data.map((p: any) => p.id);
-        const tenants = await getActiveTenantsForProperties(ids);
-        setTenantMap(tenants);
-      } catch (tErr) {
-        console.warn('⚠️ No se pudieron cargar inquilinos activos:', tErr);
-      }
-
-      return response;
-    });
+    console.log('🔄 AdminProperties: Refrescando TODAS las propiedades');
+    await loadProperties();
   };
 
   const handleReleaseProperty = async (propertyId: number) => {
@@ -746,7 +775,8 @@ function AdminProperties() {
         status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
         images: selectedProperty.images, // Usar imágenes actuales de la propiedad (con orden de portada)
-        advisor_id: formData.advisor_id || undefined
+        advisor_id: formData.advisor_id || undefined,
+        featured: formData.featured || false // Incluir estado destacado
       };
       
       await updateProperty(selectedProperty.id, propertyData);
@@ -763,6 +793,30 @@ function AdminProperties() {
       showNotification(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Función para alternar el estado destacado de una propiedad
+  const handleToggleFeatured = async (property: Property) => {
+    try {
+      const newFeaturedState = !property.featured;
+      
+      await updateProperty(property.id, {
+        ...property,
+        featured: newFeaturedState
+      });
+      
+      await refreshProperties();
+      
+      const message = newFeaturedState 
+        ? '⭐ Propiedad marcada como destacada' 
+        : '✅ Propiedad desmarcada como destacada';
+      
+      showNotification(message, 'success');
+      console.log(`✅ Estado destacado actualizado: ${newFeaturedState}`);
+    } catch (error: any) {
+      console.error('❌ Error actualizando estado destacado:', error);
+      showNotification('Error al actualizar el estado destacado', 'error');
     }
   };
 
@@ -847,8 +901,12 @@ function AdminProperties() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Propiedades</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{properties.length}</p>
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">+2.5% este mes</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{allProperties.length}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {properties.length !== allProperties.length 
+                    ? `Mostrando ${properties.length} filtradas` 
+                    : 'Todas las propiedades'}
+                </p>
               </div>
               <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
                 <Home className="w-8 h-8 text-blue-600" />
@@ -1113,6 +1171,23 @@ function AdminProperties() {
                       whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         e.stopPropagation();
+                        handleToggleFeatured(property);
+                      }}
+                      className={`p-2 rounded-lg transition-all duration-200 hover:shadow-md ${
+                        property.featured
+                          ? 'text-purple-600 bg-purple-100 dark:bg-purple-900/30'
+                          : 'text-gray-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600'
+                      }`}
+                      title={property.featured ? 'Quitar destacado' : 'Marcar como destacada'}
+                    >
+                      <Star className={`w-5 h-5 ${property.featured ? 'fill-purple-600' : ''}`} />
+                    </motion.button>
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
                         handleViewProperty(property);
                       }}
                       className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200 hover:shadow-md"
@@ -1178,17 +1253,10 @@ function AdminProperties() {
         </div>
       )}
 
-      {/* Componente de Paginación */}
-      {totalPages > 1 && (
-        <div className="mt-8 flex justify-center">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={total}
-            itemsPerPage={limit}
-            onPageChange={setPage}
-            onPageSizeChange={setLimit}
-          />
+      {/* Información de resultados */}
+      {properties.length > 0 && (
+        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          Mostrando {properties.length} de {allProperties.length} propiedades totales
         </div>
       )}
 
@@ -2235,6 +2303,29 @@ function AdminProperties() {
                 <option value="maintenance">Mantenimiento</option>
                 <option value="pending">Pendiente</option>
               </select>
+            </div>
+
+            {/* Propiedad Destacada */}
+            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border-2 border-purple-200 dark:border-purple-700">
+              <input
+                type="checkbox"
+                id="featured-edit"
+                name="featured"
+                checked={formData.featured || false}
+                onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+              />
+              <label htmlFor="featured-edit" className="flex items-center cursor-pointer">
+                <Star className="w-5 h-5 text-purple-600 mr-2" />
+                <div>
+                  <span className="block text-sm font-medium text-gray-900 dark:text-white">
+                    Marcar como Destacada
+                  </span>
+                  <span className="block text-xs text-gray-600 dark:text-gray-400">
+                    Aparecerá en la sección Premium
+                  </span>
+                </div>
+              </label>
             </div>
 
             {/* Asesor Asignado */}
