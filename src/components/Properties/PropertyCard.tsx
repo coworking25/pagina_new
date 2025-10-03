@@ -160,13 +160,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </div>
         </div>
 
-        {/* Badge de imágenes */}
-        {publicImageUrls.length > 1 && (
-          <div className="absolute top-3 right-3 bg-black bg-opacity-60 text-white px-2 py-1 rounded-lg text-sm">
-            📸 {publicImageUrls.length}
-          </div>
-        )}
-
         {/* Featured Badge */}
         {property.featured && (
           <div className="absolute top-3 left-3">

@@ -37,10 +37,33 @@ const Logo: React.FC<LogoProps> = ({
   const logoContent = (
     <div className={`flex items-center space-x-3 group ${className}`}>
       <div className="relative">
+        {/* Logo for light mode */}
         <img
           src="/logo-13962586_transparent (1).png"
           alt="Coworking Inmobiliario"
-          className={`${sizeClasses[size]} object-contain transition-all duration-300 ${
+          className={`${sizeClasses[size]} object-contain transition-all duration-300 dark:hidden ${
+            variant === 'header' ? 'group-hover:scale-105' : 'group-hover:scale-110'
+          }`}
+          style={{
+            imageRendering: variant === 'header' ? 'crisp-edges' : 'auto'
+          }}
+          onError={(e) => {
+            // Fallback to CSS logo if image fails
+            e.currentTarget.style.display = 'none';
+            const fallback = document.createElement('div');
+            fallback.className = `${sizeClasses[size]} bg-gradient-to-br from-cyan-400 via-green-400 to-purple-500 rounded-lg flex items-center justify-center shadow-lg glow-cyan group-hover:glow-purple transition-all duration-300`;
+            fallback.innerHTML = `<span class="text-white font-bold ${textSizeClasses[size]}">CI</span>`;
+            const blurDiv = document.createElement('div');
+            blurDiv.className = 'absolute inset-0 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300 animate-pulse-slow';
+            fallback.appendChild(blurDiv);
+            e.currentTarget.parentElement?.appendChild(fallback);
+          }}
+        />
+        {/* Logo for dark mode */}
+        <img
+          src="/LogoEnBlancoo.png"
+          alt="Coworking Inmobiliario"
+          className={`${sizeClasses[size]} object-contain transition-all duration-300 hidden dark:block ${
             variant === 'header' ? 'group-hover:scale-105' : 'group-hover:scale-110'
           }`}
           style={{

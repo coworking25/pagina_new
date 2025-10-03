@@ -340,27 +340,27 @@ const Contact: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <Card className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="relative">
-                        <div className={`w-12 h-12 bg-gradient-to-r ${info.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                          <Icon className="w-6 h-6 text-white" />
+                  <Card className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="relative flex-shrink-0">
+                        <div className={`w-10 h-10 bg-gradient-to-r ${info.color} rounded-lg flex items-center justify-center shadow-lg`}>
+                          <Icon className="w-5 h-5 text-white" />
                         </div>
-                        <div className={`absolute inset-0 bg-gradient-to-r ${info.color} rounded-xl blur-md opacity-30`}></div>
+                        <div className={`absolute inset-0 bg-gradient-to-r ${info.color} rounded-lg blur-md opacity-30`}></div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
                           {info.title}
                         </h3>
                         {info.details.map((detail, detailIndex) => (
-                          <p key={detailIndex} className="text-sm text-gray-600 dark:text-gray-400">
+                          <p key={detailIndex} className="text-xs text-gray-600 dark:text-gray-400 truncate">
                             {detail}
                           </p>
                         ))}
                         {info.action && (
                           <button
                             onClick={info.action}
-                            className={`mt-3 inline-flex items-center text-sm font-medium bg-gradient-to-r ${info.color} text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95`}
+                            className={`mt-2 inline-flex items-center text-xs font-medium bg-gradient-to-r ${info.color} text-white px-3 py-1.5 rounded-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95`}
                           >
                             {info.actionLabel}
                           </button>
@@ -374,7 +374,7 @@ const Contact: React.FC = () => {
 
             {/* Map */}
             <Card className="p-0 overflow-hidden">
-              <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
+              <div className="h-96 bg-gray-200 dark:bg-gray-700 relative">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.3!2d-75.5869393!3d6.1686946!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e46830032e68b5f%3A0xe291342f9e551bda!2sCoworking%20Inmobiliario!5e0!3m2!1ses!2sco!4v1725531234567!5m2!1ses!2sco"
                   width="100%"

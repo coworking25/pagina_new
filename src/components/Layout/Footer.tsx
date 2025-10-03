@@ -61,15 +61,23 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <span>{CONTACT_INFO.phones.primary}</span>
+                <a
+                  href={CONTACT_INFO.urls.whatsapp('Hola, me gustaría obtener información')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-green-400 transition-colors cursor-pointer"
+                >
+                  {CONTACT_INFO.phones.primary}
+                </a>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <span>{CONTACT_INFO.email.primary}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <MessageCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <span>WhatsApp disponible</span>
+                <a
+                  href={CONTACT_INFO.urls.email}
+                  className="hover:text-green-400 transition-colors cursor-pointer"
+                >
+                  {CONTACT_INFO.email.primary}
+                </a>
               </div>
             </div>
 
@@ -85,7 +93,9 @@ const Footer: React.FC = () => {
                 <MessageCircle className="w-4 h-4" />
               </a>
               <a
-                href="#"
+                href="https://www.facebook.com/share/19jKKqdok8/?mibextid=wwXIfr"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-green-600 transition-colors duration-200"
                 title="Facebook"
               >

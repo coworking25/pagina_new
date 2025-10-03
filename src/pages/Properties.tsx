@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Grid } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Property } from '../types';
-import { getProperties, getAdvisorById, isAdmin } from '../lib/supabase';
+import { getProperties, getAdvisorById } from '../lib/supabase';
 import { diagnosticImageUrls, testMultipleUrls } from '../lib/diagnostics';
 import { advisors } from '../data/advisors';
 import PropertyCard from '../components/Properties/PropertyCard';
@@ -56,13 +56,8 @@ const Properties: React.FC = () => {
     featured: false,
   });
 
-  const [isUserAdmin, setIsUserAdmin] = useState(false);
-
   useEffect(() => {
     loadProperties();
-    
-    // Verificar si el usuario es admin
-    setIsUserAdmin(isAdmin());
     
     // Ejecutar diagnóstico en desarrollo
     if (import.meta.env.DEV) {
@@ -450,7 +445,7 @@ const Properties: React.FC = () => {
                         onViewDetails={handleViewDetails}
                         onContact={handleContact}
                         onSchedule={handleSchedule}
-                        showAdminActions={isUserAdmin}
+                        showAdminActions={false}
                       />
                     </motion.div>
                   ));
