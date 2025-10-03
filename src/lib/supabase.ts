@@ -1194,10 +1194,11 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
-    // Si solo queremos propiedades disponibles, incluir solo estados que indican disponibilidad
+    // Si solo queremos propiedades disponibles para mostrar en la página pública
     if (onlyAvailable) {
-      // Incluir solo propiedades con status 'rent' o 'sale' (disponibles para arriendo o venta)
-      query = query.or('status.eq.rent,status.eq.sale');
+      // Incluir solo propiedades con status: 'rent', 'sale', o 'available'
+      // Estas son las únicas que deben aparecer en la página web pública
+      query = query.or('status.eq.rent,status.eq.sale,status.eq.available');
     }
 
     const { data, error } = await query;

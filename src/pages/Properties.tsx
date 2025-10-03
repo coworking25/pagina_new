@@ -40,6 +40,10 @@ const Properties: React.FC = () => {
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedAdvisor, setSelectedAdvisor] = useState(advisors[0]);
 
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const propertiesPerPage = 15; // 15 propiedades por página
+
   const [filters, setFilters] = useState<FilterState>({
     search: searchParams.get('search') || '',
     zone: searchParams.get('zone') || '',
@@ -84,7 +88,8 @@ const Properties: React.FC = () => {
       console.log('🔄 Iniciando carga de propiedades...');
       setLoading(true);
       
-  const data = await getProperties(true);
+      // true = Solo propiedades disponibles para la página pública (rent, sale, available)
+      const data = await getProperties(true);
       console.log('📊 Total propiedades recibidas:', data?.length || 0);
       
       if (!data || data.length === 0) {
@@ -323,6 +328,7 @@ const Properties: React.FC = () => {
       });
 
       setFilteredProperties(filtered);
+      setCurrentPage(1); // Resetear a la página 1 cuando cambian los filtros
       
     } catch (error) {
       console.error('❌ Error aplicando filtros:', error);
@@ -449,29 +455,109 @@ const Properties: React.FC = () => {
               ))}
             </div>
           ) : viewMode === 'grid' ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-            >
-              {filteredProperties.map((property, index) => (
-                <motion.div
-                  key={property.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                >
-                  <PropertyCard
-                    property={property}
-                    onViewDetails={handleViewDetails}
-                    onContact={handleContact}
-                    onSchedule={handleSchedule}
-                    showAdminActions={isUserAdmin}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              >
+                {(() => {
+                  // Calcular índices de paginación
+                  const indexOfLastProperty = currentPage * propertiesPerPage;
+                  const indexOfFirstProperty = indexOfLastProperty - propertiesPerPage;
+                  const currentProperties = filteredProperties.slice(indexOfFirstProperty, indexOfLastProperty);
+
+                  return currentProperties.map((property, index) => (
+                    <motion.div
+                      key={property.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                    >
+                      <PropertyCard
+                        property={property}
+                        onViewDetails={handleViewDetails}
+                        onContact={handleContact}
+                        onSchedule={handleSchedule}
+                        showAdminActions={isUserAdmin}
+                      />
+                    </motion.div>
+                  ));
+                })()}
+              </motion.div>
+
+              {/* Controles de Paginación */}
+              {filteredProperties.length > propertiesPerPage && (
+                <div className="mt-12 flex flex-col items-center gap-6">
+                  {/* Información de página */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Mostrando {Math.min((currentPage - 1) * propertiesPerPage + 1, filteredProperties.length)} - {Math.min(currentPage * propertiesPerPage, filteredProperties.length)} de {filteredProperties.length} propiedades
+                  </div>
+
+                  {/* Botones de paginación */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        currentPage === 1
+                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      Anterior
+                    </button>
+
+                    {/* Números de página */}
+                    <div className="flex items-center gap-1">
+                      {(() => {
+                        const totalPages = Math.ceil(filteredProperties.length / propertiesPerPage);
+                        const pageNumbers = [];
+                        const maxPagesToShow = 5;
+
+                        let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+                        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+                        if (endPage - startPage < maxPagesToShow - 1) {
+                          startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                        }
+
+                        for (let i = startPage; i <= endPage; i++) {
+                          pageNumbers.push(
+                            <button
+                              key={i}
+                              onClick={() => setCurrentPage(i)}
+                              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                currentPage === i
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {i}
+                            </button>
+                          );
+                        }
+
+                        return pageNumbers;
+                      })()}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredProperties.length / propertiesPerPage)))}
+                      disabled={currentPage >= Math.ceil(filteredProperties.length / propertiesPerPage)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        currentPage >= Math.ceil(filteredProperties.length / propertiesPerPage)
+                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <motion.div
               initial={{ opacity: 0 }}
