@@ -6,7 +6,6 @@ import { getAdvisorById } from '../../lib/supabase';
 import Button from '../UI/Button';
 import ImageGallery from '../UI/ImageGallery';
 import MortgageCalculator from '../UI/MortgageCalculator';
-import PriceHistoryComponent from '../UI/PriceHistory';
 import ContactFormModal from './ContactFormModal';
 import ScheduleAppointmentModal from './ScheduleAppointmentModal';
 import { getPublicImageUrl } from '../../lib/supabase';
@@ -30,7 +29,7 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'map' | 'mortgage' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'mortgage'>('overview');
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   
@@ -114,62 +113,8 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
 
   const tabs = [
     { id: 'overview', label: 'Descripción', icon: MapPin },
-    { id: 'map', label: 'Ubicación', icon: MapPin },
     { id: 'mortgage', label: 'Calculadora', icon: TrendingUp },
-    { id: 'history', label: 'Historial', icon: TrendingUp },
   ];
-
-  const MockNeighborhoodMap = () => (
-    <div className="space-y-6">
-      {/* Mapa */}
-      <div className="bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden">
-        <div className="h-64 bg-gradient-to-br from-green-100 to-blue-100 dark:from-green-900/20 dark:to-blue-900/20 flex items-center justify-center relative">
-          <div className="text-center">
-            <MapPin className="w-12 h-12 mx-auto mb-2 text-green-600" />
-            <p className="text-gray-600 dark:text-gray-400 mb-4">Vista del mapa interactivo</p>
-            <button
-              onClick={() => {
-                const location = property.location || 'Ubicación no disponible';
-                const url = `https://www.google.com/maps/search/${encodeURIComponent(location)}`;
-                window.open(url, '_blank');
-              }}
-              className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-            >
-              <span>Ver en Google Maps</span>
-            </button>
-          </div>
-          <div className="absolute top-4 left-4 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-lg">
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{property.location}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Información del Barrio */}
-      <div className="space-y-4">
-        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Información del Barrio
-        </h4>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-            <h5 className="font-medium text-gray-900 dark:text-white mb-2">Transporte</h5>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              <li>• TransMilenio cercano</li>
-              <li>• Rutas de bus</li>
-              <li>• Ciclorruta</li>
-            </ul>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-            <h5 className="font-medium text-gray-900 dark:text-white mb-2">Servicios</h5>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              <li>• Centro comercial</li>
-              <li>• Hospitales</li>
-              <li>• Bancos</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -477,18 +422,8 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                             </div>
                           )}
 
-                          {activeTab === 'map' && <MockNeighborhoodMap />}
-
                           {activeTab === 'mortgage' && (
                             <MortgageCalculator propertyPrice={property.price} />
-                          )}
-
-                          {activeTab === 'history' && (
-                            <PriceHistoryComponent
-                              priceHistory={property.price_history}
-                              currentPrice={property.price}
-                              propertyType={property.status === 'sold' || property.status === 'rented' ? 'sale' : property.status}
-                            />
                           )}
                         </div>
                       </div>

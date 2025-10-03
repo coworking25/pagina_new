@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Download, Maximize2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 
 interface ImageGalleryProps {
   images: string[];
@@ -18,6 +18,24 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  // Navegación con teclado
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isLightboxOpen) return;
+
+      if (e.key === 'ArrowLeft') {
+        prevLightboxImage();
+      } else if (e.key === 'ArrowRight') {
+        nextLightboxImage();
+      } else if (e.key === 'Escape') {
+        closeLightbox();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen, lightboxIndex]);
+
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
     setIsLightboxOpen(true);
@@ -33,23 +51,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
 
   const prevLightboxImage = () => {
     setLightboxIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
-
-  const downloadImage = async (imageUrl: string, index: number) => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${title}-imagen-${index + 1}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading image:', error);
-    }
   };
 
   const nextImage = () => {
@@ -74,50 +75,51 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
             transition={{ duration: 0.3 }}
             src={images[currentIndex]}
             alt={`${title} - Imagen ${currentIndex + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover cursor-pointer"
+            onClick={() => openLightbox(currentIndex)}
           />
           
           {/* Overlay de controles */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300">
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 pointer-events-none">
             {/* Botones de navegación */}
             {images.length > 1 && (
               <>
                 <button
-                  onClick={prevImage}
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    prevImage();
+                  }}
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 pointer-events-auto"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={nextImage}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nextImage();
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 pointer-events-auto"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </>
             )}
 
-            {/* Botones de acción */}
-            <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <button
-                onClick={() => openLightbox(currentIndex)}
-                className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200"
-                title="Ver en pantalla completa"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => downloadImage(images[currentIndex], currentIndex)}
-                className="p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200"
-                title="Descargar imagen"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-            </div>
+            {/* Botón de maximizar */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openLightbox(currentIndex);
+              }}
+              className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 pointer-events-auto"
+              title="Ver en pantalla completa"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Contador de imágenes */}
-          <div className="absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-lg text-sm">
+          <div className="absolute bottom-2 right-2 bg-black/50 text-white px-3 py-1 rounded-lg text-sm pointer-events-none">
             {currentIndex + 1} / {images.length}
           </div>
         </div>
@@ -175,17 +177,11 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
               />
 
               {/* Controles del lightbox */}
-              <div className="absolute top-4 right-4 flex space-x-2">
-                <button
-                  onClick={() => downloadImage(images[lightboxIndex], lightboxIndex)}
-                  className="p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200"
-                  title="Descargar imagen"
-                >
-                  <Download className="w-5 h-5" />
-                </button>
+              <div className="absolute top-4 right-4">
                 <button
                   onClick={closeLightbox}
                   className="p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200"
+                  title="Cerrar (ESC)"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -197,12 +193,14 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                   <button
                     onClick={prevLightboxImage}
                     className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200"
+                    title="Anterior (←)"
                   >
                     <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button
                     onClick={nextLightboxImage}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200"
+                    title="Siguiente (→)"
                   >
                     <ChevronRight className="w-6 h-6" />
                   </button>
