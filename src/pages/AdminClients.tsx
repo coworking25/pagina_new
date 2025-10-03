@@ -41,7 +41,7 @@ import {
   generateContractPayments,
   checkClientExists
 } from '../lib/clientsApi';
-import { getProperties } from '../lib/supabase';
+import { getProperties, updatePropertyStatus } from '../lib/supabase';
 import Modal from '../components/UI/Modal';
 import { ChevronLeft, ChevronRight, MapPin as MapPinIcon } from 'lucide-react';
 import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary, ClientFormData, ContractFormData } from '../types/clients';
@@ -639,6 +639,41 @@ function AdminClients() {
     } catch (error) {
       console.error('❌ Error marcando relación como activa:', error);
       alert('Error al actualizar la relación. Revisa la consola.');
+    }
+  };
+
+  // Acción: Quitar propiedad asignada al cliente
+  const handleRemovePropertyRelation = async (relation: ClientPropertyRelation) => {
+    if (!relation || !relation.id || !relation.property_id) return;
+
+    const confirmMessage = `¿Estás seguro de que quieres quitar la propiedad "${relation.property?.title || `Propiedad #${relation.property_id}`}" del cliente? La propiedad volverá a estar disponible para arrendar.`;
+
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      // 1) Eliminar la relación cliente-propiedad
+      await deleteClientPropertyRelation(relation.id);
+      console.log('✅ Relación cliente-propiedad eliminada:', relation.id);
+
+      // 2) Cambiar el status de la propiedad a 'available'
+      await updatePropertyStatus(relation.property_id, 'available', `Propiedad desasignada del cliente ${selectedClient?.full_name}`);
+      console.log('✅ Propiedad marcada como disponible:', relation.property_id);
+
+      alert('Propiedad quitada exitosamente. Ahora está disponible para arrendar.');
+
+      // 3) Recargar relaciones y resumen del cliente
+      if (selectedClient) {
+        const [relations, summary] = await Promise.all([
+          getClientPropertyRelations(selectedClient.id),
+          getClientPropertySummary(selectedClient.id)
+        ]);
+        setClientRelations(relations || []);
+        setClientPropertySummary(summary || null);
+      }
+
+    } catch (error) {
+      console.error('❌ Error quitando propiedad asignada:', error);
+      alert('Error al quitar la propiedad. Revisa la consola.');
     }
   };
 
@@ -1974,6 +2009,13 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
                                       Activar
                                     </button>
                                   ) : null}
+                                  <button
+                                    onClick={() => handleRemovePropertyRelation(rel)}
+                                    className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                    title="Quitar propiedad del cliente"
+                                  >
+                                    Quitar
+                                  </button>
                                   <button
                                     onClick={() => handleViewPropertyDetails(rel.property)}
                                     className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"

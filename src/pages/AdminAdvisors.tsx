@@ -17,16 +17,15 @@ import {
   UserCheck,
   Image as ImageIcon
 } from 'lucide-react';
-import { getAdvisors, createAdvisor, updateAdvisor, deleteAdvisor } from '../lib/supabase';
+import { createAdvisor, updateAdvisor, deleteAdvisor, getAdvisorsPaginated } from '../lib/supabase';
 import { Advisor } from '../types';
 import AdvisorDetailsModal from '../components/AdvisorDetailsModal';
 import AdvisorFormModal from '../components/AdvisorFormModal';
 import DeleteAdvisorModal from '../components/DeleteAdvisorModal';
+import { usePagination } from '../hooks/usePagination';
+import Pagination from '../components/UI/Pagination';
 
 function AdminAdvisors() {
-  const [advisors, setAdvisors] = useState<Advisor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   
   // Modal states
@@ -37,25 +36,49 @@ function AdminAdvisors() {
   const [isEditing, setIsEditing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Hook de paginación para asesores
+  const {
+    data: advisors,
+    isLoading,
+    currentPage,
+    totalPages,
+    total,
+    limit,
+    search,
+    sortBy,
+    sortOrder,
+    loadData,
+    setPage,
+    setLimit,
+    setSort,
+    setSearch
+  } = usePagination<Advisor>({
+    initialPage: 1,
+    initialLimit: 20,
+    initialSortBy: 'name',
+    initialSortOrder: 'asc'
+  });
+
   useEffect(() => {
     loadAdvisors();
   }, []);
 
   const loadAdvisors = async () => {
-    try {
-      console.log('👥 Cargando asesores desde Supabase...');
-      
-      const advisorsData = await getAdvisors();
-      console.log('✅ Asesores obtenidos:', advisorsData);
-      
-      setAdvisors(advisorsData);
-      setLoading(false);
-      
-    } catch (error) {
-      console.error('❌ Error cargando asesores:', error);
-      setAdvisors([]);
-      setLoading(false);
-    }
+    console.log('👥 AdminAdvisors: Cargando asesores con paginación');
+
+    await loadData(async (options) => {
+      const response = await getAdvisorsPaginated(options);
+      return response;
+    });
+  };
+
+  const refreshAdvisors = async () => {
+    console.log('🔄 AdminAdvisors: Refrescando asesores con paginación');
+
+    await loadData(async (options) => {
+      const response = await getAdvisorsPaginated(options);
+      return response;
+    });
   };
 
   // Modal handlers
@@ -95,7 +118,7 @@ function AdminAdvisors() {
       }
       
       // Reload advisors list
-      await loadAdvisors();
+      await refreshAdvisors();
       setIsFormModalOpen(false);
       setSelectedAdvisor(null);
     } catch (error) {
@@ -115,7 +138,7 @@ function AdminAdvisors() {
       console.log('✅ Asesor eliminado exitosamente');
       
       // Reload advisors list
-      await loadAdvisors();
+      await refreshAdvisors();
       setIsDeleteModalOpen(false);
       setSelectedAdvisor(null);
     } catch (error) {
@@ -161,16 +184,11 @@ function AdminAdvisors() {
     }
   };
 
-  const filteredAdvisors = advisors.filter(advisor => {
-    const matchesSearch = advisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         advisor.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecialty = specialtyFilter === 'all' || advisor.specialty === specialtyFilter;
-    return matchesSearch && matchesSpecialty;
-  });
+
 
   const uniqueSpecialties = Array.from(new Set(advisors.map(advisor => advisor.specialty)));
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <motion.div
@@ -291,8 +309,8 @@ function AdminAdvisors() {
             <input
               type="text"
               placeholder="Buscar por nombre o email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -316,7 +334,7 @@ function AdminAdvisors() {
 
       {/* Advisors Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAdvisors.map((advisor, index) => (
+        {advisors.map((advisor, index) => (
           <motion.div
             key={advisor.id}
             initial={{ opacity: 0, y: 20 }}
@@ -469,7 +487,7 @@ function AdminAdvisors() {
         ))}
       </div>
 
-      {filteredAdvisors.length === 0 && (
+      {advisors.length === 0 && !isLoading && (
         <div className="text-center py-12">
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -478,6 +496,20 @@ function AdminAdvisors() {
           <p className="text-gray-500 dark:text-gray-400">
             No se encontraron asesores que coincidan con los filtros aplicados.
           </p>
+        </div>
+      )}
+
+      {/* Componente de Paginación */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex justify-center">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={total}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+            onPageSizeChange={setLimit}
+          />
         </div>
       )}
 

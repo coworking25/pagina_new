@@ -17,17 +17,16 @@ import {
   Plus,
   MessageCircle
 } from 'lucide-react';
-import { getAllPropertyAppointments, updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple, sendWhatsAppToClient } from '../lib/supabase';
+import { updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple, sendWhatsAppToClient, getPropertyAppointmentsPaginated } from '../lib/supabase';
 import AppointmentDetailsModal from '../components/Modals/AppointmentDetailsModal';
 import EditAppointmentModal from '../components/Modals/EditAppointmentModal';
 import CreateAppointmentModal from '../components/Modals/CreateAppointmentModal';
 import { PropertyAppointment, Advisor, Property } from '../types';
 import { useNotificationContext } from '../contexts/NotificationContext';
+import { usePagination } from '../hooks/usePagination';
+import Pagination from '../components/UI/Pagination';
 
 function AdminAppointments() {
-  const [appointments, setAppointments] = useState<PropertyAppointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
@@ -47,58 +46,73 @@ function AdminAppointments() {
 
   const { addNotification } = useNotificationContext();
 
+  // Hook de paginación para citas
+  const {
+    data: appointments,
+    isLoading,
+    currentPage,
+    totalPages,
+    total,
+    limit,
+    search,
+    sortBy,
+    sortOrder,
+    loadData,
+    setPage,
+    setLimit,
+    setSort,
+    setSearch
+  } = usePagination<PropertyAppointment>({
+    initialPage: 1,
+    initialLimit: 15,
+    initialSortBy: 'appointment_date',
+    initialSortOrder: 'desc'
+  });
+
   useEffect(() => {
     loadAppointments();
+    loadAdditionalData();
   }, []);
 
-  const loadAppointments = async () => {
+  const loadAdditionalData = async () => {
+    setAdditionalDataLoading(true);
     try {
-      console.log('📅 Cargando citas desde Supabase...');
-
-      const appointmentsData = await getAllPropertyAppointments();
-      console.log('✅ Citas obtenidas:', appointmentsData);
-
-      setAppointments(appointmentsData);
-      setLoading(false);
-
-      // Cargar asesores y propiedades para los modales
-      setAdditionalDataLoading(true);
-      console.log('🔄 Iniciando carga de datos adicionales...');
-      try {
-        console.log('🔄 Cargando asesores y propiedades...');
-        const [advisorsData, propertiesData] = await Promise.all([
-          getAdvisors(),
-          getProperties()
-        ]);
-        console.log('✅ Datos obtenidos de las funciones:', {
-          advisorsData: advisorsData?.length || 0,
-          propertiesData: propertiesData?.length || 0
-        });
-        setAdvisors(advisorsData || []);
-        setProperties(propertiesData || []);
-        console.log('✅ Estados actualizados:', {
-          advisorsCount: advisorsData?.length || 0,
-          propertiesCount: propertiesData?.length || 0,
-          firstProperty: propertiesData?.[0],
-          firstAdvisor: advisorsData?.[0],
-          propertyIds: propertiesData?.map(p => ({ id: p.id, title: p.title })),
-          advisorIds: advisorsData?.map(a => ({ id: a.id, name: a.name }))
-        });
-      } catch (error) {
-        console.error('❌ Error cargando asesores y propiedades:', error);
-        setAdvisors([]);
-        setProperties([]);
-        // Mostrar alerta al usuario
-        alert('Advertencia: No se pudieron cargar los datos de asesores y propiedades. Los detalles de citas pueden mostrar información limitada.');
-      } finally {
-        console.log('🔄 Finalizando carga de datos adicionales, additionalDataLoading = false');
-        setAdditionalDataLoading(false);
-      }
+      console.log('🔄 Cargando asesores y propiedades para modales...');
+      const [advisorsData, propertiesData] = await Promise.all([
+        getAdvisors(),
+        getProperties()
+      ]);
+      setAdvisors(advisorsData || []);
+      setProperties(propertiesData || []);
+      console.log('✅ Datos adicionales cargados:', {
+        advisorsCount: advisorsData?.length || 0,
+        propertiesCount: propertiesData?.length || 0
+      });
     } catch (error) {
-      console.error('❌ Error cargando citas:', error);
-      setAppointments([]);
-      setLoading(false);
+      console.error('❌ Error cargando datos adicionales:', error);
+      setAdvisors([]);
+      setProperties([]);
+    } finally {
+      setAdditionalDataLoading(false);
     }
+  };
+
+  const loadAppointments = async () => {
+    console.log('📅 AdminAppointments: Cargando citas con paginación');
+
+    await loadData(async (options) => {
+      const response = await getPropertyAppointmentsPaginated(options);
+      return response;
+    });
+  };
+
+  const refreshAppointments = async () => {
+    console.log('🔄 AdminAppointments: Refrescando citas con paginación');
+
+    await loadData(async (options) => {
+      const response = await getPropertyAppointmentsPaginated(options);
+      return response;
+    });
   };
 
   // Funciones para manejar modales
@@ -142,7 +156,7 @@ function AdminAppointments() {
         });
       }
       
-      loadAppointments(); // Recargar la lista
+      refreshAppointments(); // Recargar la lista
     } catch (error) {
       console.error('Error eliminando cita:', error);
       alert('Error al eliminar la cita. Por favor, inténtalo de nuevo.');
@@ -250,7 +264,7 @@ function AdminAppointments() {
         });
       }
       
-      loadAppointments(); // Recargar la lista
+      refreshAppointments(); // Recargar la lista
     } catch (error) {
       console.error('Error cambiando estado de cita:', error);
       alert('Error al cambiar el estado de la cita. Por favor, inténtalo de nuevo.');
@@ -313,7 +327,7 @@ function AdminAppointments() {
         });
       }
       
-      loadAppointments(); // Recargar la lista
+      refreshAppointments(); // Recargar la lista
 
       // Limpiar estado
       setShowStatusModal(false);
@@ -405,7 +419,7 @@ function AdminAppointments() {
         await updateAppointment(selectedAppointment.id, appointmentData);
         alert('Cita actualizada exitosamente');
       }
-      loadAppointments(); // Recargar la lista
+      refreshAppointments(); // Recargar la lista
     } catch (error) {
       console.error('Error guardando cita:', error);
       alert('Error al guardar la cita. Por favor, inténtalo de nuevo.');
@@ -483,7 +497,7 @@ function AdminAppointments() {
 
       alert('Cita creada exitosamente');
       setShowCreateModal(false);
-      loadAppointments(); // Recargar la lista
+      refreshAppointments(); // Recargar la lista
     } catch (error) {
       console.error('Error creando cita:', error);
       alert('Error al crear la cita. Por favor, inténtalo de nuevo.');
@@ -535,14 +549,9 @@ function AdminAppointments() {
     }
   };
 
-  const filteredAppointments = appointments.filter(appointment => {
-    const matchesSearch = appointment.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.client_email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || appointment.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
 
-  if (loading) {
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <motion.div
@@ -592,8 +601,8 @@ function AdminAppointments() {
             <input
               type="text"
               placeholder="Buscar por nombre o email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -661,7 +670,7 @@ function AdminAppointments() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredAppointments.map((appointment, index) => (
+              {appointments.map((appointment, index) => (
                 <motion.tr
                   key={appointment.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -775,7 +784,7 @@ function AdminAppointments() {
           </table>
         </div>
 
-        {filteredAppointments.length === 0 && (
+        {appointments.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -787,6 +796,20 @@ function AdminAppointments() {
           </div>
         )}
       </motion.div>
+
+      {/* Componente de Paginación */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex justify-center">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={total}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+            onPageSizeChange={setLimit}
+          />
+        </div>
+      )}
 
       {/* Modales */}
       <AppointmentDetailsModal

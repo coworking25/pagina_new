@@ -78,24 +78,49 @@ import {
   Mountain,
   Sparkles
 } from 'lucide-react';
-import { getProperties, createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase } from '../lib/supabase';
+import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getPropertiesPaginated } from '../lib/supabase';
 import { Property, Advisor } from '../types';
 import Modal from '../components/UI/Modal';
 import FloatingCard from '../components/UI/FloatingCard';
+import Pagination from '../components/UI/Pagination';
 import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
 import ContactModal from '../components/Modals/ContactModal';
 import { CoverImageSelector } from '../components/CoverImageSelector';
+import { usePagination } from '../hooks/usePagination';
 
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
-  
+
   const location = useLocation();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // Hook de paginación para propiedades
+  const {
+    currentPage,
+    limit,
+    sortBy,
+    sortOrder,
+    search,
+    isLoading,
+    data: properties,
+    total,
+    totalPages,
+    hasNext,
+    hasPrev,
+    setPage,
+    setLimit,
+    setSort,
+    setSearch,
+    loadData
+  } = usePagination<Property>({
+    initialPage: 1,
+    initialLimit: 25,
+    initialSortBy: 'created_at',
+    initialSortOrder: 'desc'
+  });
+
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  
+
   console.log('🔍 AdminProperties: Estados inicializados');
   
   // Estados para modales y ventanas flotantes
@@ -281,33 +306,41 @@ function AdminProperties() {
   };
 
   const loadProperties = async () => {
-    try {
-      console.log('🏠 Cargando propiedades desde Supabase...');
-      
-      const propertiesData = await getProperties();
-      console.log('✅ Propiedades obtenidas:', propertiesData);
-      
-      // Verificar advisor_id en cada propiedad
-      propertiesData.forEach((property, index) => {
-        console.log(`🏠 Propiedad ${index + 1}: "${property.title}" - advisor_id: ${property.advisor_id || 'SIN ASESOR'}`);
-      });
-      
-      setProperties(propertiesData);
+    console.log('🔄 AdminProperties: Cargando propiedades con paginación');
+
+    await loadData(async (options) => {
+      const response = await getPropertiesPaginated(options);
+
       // Cargar inquilinos activos para estas propiedades
       try {
-        const ids = propertiesData.map((p: any) => p.id);
+        const ids = response.data.map((p: any) => p.id);
         const tenants = await getActiveTenantsForProperties(ids);
         setTenantMap(tenants);
       } catch (tErr) {
         console.warn('⚠️ No se pudieron cargar inquilinos activos:', tErr);
       }
-      setLoading(false);
-      
-    } catch (error) {
-      console.error('❌ Error cargando propiedades:', error);
-      setProperties([]);
-      setLoading(false);
-    }
+
+      return response;
+    });
+  };
+
+  const refreshProperties = async () => {
+    console.log('🔄 AdminProperties: Refrescando propiedades con paginación');
+
+    await loadData(async (options) => {
+      const response = await getPropertiesPaginated(options);
+
+      // Cargar inquilinos activos para estas propiedades
+      try {
+        const ids = response.data.map((p: any) => p.id);
+        const tenants = await getActiveTenantsForProperties(ids);
+        setTenantMap(tenants);
+      } catch (tErr) {
+        console.warn('⚠️ No se pudieron cargar inquilinos activos:', tErr);
+      }
+
+      return response;
+    });
   };
 
   const handleReleaseProperty = async (propertyId: number) => {
@@ -341,9 +374,8 @@ function AdminProperties() {
       }
 
       // Refresh properties and tenantMap
-      const refreshed = await getProperties();
-      setProperties(refreshed);
-      const refreshedTenants = await getActiveTenantsForProperties(refreshed.map((p: any) => p.id));
+      await refreshProperties();
+      const refreshedTenants = await getActiveTenantsForProperties(properties.map((p: any) => p.id));
       setTenantMap(refreshedTenants);
 
       alert('Propiedad liberada correctamente');
@@ -375,13 +407,7 @@ function AdminProperties() {
     }).format(price);
   };
 
-  const filteredProperties = properties.filter(property => {
-    const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (property.location || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
-    const matchesType = typeFilter === 'all' || property.type === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
-  });
+
 
   // Función para limpiar el formulario
   const resetForm = () => {
@@ -493,18 +519,8 @@ function AdminProperties() {
       // Actualizar la propiedad usando updateProperty
       await updateProperty(selectedProperty.id, { images: newImages });
 
-      // Actualizar el estado local
-      setProperties(prev => prev.map(p =>
-        p.id === selectedProperty.id
-          ? { ...p, images: newImages }
-          : p
-      ));
-
-      // Actualizar selectedProperty
-      setSelectedProperty(prev => prev ? {
-        ...prev,
-        images: newImages
-      } : null);
+      // Refrescar datos desde el servidor
+      await refreshProperties();
 
       console.log(`✅ ${uploadedUrls.length} imágenes agregadas exitosamente`);
       showNotification(`${uploadedUrls.length} imágenes agregadas exitosamente`, 'success');
@@ -680,8 +696,8 @@ function AdminProperties() {
         advisor_id: formData.advisor_id || undefined
       };
       
-      const newProperty = await createProperty(propertyData);
-      setProperties(prev => [newProperty, ...prev]);
+      await createProperty(propertyData);
+      await refreshProperties();
       setShowAddModal(false);
       resetForm();
       
@@ -733,8 +749,8 @@ function AdminProperties() {
         advisor_id: formData.advisor_id || undefined
       };
       
-      const updatedProperty = await updateProperty(selectedProperty.id, propertyData);
-      setProperties(prev => prev.map(p => p.id === selectedProperty.id ? updatedProperty : p));
+      await updateProperty(selectedProperty.id, propertyData);
+      await refreshProperties();
       setShowEditModal(false);
       setSelectedProperty(null);
       resetForm();
@@ -758,8 +774,8 @@ function AdminProperties() {
         console.log('🗑️ Eliminando propiedad:', propertyId);
         await deleteProperty(propertyId);
         
-        // Actualizar la lista local
-        setProperties(prev => prev.filter(p => p.id !== propertyId));
+        // Refrescar datos desde el servidor
+        await refreshProperties();
         
         console.log('✅ Propiedad eliminada exitosamente');
         // Usar una notificación más elegante en lugar de alert
@@ -784,7 +800,7 @@ function AdminProperties() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <motion.div
@@ -918,8 +934,8 @@ function AdminProperties() {
               <input
                 type="text"
                 placeholder="Buscar por título o ubicación..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
             </div>
@@ -965,7 +981,7 @@ function AdminProperties() {
 
       {/* Properties Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProperties.map((property, index) => (
+        {properties.map((property, index) => (
           <motion.div
             key={property.id}
             initial={{ opacity: 0, y: 20 }}
@@ -1150,7 +1166,7 @@ function AdminProperties() {
         ))}
       </div>
 
-      {filteredProperties.length === 0 && (
+      {properties.length === 0 && !isLoading && (
         <div className="text-center py-12">
           <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -1159,6 +1175,20 @@ function AdminProperties() {
           <p className="text-gray-500 dark:text-gray-400">
             No se encontraron propiedades que coincidan con los filtros aplicados.
           </p>
+        </div>
+      )}
+
+      {/* Componente de Paginación */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex justify-center">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={total}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+            onPageSizeChange={setLimit}
+          />
         </div>
       )}
 
@@ -1655,10 +1685,10 @@ function AdminProperties() {
             </button>
             <button
               type="submit"
-              disabled={loading || uploadingImages}
+              disabled={isLoading || uploadingImages}
               className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
             >
-              {loading ? (
+              {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Creando...
@@ -2411,19 +2441,8 @@ function AdminProperties() {
                             // Eliminar imagen usando la función deletePropertyImage
                             await deletePropertyImage(imageUrl);
 
-                            // Actualizar el estado local
-                            const newImages = selectedProperty.images.filter(img => img !== imageUrl);
-                            setProperties(prev => prev.map(p =>
-                              p.id === selectedProperty.id
-                                ? { ...p, images: newImages }
-                                : p
-                            ));
-
-                            // Actualizar selectedProperty
-                            setSelectedProperty(prev => prev ? {
-                              ...prev,
-                              images: newImages
-                            } : null);
+                            // Refrescar datos desde el servidor
+                            await refreshProperties();
 
                             showNotification('Imagen eliminada exitosamente', 'success');
                           } catch (error) {
@@ -2520,22 +2539,8 @@ function AdminProperties() {
                     // Actualizar usando updateProperty con el nuevo array de imágenes
                     await updateProperty(selectedProperty.id, { images: newImages });
 
-                    // Actualizar la propiedad en el estado local
-                    setProperties(prev => prev.map(p =>
-                      p.id === selectedProperty.id
-                        ? { ...p, images: newImages, cover_image: imageUrl }
-                        : p
-                    ));
-
-                    // Actualizar selectedProperty
-                    setSelectedProperty(prev => prev ? {
-                      ...prev,
-                      images: newImages,
-                      cover_image: imageUrl
-                    } : null);
-
-                    // IMPORTANTE: Actualizar también previewImages para mantener sincronización
-                    setPreviewImages(newImages);
+                    // Refrescar datos desde el servidor
+                    await refreshProperties();
 
                     showNotification('Imagen de portada actualizada exitosamente. La imagen seleccionada ahora es la primera en la lista.', 'success');
                   } catch (error) {

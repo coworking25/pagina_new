@@ -16,6 +16,181 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).supabase = supabase;
 }
 
+// ==========================================
+// TIPOS PARA PAGINACIÓN
+// ==========================================
+
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  search?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+// ==========================================
+// FUNCIONES DE PAGINACIÓN
+// ==========================================
+
+/**
+ * Función genérica para paginación con Supabase
+ */
+async function paginateQuery<T>(
+  query: any,
+  options: PaginationOptions
+): Promise<PaginatedResponse<T>> {
+  const { page, limit, sortBy, sortOrder = 'desc' } = options;
+  const offset = (page - 1) * limit;
+
+  // Aplicar ordenamiento si se especifica
+  if (sortBy) {
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+  }
+
+  // Obtener datos paginados
+  const { data, error } = await query.range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error('❌ Error en paginateQuery:', error);
+    throw error;
+  }
+
+  // Obtener el total de registros (sin paginación)
+  const totalQuery = query.select('*', { count: 'exact', head: true });
+  const { count: total, error: countError } = await totalQuery;
+
+  if (countError) {
+    console.error('❌ Error obteniendo total:', countError);
+    throw countError;
+  }
+
+  const totalPages = Math.ceil((total || 0) / limit);
+
+  return {
+    data: data || [],
+    total: total || 0,
+    page,
+    limit,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1
+  };
+}
+
+/**
+ * Obtener propiedades con paginación
+ */
+export async function getPropertiesPaginated(
+  options: PaginationOptions,
+  onlyAvailable: boolean = false
+): Promise<PaginatedResponse<Property>> {
+  try {
+    console.log('🔍 getPropertiesPaginated called:', { options, onlyAvailable });
+
+    let query = supabase
+      .from('properties')
+      .select('*')
+      .is('deleted_at', null);
+
+    // Filtros adicionales
+    if (onlyAvailable) {
+      query = query.or('status.eq.rent,status.eq.sale');
+    }
+
+    // Aplicar búsqueda si existe
+    if (options.search) {
+      query = query.or(`title.ilike.%${options.search}%,location.ilike.%${options.search}%,description.ilike.%${options.search}%`);
+    }
+
+    return await paginateQuery<Property>(query, options);
+  } catch (error) {
+    console.error('❌ Error en getPropertiesPaginated:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener citas con paginación
+ */
+export async function getPropertyAppointmentsPaginated(
+  options: PaginationOptions,
+  filters?: {
+    status?: string;
+    advisor_id?: string;
+    date_from?: string;
+    date_to?: string;
+  }
+): Promise<PaginatedResponse<PropertyAppointment>> {
+  try {
+    console.log('🔍 getPropertyAppointmentsPaginated called:', { options, filters });
+
+    let query = supabase
+      .from('property_appointments')
+      .select('*')
+      .is('deleted_at', null);
+
+    // Aplicar filtros
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters?.advisor_id) {
+      query = query.eq('advisor_id', filters.advisor_id);
+    }
+    if (filters?.date_from) {
+      query = query.gte('appointment_date', filters.date_from);
+    }
+    if (filters?.date_to) {
+      query = query.lte('appointment_date', filters.date_to);
+    }
+
+    // Aplicar búsqueda si existe
+    if (options.search) {
+      query = query.or(`client_name.ilike.%${options.search}%,client_email.ilike.%${options.search}%`);
+    }
+
+    return await paginateQuery<PropertyAppointment>(query, options);
+  } catch (error) {
+    console.error('❌ Error en getPropertyAppointmentsPaginated:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener asesores con paginación
+ */
+export async function getAdvisorsPaginated(
+  options: PaginationOptions
+): Promise<PaginatedResponse<Advisor>> {
+  try {
+    console.log('🔍 getAdvisorsPaginated called:', options);
+
+    let query = supabase
+      .from('advisors')
+      .select('*')
+      .is('deleted_at', null);
+
+    // Aplicar búsqueda si existe
+    if (options.search) {
+      query = query.or(`name.ilike.%${options.search}%,email.ilike.%${options.search}%,specialty.ilike.%${options.search}%`);
+    }
+
+    return await paginateQuery<Advisor>(query, options);
+  } catch (error) {
+    console.error('❌ Error en getAdvisorsPaginated:', error);
+    throw error;
+  }
+}
+
 // Función para guardar citas de propiedades
 // Función simplificada para guardar citas sin referencias FK
 export async function savePropertyAppointmentSimple(appointmentData: {
@@ -1434,9 +1609,7 @@ export async function deleteServiceInquiry(id: string): Promise<boolean> {
     }
 
     console.log('✅ [SUPABASE] Consulta de servicio eliminada correctamente (soft delete):', id);
-    return true;
-    
-  } catch (error) {
+    return true;  } catch (error) {
     console.error('❌ [SUPABASE] Error en deleteServiceInquiry:', error);
     return false;
   }
@@ -2562,18 +2735,16 @@ export async function deleteProperty(propertyId: number) {
     }
 
     // Registrar actividad antes de eliminar
-    await logPropertyActivity(propertyId, 'deleted', {
+    await logPropertyActivity(propertyId, 'deleted', { 
       property: property,
-      deleted_at: new Date().toISOString()
+      deleted_at: new Date().toISOString() 
     });
 
     // Soft delete - marcar como eliminada en lugar de eliminar físicamente
     const { error } = await supabase
       .from('properties')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', propertyId);
-
-    if (error) {
+      .eq('id', propertyId);    if (error) {
       console.error('❌ Error al eliminar propiedad:', error);
       throw new Error(`Error al eliminar la propiedad: ${error.message}`);
     }
@@ -3015,28 +3186,26 @@ export async function updateAdvisor(id: string, advisorData: Partial<Advisor>): 
 export async function deleteAdvisor(id: string): Promise<boolean> {
   try {
     console.log('🗑️ Eliminando asesor:', id);
-
+    
     // Soft delete - marcar con deleted_at en lugar de cambiar is_active
     const { error } = await supabase
       .from('advisors')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
-
+    
     if (error) {
       console.error('❌ Error eliminando asesor:', error);
       throw error;
     }
-
+    
     console.log('✅ Asesor eliminado exitosamente (soft delete)');
     return true;
-
+    
   } catch (error) {
     console.error('❌ Error en deleteAdvisor:', error);
     throw error;
   }
-}
-
-// =====================================================
+}// =====================================================
 // SISTEMA DE CLIENTES
 // =====================================================
 // Las funciones de clientes han sido movidas a src/lib/clientsApi.ts
