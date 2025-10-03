@@ -101,6 +101,7 @@ function AdminProperties() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [featuredFilter, setFeaturedFilter] = useState(false); // Nuevo filtro para destacadas
 
   console.log('🔍 AdminProperties: Estados inicializados');
   
@@ -280,6 +281,11 @@ function AdminProperties() {
       );
     }
 
+    // Filtro por destacadas
+    if (featuredFilter) {
+      filtered = filtered.filter(p => p.featured === true);
+    }
+
     // Filtro por estado
     if (statusFilter && statusFilter !== 'all') {
       if (statusFilter === 'inactive') {
@@ -310,7 +316,7 @@ function AdminProperties() {
 
     console.log(`✅ Propiedades filtradas: ${filtered.length} de ${allProperties.length} totales`);
     setProperties(filtered);
-  }, [search, statusFilter, typeFilter, sortBy, sortOrder, allProperties]);
+  }, [search, statusFilter, typeFilter, sortBy, sortOrder, allProperties, featuredFilter]);
 
   // Detectar si viene de una alerta y aplicar filtros automáticamente
   useEffect(() => {
@@ -436,7 +442,42 @@ function AdminProperties() {
     }).format(price);
   };
 
-
+  // Funciones para manejar clics en las tarjetas de estadísticas
+  const handleQuickFilter = (filterType: 'all' | 'sale' | 'rent' | 'featured') => {
+    // Limpiar otros filtros
+    setSearch('');
+    setTypeFilter('all');
+    
+    switch (filterType) {
+      case 'all':
+        // Mostrar todas las propiedades
+        setStatusFilter('all');
+        setFeaturedFilter(false);
+        console.log('📊 Mostrando todas las propiedades');
+        break;
+      
+      case 'sale':
+        // Filtrar solo propiedades en venta
+        setStatusFilter('sale');
+        setFeaturedFilter(false);
+        console.log('🏷️ Filtrando propiedades en venta');
+        break;
+      
+      case 'rent':
+        // Filtrar solo propiedades en arriendo
+        setStatusFilter('rent');
+        setFeaturedFilter(false);
+        console.log('🏠 Filtrando propiedades en arriendo');
+        break;
+      
+      case 'featured':
+        // Para destacadas, filtrar por featured=true
+        setStatusFilter('all');
+        setFeaturedFilter(true);
+        console.log('⭐ Filtrando propiedades destacadas');
+        break;
+    }
+  };
 
   // Función para limpiar el formulario
   const resetForm = () => {
@@ -896,8 +937,16 @@ function AdminProperties() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => handleQuickFilter('all')}
+          className="cursor-pointer"
         >
-          <FloatingCard glowEffect className="p-6">
+          <FloatingCard glowEffect className={`p-6 transition-all duration-200 ${
+            statusFilter === 'all' && !featuredFilter 
+              ? 'ring-2 ring-blue-500 shadow-lg' 
+              : ''
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Propiedades</p>
@@ -919,13 +968,21 @@ function AdminProperties() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => handleQuickFilter('sale')}
+          className="cursor-pointer"
         >
-          <FloatingCard glowEffect className="p-6">
+          <FloatingCard glowEffect className={`p-6 transition-all duration-200 ${
+            statusFilter === 'sale' && !featuredFilter 
+              ? 'ring-2 ring-blue-500 shadow-lg' 
+              : ''
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">En Venta</p>
                 <p className="text-3xl font-bold text-blue-600">
-                  {properties.filter(p => p.status === 'sale').length}
+                  {allProperties.filter(p => p.status === 'sale').length}
                 </p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Disponibles</p>
               </div>
@@ -940,13 +997,21 @@ function AdminProperties() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => handleQuickFilter('rent')}
+          className="cursor-pointer"
         >
-          <FloatingCard glowEffect className="p-6">
+          <FloatingCard glowEffect className={`p-6 transition-all duration-200 ${
+            statusFilter === 'rent' && !featuredFilter 
+              ? 'ring-2 ring-green-500 shadow-lg' 
+              : ''
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">En Arriendo</p>
                 <p className="text-3xl font-bold text-green-600">
-                  {properties.filter(p => p.status === 'rent').length}
+                  {allProperties.filter(p => p.status === 'rent').length}
                 </p>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">Disponibles</p>
               </div>
@@ -961,13 +1026,21 @@ function AdminProperties() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+          whileHover={{ scale: 1.02, y: -4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => handleQuickFilter('featured')}
+          className="cursor-pointer"
         >
-          <FloatingCard glowEffect className="p-6">
+          <FloatingCard glowEffect className={`p-6 transition-all duration-200 ${
+            featuredFilter 
+              ? 'ring-2 ring-purple-500 shadow-lg' 
+              : ''
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Destacadas</p>
                 <p className="text-3xl font-bold text-purple-600">
-                  {properties.filter(p => p.featured).length}
+                  {allProperties.filter(p => p.featured).length}
                 </p>
                 <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">Premium</p>
               </div>
