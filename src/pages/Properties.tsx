@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Grid, Map, LayoutGrid } from 'lucide-react';
+import { Grid } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Property } from '../types';
 import { getProperties, getAdvisorById, isAdmin } from '../lib/supabase';
@@ -8,7 +8,6 @@ import { diagnosticImageUrls, testMultipleUrls } from '../lib/diagnostics';
 import { advisors } from '../data/advisors';
 import PropertyCard from '../components/Properties/PropertyCard';
 import PropertyFilters from '../components/Properties/PropertyFilters';
-import PropertyMap from '../components/Properties/PropertyMap';
 import PropertyDetailsModal from '../components/Modals/PropertyDetailsModal';
 import ContactModal from '../components/Modals/ContactModal';
 import ScheduleAppointmentModalEnhanced from '../components/Modals/ScheduleAppointmentModalEnhanced';
@@ -33,7 +32,6 @@ const Properties: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -384,11 +382,6 @@ const Properties: React.FC = () => {
     setIsScheduleModalOpen(true);
   };
 
-  const handlePropertySelect = (property: Property) => {
-    setSelectedProperty(property);
-    setIsDetailsModalOpen(true);
-  };
-
   return (
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
@@ -415,35 +408,12 @@ const Properties: React.FC = () => {
             onClearFilters={clearFilters}
           />
 
-          {/* View Toggle */}
+          {/* View Toggle - Removed: Solo mostramos vista de lista */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 {filteredProperties.length} propiedades encontradas
               </span>
-            </div>
-            
-            <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-all duration-200 ${
-                  viewMode === 'grid'
-                    ? 'bg-green-500 text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('map')}
-                className={`p-2 rounded-md transition-all duration-200 ${
-                  viewMode === 'map'
-                    ? 'bg-green-500 text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Map className="w-4 h-4" />
-              </button>
             </div>
           </div>
 
@@ -454,7 +424,7 @@ const Properties: React.FC = () => {
                 <div key={i} className="bg-white dark:bg-gray-800 rounded-xl h-96 animate-pulse"></div>
               ))}
             </div>
-          ) : viewMode === 'grid' ? (
+          ) : (
             <>
               <motion.div
                 initial={{ opacity: 0 }}
@@ -558,19 +528,6 @@ const Properties: React.FC = () => {
                 </div>
               )}
             </>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="h-[600px] rounded-xl overflow-hidden"
-            >
-              <PropertyMap
-                properties={filteredProperties}
-                onPropertySelect={handlePropertySelect}
-                selectedProperty={selectedProperty || undefined}
-              />
-            </motion.div>
           )}
 
           {/* No Results */}
