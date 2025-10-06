@@ -83,21 +83,19 @@ className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm f
 
 #### **Ahora:**
 ```jsx
-className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
+className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
 ```
 
 **Mejoras:**
-- ✅ **Tamaño móvil:** `w-14 h-14` (56px) - Más estándar, no resalta tanto
-- ✅ **Tamaño desktop:** `sm:w-16 sm:h-16` (64px) - Ligeramente más grande para pantallas amplias
+- ✅ **Tamaño móvil:** `w-12 h-12` (48px) - Tamaño compacto y optimizado para móviles
+- ✅ **Tamaño desktop:** `sm:w-16 sm:h-16` (64px) - Más grande para pantallas amplias
 - ✅ **Responsive:** Se adapta según el tamaño de pantalla
 - ✅ **Mantiene:** Border, shadow, y circular (rounded-full)
 
 **Comparación de tamaños:**
-- Antes: `w-12 h-12` = 48px × 48px (fijo)
-- Ahora Móvil: `w-14 h-14` = 56px × 56px (+16.7% más grande que antes)
-- Ahora Desktop: `sm:w-16 sm:h-16` = 64px × 64px
-
-> **Nota:** Aunque aumentamos ligeramente el tamaño base, el efecto visual es mejor porque ahora todos los elementos están proporcionados. El problema original era que la imagen destacaba demasiado por falta de balance con el resto de elementos.
+- Antes: `w-14 h-14` = 56px × 56px (muy grande para móvil)
+- Ahora Móvil: `w-12 h-12` = 48px × 48px (compacto y profesional)
+- Ahora Desktop: `sm:w-16 sm:h-16` = 64px × 64px (grande y visible)
 
 ---
 
@@ -236,7 +234,7 @@ className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-w
 
 | Elemento | Móvil (< 640px) | Desktop (≥ 640px) |
 |----------|----------------|-------------------|
-| **Foto Asesor** | `w-14 h-14` (56px) | `w-16 h-16` (64px) |
+| **Foto Asesor** | `w-12 h-12` (48px) | `w-16 h-16` (64px) |
 | **Padding Tarjeta** | `p-4` | `p-6` |
 | **Espaciado Flex** | `space-x-3` | `space-x-4` |
 | **Nombre** | `text-base` | `text-lg` |
@@ -252,7 +250,7 @@ className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-w
 
 ```css
 /* Imagen del Asesor */
-w-14 h-14 sm:w-16 sm:h-16    // Foto escalable
+w-12 h-12 sm:w-16 sm:h-16    // Foto escalable (48px móvil, 64px desktop)
 
 /* Contenedor */
 p-4 sm:p-6                   // Padding responsive
@@ -281,9 +279,9 @@ min-w-0                      // Permite truncate funcionar
 ```
 ┌────────────────────────────┐
 │  ┌────┐ Santiago Sánchez   │  <- Compacto
-│  │56px│ Apartamentos       │     p-4 padding
+│  │48px│ Apartamentos       │     p-4 padding
 │  │img │ ⭐⭐⭐ 4.8/5        │     text-xs
-│  └────┘                    │     w-14 h-14
+│  └────┘                    │     w-12 h-12
 │                            │
 │  🕐 Lun-Vie: 9:00-18:00    │  <- Vertical
 │  📞 +57 302 584 56 30      │     flex-col
@@ -311,7 +309,7 @@ src/components/Modals/ScheduleAppointmentModal.tsx
 └── Paso 1: Información Personal
     └── Tarjeta del Asesor
         ├── Contenedor: p-4 sm:p-6
-        ├── Imagen: w-14 h-14 sm:w-16 sm:h-16
+        ├── Imagen: w-12 h-12 sm:w-16 sm:h-16 (48px móvil, 64px desktop)
         ├── Nombre: text-base sm:text-lg + truncate
         ├── Especialidad: text-xs sm:text-sm + truncate
         ├── Estrellas: w-3 h-3 sm:w-4 sm:h-4
@@ -380,7 +378,7 @@ src/components/Modals/ScheduleAppointmentModal.tsx
 El modal de agendar cita ahora presenta la **información del asesor de forma equilibrada y profesional** en dispositivos móviles:
 
 ### **📱 Móvil:**
-- ✅ Imagen estándar de 56px (w-14 h-14)
+- ✅ Imagen compacta de 48px (w-12 h-12)
 - ✅ Textos compactos y legibles
 - ✅ Layout vertical para info de contacto
 - ✅ Sin desbordamiento de texto

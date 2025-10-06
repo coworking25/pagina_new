@@ -445,7 +445,7 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                   <img
                     src={advisor.photo}
                     alt={advisor.name}
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       console.error(`❌ Error cargando imagen del asesor ${advisor.name} en modal:`, advisor.photo);
