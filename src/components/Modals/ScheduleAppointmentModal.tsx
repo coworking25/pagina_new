@@ -440,12 +440,12 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
           {currentStep === 1 && (
             <div className="p-6 space-y-6">
               {/* Información del Asesor */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6">
-                <div className="flex items-start space-x-4">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 sm:p-6">
+                <div className="flex items-start space-x-3 sm:space-x-4">
                   <img
                     src={advisor.photo}
                     alt={advisor.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       console.error(`❌ Error cargando imagen del asesor ${advisor.name} en modal:`, advisor.photo);
@@ -455,36 +455,36 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                       console.log(`✅ Imagen del asesor ${advisor.name} cargada en modal:`, advisor.photo);
                     }}
                   />
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
                       {advisor.name}
                     </h3>
-                    <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+                    <p className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium truncate">
                       {advisor.specialty}
                     </p>
                     <div className="flex items-center space-x-1 mt-2">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-4 h-4 ${
+                          className={`w-3 h-3 sm:w-4 sm:h-4 ${
                             i < advisor.rating
                               ? 'text-yellow-400 fill-current'
                               : 'text-gray-300'
                           }`}
                         />
                       ))}
-                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                      <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 ml-2">
                         {advisor.rating}/5 ({advisor.reviews} reseñas)
                       </span>
                     </div>
-                    <div className="flex items-center space-x-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1 sm:space-y-0">
                       <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4" />
-                        <span>Lun-Vie: {advisor.availability?.weekdays || '9:00-18:00'}</span>
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="truncate">Lun-Vie: {advisor.availability?.weekdays || '9:00-18:00'}</span>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <Phone className="w-4 h-4" />
-                        <span>{advisor.whatsapp}</span>
+                        <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="truncate">{advisor.whatsapp}</span>
                       </div>
                     </div>
                   </div>
