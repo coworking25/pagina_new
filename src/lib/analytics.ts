@@ -132,14 +132,14 @@ export const hasLikedProperty = async (propertyId: string): Promise<boolean> => 
     
     const { data, error } = await supabase
       .from('property_likes')
-      .select('id')
+      .select('id', { count: 'exact' })
       .eq('property_id', parseInt(propertyId)) // Convertir a número
       .eq('session_id', sessionId)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('❌ Error al verificar like:', error);
-      throw error;
+      return false;
     }
 
     return !!data;
