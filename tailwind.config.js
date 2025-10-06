@@ -89,7 +89,7 @@ export default {
   			},
   			slideUp: {
   				'0%': {
-  					transform: 'translateY(20px)',
+  					transform: 'translateY(1.25rem)', /* 20px */
   					opacity: '0'
   				},
   				'100%': {
@@ -99,10 +99,10 @@ export default {
   			},
   			glow: {
   				'0%': {
-  					boxShadow: '0 0 20px rgba(57, 255, 20, 0.3)'
+  					boxShadow: '0 0 1.25rem rgba(57, 255, 20, 0.3)' /* 20px */
   				},
   				'100%': {
-  					boxShadow: '0 0 30px rgba(57, 255, 20, 0.6)'
+  					boxShadow: '0 0 1.875rem rgba(57, 255, 20, 0.6)' /* 30px */
   				}
   			}
   		},

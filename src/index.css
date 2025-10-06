@@ -77,27 +77,54 @@ body {
 
 /* Glow Effects */
 .glow-green {
-  box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+  box-shadow: 0 0 1.25rem rgba(57, 255, 20, 0.3); /* 20px */
 }
 
 .glow-green:hover {
-  box-shadow: 0 0 30px rgba(57, 255, 20, 0.5);
+  box-shadow: 0 0 1.875rem rgba(57, 255, 20, 0.5); /* 30px */
 }
 
 .glow-cyan {
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 0 1.25rem rgba(0, 212, 255, 0.3); /* 20px */
 }
 
 .glow-cyan:hover {
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 1.875rem rgba(0, 212, 255, 0.5); /* 30px */
 }
 
 .glow-purple {
-  box-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+  box-shadow: 0 0 1.25rem rgba(157, 78, 221, 0.3); /* 20px */
 }
 
 .glow-purple:hover {
-  box-shadow: 0 0 30px rgba(157, 78, 221, 0.5);
+  box-shadow: 0 0 1.875rem rgba(157, 78, 221, 0.5); /* 30px */
+}
+
+/* Responsive glow effects for smaller screens */
+@media (max-width: 640px) {
+  .glow-green {
+    box-shadow: 0 0 0.75rem rgba(57, 255, 20, 0.3); /* 12px */
+  }
+  
+  .glow-green:hover {
+    box-shadow: 0 0 1.125rem rgba(57, 255, 20, 0.5); /* 18px */
+  }
+  
+  .glow-cyan {
+    box-shadow: 0 0 0.75rem rgba(0, 212, 255, 0.3); /* 12px */
+  }
+  
+  .glow-cyan:hover {
+    box-shadow: 0 0 1.125rem rgba(0, 212, 255, 0.5); /* 18px */
+  }
+  
+  .glow-purple {
+    box-shadow: 0 0 0.75rem rgba(157, 78, 221, 0.3); /* 12px */
+  }
+  
+  .glow-purple:hover {
+    box-shadow: 0 0 1.125rem rgba(157, 78, 221, 0.5); /* 18px */
+  }
 }
 
 /* Futuristic Gradients */
@@ -136,19 +163,19 @@ body {
 
 @keyframes float {
   0%, 100% {
-    transform: translateY(0px);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-0.625rem); /* -10px */
   }
 }
 
 @keyframes glow {
   from {
-    box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+    box-shadow: 0 0 1.25rem rgba(57, 255, 20, 0.3); /* 20px */
   }
   to {
-    box-shadow: 0 0 30px rgba(57, 255, 20, 0.6);
+    box-shadow: 0 0 1.875rem rgba(57, 255, 20, 0.6); /* 30px */
   }
 }
 
@@ -157,7 +184,37 @@ body {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-0.3125rem); /* -5px */
+  }
+}
+
+/* Responsive animations for smaller screens */
+@media (max-width: 640px) {
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-0.375rem); /* -6px */
+    }
+  }
+
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 0.75rem rgba(57, 255, 20, 0.3); /* 12px */
+    }
+    to {
+      box-shadow: 0 0 1.125rem rgba(57, 255, 20, 0.6); /* 18px */
+    }
+  }
+
+  @keyframes bounce-gentle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-0.1875rem); /* -3px */
+    }
   }
 }
 
@@ -174,33 +231,6 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-/* Animation Classes */
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.animate-glow {
-  animation: glow 2s ease-in-out infinite alternate;
-}
-
-@keyframes glow {
-  from {
-    box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
-  }
-  to {
-    box-shadow: 0 0 30px rgba(57, 255, 20, 0.6);
-  }
 }
 
 /* Leaflet Map Customization */
@@ -250,14 +280,34 @@ body {
   }
 }
 
+/* Responsive shimmer for smaller screens */
+@media (max-width: 640px) {
+  @keyframes shimmer {
+    0% {
+      background-position: -150% 0;
+    }
+    100% {
+      background-position: 150% 0;
+    }
+  }
+}
+
 /* Custom Button Hover Effects */
 .btn-hover-lift {
   transition: all 0.2s ease;
 }
 
 .btn-hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-0.125rem); /* -2px */
+  box-shadow: 0 0.625rem 1.5625rem rgba(0, 0, 0, 0.1); /* 10px 25px */
+}
+
+/* Responsive button lift for smaller screens */
+@media (max-width: 640px) {
+  .btn-hover-lift:hover {
+    transform: translateY(-0.0625rem); /* -1px - más sutil en móvil */
+    box-shadow: 0 0.375rem 0.9375rem rgba(0, 0, 0, 0.1); /* 6px 15px */
+  }
 }
 
 /* Responsive Typography */
@@ -336,12 +386,26 @@ img {
   }
   50% {
     transform: scale(1.05);
-    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+    box-shadow: 0 0 0 0.625rem rgba(34, 197, 94, 0); /* 10px */
   }
 }
 
 .whatsapp-pulse {
   animation: pulse-green 2s infinite;
+}
+
+/* Responsive WhatsApp animation for smaller screens */
+@media (max-width: 640px) {
+  @keyframes pulse-green {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    50% {
+      transform: scale(1.03);
+      box-shadow: 0 0 0 0.375rem rgba(34, 197, 94, 0); /* 6px */
+    }
+  }
 }
 
 /* Chatbot custom scrollbar */
