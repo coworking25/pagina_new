@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, 
   DollarSign, 
@@ -10,7 +10,9 @@ import {
   Building,
   ArrowRight,
   CreditCard,
-  Scissors
+  Scissors,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
@@ -20,6 +22,7 @@ import TestimonialsCarousel from './TestimonialsCarousel';
 const Services: React.FC = () => {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [expandedServiceIndex, setExpandedServiceIndex] = useState<number | null>(null);
 
   const services = [
     {
@@ -205,6 +208,10 @@ const Services: React.FC = () => {
     setSelectedService(null);
   };
 
+  const toggleService = (index: number) => {
+    setExpandedServiceIndex(expandedServiceIndex === index ? null : index);
+  };
+
   return (
     <section className="py-20 bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -236,8 +243,9 @@ const Services: React.FC = () => {
           </motion.p>
         </motion.div>
 
-        {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        {/* Services Grid - Desktop (Grid) y Mobile (Accordion) */}
+        {/* Desktop/Tablet: Grid tradicional (hidden en móvil) */}
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {services.map((service, index) => {
             const Icon = service.icon;
             return (
@@ -287,6 +295,90 @@ const Services: React.FC = () => {
                       Más Información
                     </Button>
                   </div>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Mobile: Accordion compacto (solo visible en móvil) */}
+        <div className="md:hidden space-y-3 mb-12">
+          {services.map((service, index) => {
+            const Icon = service.icon;
+            const isExpanded = expandedServiceIndex === index;
+            
+            return (
+              <motion.div
+                key={service.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                viewport={{ once: true }}
+              >
+                <Card className="overflow-hidden">
+                  {/* Header - Siempre visible */}
+                  <button
+                    onClick={() => toggleService(index)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 bg-gradient-to-r ${service.color} rounded-lg flex items-center justify-center shadow-md`}>
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white text-left">
+                        {service.title}
+                      </h3>
+                    </div>
+                    <div className="flex-shrink-0">
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Content - Expandible */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-4 pt-2 space-y-3 border-t border-gray-100 dark:border-gray-700">
+                          {/* Description */}
+                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {service.description}
+                          </p>
+
+                          {/* Features */}
+                          <ul className="space-y-2">
+                            {service.features.map((feature, featureIndex) => (
+                              <li key={featureIndex} className="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                                <div className="w-1 h-1 bg-green-600 rounded-full mr-2"></div>
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+
+                          {/* CTA Button */}
+                          <Button
+                            variant="ghost"
+                            icon={ArrowRight}
+                            iconPosition="right"
+                            size="sm"
+                            className="w-full mt-2"
+                            onClick={() => openServiceModal(service)}
+                          >
+                            Más Información
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </Card>
               </motion.div>
             );
