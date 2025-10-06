@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import { usePersistedState } from '../hooks/usePersistedState';
 import {
   Home,
   Search,
@@ -131,8 +132,8 @@ function AdminProperties() {
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   
-  // Estados para formularios
-  const [formData, setFormData] = useState({
+  // Estados para formularios con persistencia en localStorage
+  const initialFormData = {
     code: '',
     title: '',
     description: '',
@@ -145,16 +146,54 @@ function AdminProperties() {
     status: 'sale',
     advisor_id: '',
     images: [] as string[],
-    cover_image: ''
+    cover_image: '',
+    featured: false
+  };
+
+  const {
+    state: formData,
+    setState: setFormData,
+    clearPersistedState: clearFormDraft,
+    hasDraft: hasFormDraft,
+    lastSaved: formLastSaved
+  } = usePersistedState({
+    key: 'admin-property-form-draft',
+    initialValue: initialFormData,
+    expirationTime: 24 * 60 * 60 * 1000 // 24 horas
   });
+
+  const {
+    state: previewImages,
+    setState: setPreviewImages,
+    clearPersistedState: clearImagesDraft
+  } = usePersistedState({
+    key: 'admin-property-images-draft',
+    initialValue: [] as string[],
+    expirationTime: 24 * 60 * 60 * 1000
+  });
+
+  const {
+    state: selectedAmenities,
+    setState: setSelectedAmenities,
+    clearPersistedState: clearAmenitiesDraft
+  } = usePersistedState({
+    key: 'admin-property-amenities-draft',
+    initialValue: [] as string[],
+    expirationTime: 24 * 60 * 60 * 1000
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Estados para manejo de imágenes
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  
+  // Estado para mostrar/ocultar alerta de borrador
+  const [showDraftAlert, setShowDraftAlert] = useState(false);
+
+  // NO verificamos automáticamente al montar - solo cuando se abre el modal
+  // El borrador se restaura automáticamente por usePersistedState
   
   // Estados para amenidades predefinidas
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   // Lista de amenidades predefinidas con iconos
   const amenitiesList = [
@@ -479,27 +518,20 @@ function AdminProperties() {
     }
   };
 
-  // Función para limpiar el formulario
+  // Función para limpiar el formulario y borradores
   const resetForm = () => {
-    setFormData({
-      code: '',
-      title: '',
-      description: '',
-      price: '',
-      location: '',
-      bedrooms: '',
-      bathrooms: '',
-      area: '',
-      type: 'house',
-      status: 'sale',
-      advisor_id: '',
-      images: [],
-      cover_image: ''
-    });
+    setFormData(initialFormData);
     setSelectedAmenities([]);
     setCustomAmenities([]);
     setNewCustomAmenity('');
     setPreviewImages([]);
+    
+    // Limpiar borradores de localStorage
+    clearFormDraft();
+    clearImagesDraft();
+    clearAmenitiesDraft();
+    
+    console.log('🧹 Formulario y borradores limpiados');
   };
 
   // Función para manejar subida de imágenes (mejorada con código)
@@ -731,9 +763,30 @@ function AdminProperties() {
   };
 
   const handleAddProperty = () => {
-    resetForm();
     setSelectedProperty(null);
-    setShowAddModal(true);
+    
+    // Verificar si hay un borrador guardado
+    const hasDraft = hasFormDraft() && formData.title;
+    
+    if (hasDraft) {
+      // Si hay borrador, solo mostrar el modal (con alerta de restauración)
+      setShowDraftAlert(true);
+      setShowAddModal(true);
+      console.log('📝 Abriendo modal con borrador existente');
+    } else {
+      // Si no hay borrador, limpiar y abrir
+      resetForm();
+      setShowAddModal(true);
+      console.log('🆕 Abriendo modal con formulario nuevo');
+    }
+  };
+
+  // Función para cerrar modal sin perder el borrador
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+    setShowDraftAlert(false);
+    // NO limpiamos el formulario - el borrador se mantiene en localStorage
+    console.log('💾 Modal cerrado - borrador guardado en localStorage');
   };
 
   // Función para crear nueva propiedad
@@ -769,7 +822,7 @@ function AdminProperties() {
       await createProperty(propertyData);
       await refreshProperties();
       setShowAddModal(false);
-      resetForm();
+      resetForm(); // Esto limpiará los borradores también
       
       console.log('✅ Propiedad creada exitosamente');
       showNotification('Propiedad creada exitosamente', 'success');
@@ -1338,11 +1391,64 @@ function AdminProperties() {
       {/* Modal para agregar nueva propiedad */}
       <Modal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={handleCloseAddModal}
         title="Nueva Propiedad"
         size="full"
       >
         <form onSubmit={handleCreateProperty} className="p-6 max-h-[80vh] overflow-y-auto">
+          {/* Alerta de borrador guardado */}
+          {showDraftAlert && formData.title && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                      📝 Borrador Restaurado
+                    </h4>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Se ha restaurado un borrador guardado automáticamente.
+                      {formLastSaved && (
+                        <span className="block text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          Último guardado: {formLastSaved.toLocaleString()}
+                        </span>
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetForm();
+                        setShowDraftAlert(false);
+                      }}
+                      className="mt-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 underline"
+                    >
+                      Descartar borrador y empezar de nuevo
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDraftAlert(false)}
+                  className="flex-shrink-0 ml-3 text-blue-400 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Indicador de auto-guardado */}
+          {formData.title && formLastSaved && (
+            <div className="mb-4 flex items-center justify-end text-xs text-gray-500 dark:text-gray-400">
+              <Check className="w-3 h-3 mr-1 text-green-500" />
+              <span>Borrador guardado automáticamente</span>
+            </div>
+          )}
+
           {/* Sección 1: Información Básica */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -1819,7 +1925,7 @@ function AdminProperties() {
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
-              onClick={() => setShowAddModal(false)}
+              onClick={handleCloseAddModal}
               className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancelar
