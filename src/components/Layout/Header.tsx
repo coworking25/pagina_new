@@ -59,13 +59,13 @@ const Header: React.FC = () => {
           </div>
           {/* Theme Switcher & Login & Mobile Menu */}
           <div className="flex items-center space-x-4">
-            {/* Admin Login Button */}
+            {/* Portal de Acceso - Admin, Clientes y Asesores */}
             <Link
               to="/login"
               className="hidden md:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
             >
               <Users className="w-4 h-4" />
-              <span>Admin</span>
+              <span>Ingresar</span>
             </Link>
 
             {/* Theme Switcher */}
@@ -154,6 +154,15 @@ const Header: React.FC = () => {
                     </Link>
                   );
                 })}
+                {/* Portal de Acceso - Versión móvil */}
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-all duration-200"
+                >
+                  <Users className="w-5 h-5" />
+                  <span>Ingresar</span>
+                </Link>
               </div>
             </motion.div>
           )}
