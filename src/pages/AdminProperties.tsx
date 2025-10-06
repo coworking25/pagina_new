@@ -742,7 +742,8 @@ function AdminProperties() {
       status: property.status || 'sale',
       advisor_id: property.advisor_id || '',
       images: property.images || [],
-      cover_image: property.cover_image || ''
+      cover_image: property.cover_image || '',
+      featured: property.featured || false
     });
     
     // Cargar amenidades seleccionadas
@@ -802,6 +803,9 @@ function AdminProperties() {
         propertyCode = await generatePropertyCode();
       }
       
+      // La imagen de portada es la primera del array o la seleccionada manualmente
+      const coverImage = formData.cover_image || previewImages[0] || '';
+      
       const propertyData = {
         code: propertyCode,
         title: formData.title,
@@ -814,18 +818,21 @@ function AdminProperties() {
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
-        images: previewImages, // Usar imágenes de preview
+        images: previewImages, // Usar imágenes de preview (ya ordenadas con portada primero)
+        cover_image: coverImage, // ✅ Imagen de portada explícita (columna ya existe en Supabase)
         featured: false,
         advisor_id: formData.advisor_id || undefined
       };
+      
+      console.log('📤 Creando propiedad con portada:', coverImage);
       
       await createProperty(propertyData);
       await refreshProperties();
       setShowAddModal(false);
       resetForm(); // Esto limpiará los borradores también
       
-      console.log('✅ Propiedad creada exitosamente');
-      showNotification('Propiedad creada exitosamente', 'success');
+      console.log('✅ Propiedad creada exitosamente con imagen de portada');
+      showNotification('✅ Propiedad creada exitosamente', 'success');
     } catch (error: any) {
       console.error('❌ Error creando propiedad:', error);
       const errorMessage = error.message || 'Error al crear la propiedad. Por favor, inténtalo de nuevo.';
@@ -1907,19 +1914,27 @@ function AdminProperties() {
           </div>
 
           {/* Selector de Imagen de Portada - Solo si hay imágenes */}
-          {/* TEMPORALMENTE COMENTADO PARA DIAGNÓSTICO */}
-          {/* {previewImages.length > 0 && (
-            <div className="mb-8">
+          {previewImages.length > 0 && (
+            <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-xl border-2 border-blue-200 dark:border-blue-800">
               <CoverImageSelector
                 images={previewImages}
-                currentCoverImage={formData.cover_image}
+                currentCoverImage={formData.cover_image || previewImages[0]}
                 onSelectCover={(imageUrl) => {
+                  console.log('🖼️ Seleccionando imagen de portada:', imageUrl);
+                  
+                  // Actualizar el formData con la nueva portada
                   setFormData(prev => ({ ...prev, cover_image: imageUrl }));
+                  
+                  // Reorganizar previewImages para que la seleccionada sea la primera
+                  const newImagesOrder = [imageUrl, ...previewImages.filter(img => img !== imageUrl)];
+                  setPreviewImages(newImagesOrder);
+                  
+                  console.log('✅ Imagen de portada actualizada en el formulario');
                 }}
                 propertyCode={formData.code}
               />
             </div>
-          )} */}
+          )}
 
           {/* Botones de acción */}
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -2795,27 +2810,40 @@ function AdminProperties() {
 
           {/* Selector de Imagen de Portada */}
           {selectedProperty && selectedProperty.images && selectedProperty.images.length > 0 && (
-            <div className="mt-6 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="mt-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-xl border-2 border-blue-200 dark:border-blue-800">
               <CoverImageSelector
                 images={selectedProperty.images}
-                currentCoverImage={selectedProperty.cover_image}
+                currentCoverImage={selectedProperty.cover_image || selectedProperty.images[0]} // Usar cover_image si existe
                 onSelectCover={async (imageUrl) => {
                   try {
                     setIsSubmitting(true);
+                    console.log('🖼️ Actualizando imagen de portada a:', imageUrl);
 
                     // Crear un nuevo array con la imagen seleccionada como primera
                     const newImages = [imageUrl, ...selectedProperty.images.filter(img => img !== imageUrl)];
+                    console.log('📋 Nuevo orden de imágenes:', newImages);
 
-                    // Actualizar usando updateProperty con el nuevo array de imágenes
-                    await updateProperty(selectedProperty.id, { images: newImages });
+                    // ✅ Actualizar en la base de datos (columna cover_image ya existe)
+                    await updateProperty(selectedProperty.id, { 
+                      images: newImages,
+                      cover_image: imageUrl // ✅ Actualizar cover_image explícitamente
+                    });
 
-                    // Refrescar datos desde el servidor
+                    // Actualizar el estado local inmediatamente
+                    setSelectedProperty({
+                      ...selectedProperty,
+                      images: newImages,
+                      cover_image: imageUrl // ✅ Actualizar también en estado local
+                    });
+
+                    // Refrescar todos los datos desde el servidor
                     await refreshProperties();
 
-                    showNotification('Imagen de portada actualizada exitosamente. La imagen seleccionada ahora es la primera en la lista.', 'success');
+                    console.log('✅ Imagen de portada actualizada exitosamente');
+                    showNotification('✅ Imagen de portada actualizada. La imagen seleccionada ahora es la primera.', 'success');
                   } catch (error) {
-                    console.error('Error actualizando imagen de portada:', error);
-                    showNotification('Error al actualizar la imagen de portada', 'error');
+                    console.error('❌ Error actualizando imagen de portada:', error);
+                    showNotification('❌ Error al actualizar la imagen de portada', 'error');
                   } finally {
                     setIsSubmitting(false);
                   }
