@@ -153,57 +153,57 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-6xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-h-[95vh] overflow-hidden"
+                className="relative w-full max-w-6xl bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-h-[95vh] overflow-hidden mx-2 sm:mx-4"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                     {property.featured && (
-                      <div className="flex items-center space-x-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-semibold">
-                        <Star className="w-4 h-4 fill-current" />
-                        <span>Destacado</span>
+                      <div className="flex items-center space-x-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold flex-shrink-0">
+                        <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
+                        <span className="hidden sm:inline">Destacado</span>
                       </div>
                     )}
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
                       {property.title}
                     </h3>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                     {property.virtual_tour_url && (
                       <button
                         onClick={() => window.open(property.virtual_tour_url, '_blank')}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                        className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                         title="Tour Virtual 360°"
                       >
-                        <Play className="w-5 h-5 text-blue-500" />
+                        <Play className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
                       </button>
                     )}
                     <button
                       onClick={() => setIsFavorite(!isFavorite)}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                      className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                     >
-                      <Heart className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
+                      <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorite ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
                     </button>
                     <button
                       onClick={handleShare}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                      className="hidden sm:block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                     >
                       <Share2 className="w-5 h-5 text-gray-400" />
                     </button>
                     <button
                       onClick={onClose}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                      className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                     >
-                      <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
                     </button>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                <div className="overflow-y-auto max-h-[calc(95vh-80px)] sm:max-h-[calc(95vh-100px)]">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-6">
                     {/* Left Column - Images and Gallery */}
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                       <ImageGallery
                         images={publicImageUrls}
                         title={property.title}
@@ -211,50 +211,59 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                         onImageChange={setCurrentImageIndex}
                       />
 
-                      {/* Advisor Card */}
+                      {/* Advisor Card - Optimizado para móvil */}
                       {loadingAdvisor ? (
-                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/20 dark:to-gray-700/20 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/20 dark:to-gray-700/20 rounded-lg sm:rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+                          <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
                             Cargando Asesor...
                           </h4>
-                          <div className="flex items-center space-x-4">
-                            <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-full animate-pulse"></div>
-                            <div className="flex-1">
-                              <div className="h-5 bg-gray-200 dark:bg-gray-600 rounded mb-2 animate-pulse"></div>
-                              <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4 animate-pulse"></div>
+                          <div className="flex items-center space-x-3 sm:space-x-4">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 dark:bg-gray-600 rounded-full animate-pulse flex-shrink-0"></div>
+                            <div className="flex-1 min-w-0">
+                              <div className="h-4 sm:h-5 bg-gray-200 dark:bg-gray-600 rounded mb-2 animate-pulse"></div>
+                              <div className="h-3 sm:h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4 animate-pulse"></div>
                             </div>
                           </div>
                         </div>
                       ) : currentAdvisor ? (
-                        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg sm:rounded-xl p-4 sm:p-6 border border-green-200 dark:border-green-800">
+                          <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
                             Tu Asesor Inmobiliario
                           </h4>
-                          <div className="flex items-center space-x-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                             <img
                               src={currentAdvisor.photo}
                               alt={currentAdvisor.name}
-                              className="w-16 h-16 rounded-full object-cover"
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover flex-shrink-0 mx-auto sm:mx-0 border-2 border-white dark:border-gray-700 shadow-md"
                             />
-                            <div className="flex-1">
-                              <h5 className="font-semibold text-gray-900 dark:text-white">
+                            <div className="flex-1 min-w-0 text-center sm:text-left">
+                              <h5 className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg truncate">
                                 {currentAdvisor.name}
                               </h5>
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">
                                 {currentAdvisor.specialty}
                               </p>
-                              <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                                <div className="flex items-center space-x-1">
-                                  <Phone className="w-4 h-4" />
-                                  <span>{currentAdvisor.phone}</span>
-                                </div>
-                                <div className="flex items-center space-x-1">
-                                  <Mail className="w-4 h-4" />
-                                  <span>{currentAdvisor.email}</span>
-                                </div>
+                              
+                              {/* Contact Info - Optimizado para móvil */}
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                                <a 
+                                  href={`tel:${currentAdvisor.phone}`}
+                                  className="flex items-center justify-center sm:justify-start gap-1 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                                >
+                                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                                  <span className="truncate">{currentAdvisor.phone}</span>
+                                </a>
+                                <a 
+                                  href={`mailto:${currentAdvisor.email}`}
+                                  className="flex items-center justify-center sm:justify-start gap-1 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate"
+                                >
+                                  <Mail className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                                  <span className="truncate text-xs">{currentAdvisor.email}</span>
+                                </a>
                               </div>
+                              
                               {currentAdvisor.experience_years && (
-                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
                                   {currentAdvisor.experience_years} años de experiencia
                                 </p>
                               )}
@@ -262,32 +271,32 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                           </div>
                         </div>
                       ) : property.advisor_id ? (
-                        <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-xl p-6 border border-red-200 dark:border-red-800">
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg sm:rounded-xl p-4 sm:p-6 border border-red-200 dark:border-red-800">
+                          <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
                             Asesor No Disponible
                           </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                             No se pudo cargar la información del asesor asignado.
                           </p>
                         </div>
                       ) : (
-                        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800">
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg sm:rounded-xl p-4 sm:p-6 border border-yellow-200 dark:border-yellow-800">
+                          <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
                             Sin Asesor Asignado
                           </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                             Esta propiedad no tiene un asesor específico asignado.
                           </p>
                         </div>
                       )}
 
-                      {/* Action Buttons */}
+                      {/* Action Buttons - Optimizado para móvil */}
                       {currentAdvisor && !showAdminActions && (
-                        <div className="mt-4 space-y-3">
+                        <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
                           <Button
                             variant="primary"
                             onClick={() => setIsContactModalOpen(true)}
-                            className="w-full bg-green-600 hover:bg-green-700"
+                            className="w-full bg-green-600 hover:bg-green-700 text-sm sm:text-base py-2.5 sm:py-3"
                             icon={MessageCircle}
                           >
                             Contactar Asesor
@@ -295,7 +304,7 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                           <Button
                             variant="outline"
                             onClick={() => setIsScheduleModalOpen(true)}
-                            className="w-full"
+                            className="w-full text-sm sm:text-base py-2.5 sm:py-3"
                             icon={Calendar}
                           >
                             Agendar Cita
@@ -335,16 +344,16 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                       )}
                     </div>
 
-                    {/* Right Column - Property Info */}
-                    <div className="space-y-6">
+                    {/* Right Column - Property Info - Optimizado para móvil */}
+                    <div className="space-y-4 sm:space-y-6">
                       {/* Basic Info */}
                       <div>
-                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-2">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          <span>{property.location}</span>
+                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-2 text-sm sm:text-base">
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
+                          <span className="truncate">{property.location}</span>
                         </div>
-                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-4">
-                          <Building className="w-4 h-4 mr-2" />
+                        <div className="flex items-center text-gray-600 dark:text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
+                          <Building className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
                           <span className="capitalize">
                             {property.type === 'apartment' ? 'Apartamento' :
                              property.type === 'house' ? 'Casa' :
@@ -354,64 +363,65 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                           </span>
                         </div>
                         <div className="mb-4">
-                          <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                          <span className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
                             {formatPrice(property.price)}
                           </span>
                           {property.status === 'rent' && (
-                            <span className="text-gray-500 dark:text-gray-400 ml-2">/mes</span>
+                            <span className="text-sm sm:text-base text-gray-500 dark:text-gray-400 ml-2">/mes</span>
                           )}
                         </div>
 
-                        {/* Property Details */}
-                        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        {/* Property Details - Optimizado para móvil */}
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                           <div className="text-center">
-                            <Bed className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Habitaciones</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{property.bedrooms}</p>
+                            <Bed className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-gray-600 dark:text-gray-400" />
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Habitaciones</p>
+                            <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{property.bedrooms}</p>
                           </div>
                           <div className="text-center">
-                            <Bath className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Baños</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{property.bathrooms}</p>
+                            <Bath className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-gray-600 dark:text-gray-400" />
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Baños</p>
+                            <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{property.bathrooms}</p>
                           </div>
                           <div className="text-center">
-                            <Square className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Área</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{property.area}m²</p>
+                            <Square className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-gray-600 dark:text-gray-400" />
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Área</p>
+                            <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{property.area}m²</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Tabs */}
+                      {/* Tabs - Optimizado para móvil */}
                       <div>
                         <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                           {tabs.map((tab) => (
                             <button
                               key={tab.id}
                               onClick={() => setActiveTab(tab.id as any)}
-                              className={`flex-1 flex items-center justify-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                              className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
                                 activeTab === tab.id
                                   ? 'bg-white dark:bg-gray-800 text-green-600 dark:text-green-400 shadow-sm'
                                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                               }`}
                             >
-                              <tab.icon className="w-4 h-4" />
-                              <span>{tab.label}</span>
+                              <tab.icon className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <span className="hidden sm:inline">{tab.label}</span>
+                              <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
                             </button>
                           ))}
                         </div>
 
-                        {/* Tab Content */}
-                        <div className="mt-6">
+                        {/* Tab Content - Optimizado para móvil */}
+                        <div className="mt-4 sm:mt-6">
                           {activeTab === 'overview' && (
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                               {/* Description */}
                               {property.description && (
                                 <div>
-                                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3">
                                     Descripción
                                   </h4>
-                                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
                                     {property.description}
                                   </p>
                                 </div>
@@ -420,17 +430,17 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                               {/* Amenities */}
                               {property.amenities && property.amenities.length > 0 && (
                                 <div>
-                                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3">
                                     Amenidades
                                   </h4>
-                                  <div className="grid grid-cols-2 gap-2">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {property.amenities.map((amenity, index) => (
                                       <div
                                         key={index}
-                                        className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400"
+                                        className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400"
                                       >
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        <span>{amenity}</span>
+                                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                        <span className="truncate">{amenity}</span>
                                       </div>
                                     ))}
                                   </div>
