@@ -475,11 +475,11 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                 <div className="p-4 sm:p-6 space-y-6">
                   {/* Información del Asesor */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
+                    <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
                       <img
                         src={advisor.photo}
                         alt={advisor.name}
-                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover object-center border-4 border-white shadow-lg mx-auto sm:mx-0 modal-advisor-image"
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover object-center border-3 border-white shadow-md mx-auto sm:mx-0 modal-advisor-image"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           console.error(`❌ Error cargando imagen del asesor ${advisor.name} en modal mejorado:`, advisor.photo);
@@ -489,36 +489,36 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                           console.log(`✅ Imagen del asesor ${advisor.name} cargada en modal mejorado:`, advisor.photo);
                         }}
                       />
-                      <div className="flex-1 text-center sm:text-left">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                      <div className="flex-1 min-w-0 text-center sm:text-left">
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
                           {advisor.name}
                         </h3>
-                        <p className="text-blue-600 dark:text-blue-400 font-medium">
+                        <p className="text-blue-600 dark:text-blue-400 text-sm sm:text-base font-medium truncate">
                           {advisor.specialty}
                         </p>
                         <div className="flex items-center justify-center sm:justify-start space-x-1 mt-2">
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-4 h-4 ${
+                              className={`w-3 h-3 sm:w-4 sm:h-4 ${
                                 i < advisor.rating
                                   ? 'text-yellow-400 fill-current'
                                   : 'text-gray-300'
                               }`}
                             />
                           ))}
-                          <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 ml-2">
                             {advisor.rating}/5 ({advisor.reviews} reseñas)
                           </span>
                         </div>
-                        <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                           <div className="flex items-center space-x-1">
-                            <Clock className="w-4 h-4" />
-                            <span>Lun-Vie: {advisor.availability?.weekdays || '9:00-18:00'}</span>
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">Lun-Vie: {advisor.availability?.weekdays || '9:00-18:00'}</span>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <Phone className="w-4 h-4" />
-                            <span>{advisor.whatsapp}</span>
+                            <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">{advisor.whatsapp}</span>
                           </div>
                         </div>
                       </div>
