@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
+import { addWatermarkToImage } from './watermark';
 
 // Función mejorada para subir imágenes organizadas por código de propiedad
+// CON MARCA DE AGUA AUTOMÁTICA
 async function uploadPropertyImageWithCode(file: File, propertyCode: string): Promise<string> {
   try {
     console.log(`📤 Subiendo imagen para propiedad ${propertyCode}...`);
@@ -16,19 +18,30 @@ async function uploadPropertyImageWithCode(file: File, propertyCode: string): Pr
     if (file.size > maxSize) {
       throw new Error('Archivo muy grande. Máximo 5MB por imagen.');
     }
+
+    // ✨ AGREGAR MARCA DE AGUA AUTOMÁTICAMENTE
+    console.log('🎨 Agregando marca de agua a la imagen...');
+    const watermarkedFile = await addWatermarkToImage(file, '/marcaDeAgua.png', {
+      opacity: 0.7,
+      position: 'bottom-right',
+      scale: 0.15, // 15% del ancho de la imagen
+      margin: 20
+    });
+    console.log('✅ Marca de agua agregada exitosamente');
     
     // Generar nombre único pero organizado
-    const fileExt = file.name.split('.').pop();
+    const fileExt = watermarkedFile.name.split('.').pop();
     const timestamp = Date.now();
-    const fileName = `${timestamp}.${fileExt}`;
+    const randomStr = Math.random().toString(36).substring(2, 15);
+    const fileName = `${timestamp}-${randomStr}.${fileExt}`;
     const filePath = `${propertyCode}/${fileName}`;
     
     console.log(`📁 Ruta del archivo: ${filePath}`);
     
-    // Subir archivo a Supabase Storage
+    // Subir archivo CON MARCA DE AGUA a Supabase Storage
     const { data, error } = await supabase.storage
       .from('property-images')
-      .upload(filePath, file, {
+      .upload(filePath, watermarkedFile, {
         cacheControl: '3600',
         upsert: false
       });
@@ -38,7 +51,7 @@ async function uploadPropertyImageWithCode(file: File, propertyCode: string): Pr
       throw error;
     }
     
-    console.log('✅ Imagen subida exitosamente:', data.path);
+    console.log('✅ Imagen con marca de agua subida exitosamente:', data.path);
     
     // Obtener URL pública
     const { data: publicUrlData } = supabase.storage
