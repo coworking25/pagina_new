@@ -19,6 +19,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { Property, Advisor } from '../../types';
+import { trackPropertyContact } from '../../lib/analytics';
 import Button from '../UI/Button';
 import TimeSlotSelector from '../UI/TimeSlotSelector';
 import { savePropertyAppointmentWithValidation, checkAdvisorAvailability } from '../../lib/supabase';
@@ -289,6 +290,18 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
       const savedAppointment = await savePropertyAppointmentWithValidation(appointmentData);
       
       console.log('✅ Cita guardada exitosamente:', savedAppointment);
+
+      // Registrar tracking de contacto por agenda de cita
+      await trackPropertyContact(
+        String(property.id),
+        'schedule',
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: `Cita agendada: ${formData.preferredDate} ${formData.preferredTime}`
+        }
+      );
 
       // Formatear datos para WhatsApp
       const formatDate = (dateStr: string) => {

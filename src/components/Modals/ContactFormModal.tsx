@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Phone, Mail, Calendar, Clock, Send, User, MapPin } from 'lucide-react';
 import { Property, Advisor, ContactForm } from '../../types';
+import { trackPropertyContact } from '../../lib/analytics';
 import Button from '../UI/Button';
 import { CONTACT_INFO } from '../../constants/contact';
 
@@ -83,6 +84,19 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
     setIsSubmitting(true);
 
     try {
+      // Registrar tracking de contacto
+      await trackPropertyContact(
+        String(property.id),
+        'whatsapp',
+        {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.message,
+          inquiry_type: formData.inquiry_type
+        }
+      );
+      
       // Aquí puedes agregar la lógica para guardar en la base de datos
       console.log('Form data:', formData);
       

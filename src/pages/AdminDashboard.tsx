@@ -36,6 +36,7 @@ import {
   getSmartAlerts
 } from '../lib/supabase';
 import FloatingCard from '../components/UI/FloatingCard';
+import ReportsModal from '../components/Modals/ReportsModal';
 
 interface DashboardStats {
   properties: {
@@ -116,6 +117,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [revenueTrends, setRevenueTrends] = useState<RevenueTrend[]>([]);
   const [smartAlerts, setSmartAlerts] = useState<SmartAlertsData | null>(null);
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   // Usar el contexto de notificaciones
@@ -764,7 +766,7 @@ function AdminDashboard() {
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/admin/reports')}
+                onClick={() => setIsReportsModalOpen(true)}
                 className="group relative w-full flex items-center p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-orange-200/50 dark:border-orange-700/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-orange-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -776,6 +778,12 @@ function AdminDashboard() {
           </FloatingCard>
         </motion.div>
       </div>
+
+      {/* Reports Modal */}
+      <ReportsModal 
+        isOpen={isReportsModalOpen}
+        onClose={() => setIsReportsModalOpen(false)}
+      />
     </div>
   );
 }

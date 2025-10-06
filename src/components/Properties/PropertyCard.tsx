@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2, Building } from 'lucide-react';
 import { Property } from '../../types';
@@ -6,6 +6,7 @@ import Button from '../UI/Button';
 import Card from '../UI/Card';
 import Dropdown, { DropdownItem, DropdownDivider } from '../UI/Dropdown';
 import { getPublicImageUrl, updatePropertyStatus } from '../../lib/supabase';
+import { likeProperty, unlikeProperty, hasLikedProperty, getPropertyLikesCount } from '../../lib/analytics';
 
 interface PropertyCardProps {
   property: Property;
@@ -27,9 +28,60 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   showAdminActions = false,
 }) => {
   const [isFavorite, setIsFavorite] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [isLoadingLike, setIsLoadingLike] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentStatus, setCurrentStatus] = useState(property.status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Cargar estado de like y conteo al montar
+  useEffect(() => {
+    loadLikeStatus();
+    loadLikesCount();
+  }, [property.id]);
+
+  // Función para cargar estado de like del usuario
+  const loadLikeStatus = async () => {
+    const liked = await hasLikedProperty(String(property.id));
+    setIsFavorite(liked);
+  };
+
+  // Función para cargar conteo de likes
+  const loadLikesCount = async () => {
+    const count = await getPropertyLikesCount(String(property.id));
+    setLikesCount(count);
+  };
+
+  // Función para manejar click en el corazón
+  const handleLikeClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (isLoadingLike) return;
+    
+    setIsLoadingLike(true);
+    
+    try {
+      if (isFavorite) {
+        // Quitar like
+        const success = await unlikeProperty(String(property.id));
+        if (success) {
+          setIsFavorite(false);
+          setLikesCount(prev => Math.max(0, prev - 1));
+        }
+      } else {
+        // Dar like
+        const success = await likeProperty(String(property.id));
+        if (success) {
+          setIsFavorite(true);
+          setLikesCount(prev => prev + 1);
+        }
+      }
+    } catch (error) {
+      console.error('Error al actualizar like:', error);
+    } finally {
+      setIsLoadingLike(false);
+    }
+  };
 
   // Función para abrir el modal de detalles
   const handleImageClick = (e: React.MouseEvent) => {
@@ -182,17 +234,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Favorite Button */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsFavorite(!isFavorite);
-          }}
-          className="absolute bottom-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
+          onClick={handleLikeClick}
+          disabled={isLoadingLike}
+          className="absolute bottom-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50"
         >
           <Heart 
             className={`w-4 h-4 transition-colors duration-200 ${
-              isFavorite ? 'text-red-500 fill-current' : 'text-gray-600 dark:text-gray-400'
+              isFavorite ? 'text-green-600 fill-current' : 'text-gray-600 dark:text-gray-400'
             }`} 
           />
+          {likesCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {likesCount}
+            </span>
+          )}
         </button>
 
         {/* Admin Actions Dropdown */}

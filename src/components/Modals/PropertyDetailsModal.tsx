@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail, Edit, Trash2, Building } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import { getAdvisorById } from '../../lib/supabase';
+import { trackPropertyView } from '../../lib/analytics';
 import Button from '../UI/Button';
 import ImageGallery from '../UI/ImageGallery';
 import MortgageCalculator from '../UI/MortgageCalculator';
@@ -36,6 +37,9 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
   // Estados para el asesor
   const [currentAdvisor, setCurrentAdvisor] = useState<Advisor | null>(null);
   const [loadingAdvisor, setLoadingAdvisor] = useState(false);
+  
+  // Tracking: Registrar tiempo de inicio de visualización
+  const viewStartTime = useRef<number>(Date.now());
 
   // Cargar asesor cuando se abre el modal o cambia la propiedad
   useEffect(() => {
@@ -58,6 +62,19 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
     } else {
       setCurrentAdvisor(null);
       setLoadingAdvisor(false);
+    }
+  }, [property, isOpen]);
+
+  // Tracking: Registrar vista de propiedad
+  useEffect(() => {
+    if (property && isOpen) {
+      viewStartTime.current = Date.now();
+      
+      // Cleanup: Enviar duración cuando se cierre el modal
+      return () => {
+        const duration = Math.floor((Date.now() - viewStartTime.current) / 1000);
+        trackPropertyView(String(property.id), duration).catch(console.error);
+      };
     }
   }, [property, isOpen]);
 
