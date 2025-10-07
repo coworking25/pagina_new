@@ -26,7 +26,7 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
     message: '',
     inquiry_type: 'info',
     preferred_contact_time: '',
-    property_id: property.id,
+    property_id: String(property.id),
     advisor_id: advisor.id,
   });
 
@@ -41,9 +41,10 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
   };
 
   const generateWhatsAppMessage = () => {
-    const inquiryTypeMessages = {
+    const inquiryTypeMessages: Record<string, string> = {
       rent: 'arriendo',
       buy: 'compra',
+      sell: 'venta',
       visit: 'agendar una visita',
       info: 'información'
     };
@@ -63,7 +64,7 @@ Me interesa la propiedad: *${property.title}*
 📧 Email: ${formData.email}
 📱 Teléfono: ${formData.phone}
 
-*Tipo de consulta:* ${inquiryTypeMessages[formData.inquiry_type]}
+*Tipo de consulta:* ${inquiryTypeMessages[formData.inquiry_type] || 'información'}
 ${formData.preferred_contact_time ? `*Horario preferido:* ${formData.preferred_contact_time}` : ''}
 
 ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
@@ -92,8 +93,7 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          message: formData.message,
-          inquiry_type: formData.inquiry_type
+          message: formData.message
         }
       );
       
@@ -155,50 +155,58 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
             </div>
           </div>
 
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-            {/* Información del Asesor */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6">
-              <div className="flex items-center space-x-4">
+          <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            {/* Información del Asesor - Optimizado para Móviles */}
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+              {/* Layout responsivo: columna en móvil, fila en desktop */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0">
+                {/* Foto del asesor */}
                 <img
                   src={advisor.photo}
                   alt={advisor.name}
-                  className="w-16 h-16 rounded-full object-cover"
+                  className="w-20 h-20 sm:w-16 sm:h-16 rounded-full object-cover mx-auto sm:mx-0 flex-shrink-0"
                 />
-                <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                
+                {/* Información del asesor */}
+                <div className="flex-1 text-center sm:text-left space-y-2">
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                     {advisor.name}
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     {advisor.specialty}
                   </p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center space-x-1">
-                      <Phone className="w-4 h-4" />
-                      <span>{advisor.phone}</span>
+                  
+                  {/* Teléfono y Email - Stack en móvil, lado a lado en desktop */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center justify-center sm:justify-start space-x-1">
+                      <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate">{advisor.phone}</span>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <Mail className="w-4 h-4" />
-                      <span>{advisor.email}</span>
+                    <div className="flex items-center justify-center sm:justify-start space-x-1">
+                      <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate text-xs sm:text-sm">{advisor.email}</span>
                     </div>
                   </div>
+                  
+                  {/* Horarios disponibles */}
                   {advisor.availability_hours && (
-                    <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{advisor.availability_hours}</span>
+                    <div className="flex items-center justify-center sm:justify-start space-x-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 pt-1">
+                      <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="text-center sm:text-left">{advisor.availability_hours}</span>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Información de la Propiedad */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-6">
-              <h5 className="font-semibold text-gray-900 dark:text-white mb-2">
+            {/* Información de la Propiedad - Optimizado para Móviles */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+              <h5 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2">
                 Propiedad de Interés
               </h5>
-              <p className="text-gray-700 dark:text-gray-300">{property.title}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{property.location}</p>
-              <p className="text-lg font-semibold text-green-600 dark:text-green-400 mt-1">
+              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 line-clamp-2">{property.title}</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">{property.location}</p>
+              <p className="text-base sm:text-lg font-semibold text-green-600 dark:text-green-400 mt-2">
                 {new Intl.NumberFormat('es-CO', {
                   style: 'currency',
                   currency: 'COP',
@@ -207,26 +215,26 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
               </p>
             </div>
 
-            {/* Información de Contacto de la Oficina */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-6">
-              <h5 className="font-semibold text-gray-900 dark:text-white mb-3">
+            {/* Información de Contacto de la Oficina - Optimizado para Móviles */}
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+              <h5 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-3">
                 Información de Contacto
               </h5>
               <div className="space-y-3">
                 {/* Ubicación */}
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <MapPin className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                       {CONTACT_INFO.address.street}<br />
                       {CONTACT_INFO.address.building}<br />
-                      {CONTACT_INFO.address.plusCode}
+                      <span className="text-xs">{CONTACT_INFO.address.plusCode}</span>
                     </p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => window.open(CONTACT_INFO.urls.maps, '_blank')}
-                      className="mt-2 text-xs"
+                      className="mt-2 text-xs w-full sm:w-auto"
                     >
                       Ver en Google Maps
                     </Button>
@@ -234,10 +242,10 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
                 </div>
 
                 {/* Horarios */}
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 sm:space-x-3">
                   <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                       {CONTACT_INFO.schedule.weekdays}<br />
                       {CONTACT_INFO.schedule.weekend}
                     </p>
@@ -246,8 +254,8 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
               </div>
             </div>
 
-            {/* Formulario */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Formulario - Optimizado para Móviles */}
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               {/* Datos Personales */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
