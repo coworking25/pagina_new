@@ -809,6 +809,13 @@ function AdminProperties() {
     e.preventDefault();
     if (isSubmitting) return;
     
+    // ✅ VALIDACIÓN: Asesor obligatorio
+    if (!formData.advisor_id || formData.advisor_id.trim() === '') {
+      showNotification('⚠️ Debe asignar un asesor a la propiedad', 'error');
+      setIsSubmitting(false);
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       // Generar código si no existe
@@ -874,6 +881,13 @@ function AdminProperties() {
   const handleUpdateProperty = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || !selectedProperty) return;
+    
+    // ✅ VALIDACIÓN: Asesor obligatorio
+    if (!formData.advisor_id || formData.advisor_id.trim() === '') {
+      showNotification('⚠️ Debe asignar un asesor a la propiedad', 'error');
+      setIsSubmitting(false);
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -1677,20 +1691,28 @@ function AdminProperties() {
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 👨‍💼 Asesor Asignado
+                <span className="text-red-500 ml-1">*</span>
+                <span className="ml-2 px-2 py-0.5 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 text-xs rounded-full">
+                  Obligatorio
+                </span>
               </label>
               <select
                 name="advisor_id"
                 value={formData.advisor_id}
                 onChange={handleFormChange}
+                required
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
               >
-                <option value="">Seleccionar asesor (opcional)</option>
+                <option value="">⚠️ Seleccionar asesor (obligatorio)</option>
                 {advisors.map((advisor) => (
                   <option key={advisor.id} value={advisor.id}>
                     {advisor.name} - {advisor.specialty}
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                ⚠️ Debe asignar un asesor antes de guardar la propiedad
+              </p>
             </div>
           </div>
 
@@ -2551,20 +2573,28 @@ function AdminProperties() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 👨‍💼 Asesor Asignado
+                <span className="text-red-500 ml-1">*</span>
+                <span className="ml-2 px-2 py-0.5 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 text-xs rounded-full">
+                  Obligatorio
+                </span>
               </label>
               <select
                 name="advisor_id"
                 value={formData.advisor_id}
                 onChange={handleFormChange}
+                required
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
-                <option value="">Sin asesor asignado</option>
+                <option value="">⚠️ Seleccionar asesor (obligatorio)</option>
                 {advisors.map((advisor) => (
                   <option key={advisor.id} value={advisor.id}>
                     {advisor.name} - {advisor.specialty}
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                ⚠️ Debe asignar un asesor antes de guardar los cambios
+              </p>
             </div>
 
             {/* Descripción */}
