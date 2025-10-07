@@ -3034,34 +3034,61 @@ export async function getPropertyImagesByCode(propertyCode: string): Promise<str
 }
 
 // Función para generar próximo código de propiedad disponible
+/**
+ * Genera automáticamente un código único para una propiedad
+ * Reutiliza códigos de propiedades eliminadas si existen
+ * Formato: CA-001, CA-002, etc.
+ */
 export async function generatePropertyCode(): Promise<string> {
   try {
-    // Obtener el último código usado
-    const { data, error } = await supabase
+    console.log('🔢 Generando código de propiedad automático...');
+    
+    // 1. Obtener TODOS los códigos existentes
+    const { data: existingProperties, error: fetchError } = await supabase
       .from('properties')
       .select('code')
       .not('code', 'is', null)
-      .order('code', { ascending: false })
-      .limit(1);
+      .order('code', { ascending: true });
     
-    if (error) {
-      console.error('❌ Error obteniendo último código:', error);
+    if (fetchError) {
+      console.error('❌ Error obteniendo códigos existentes:', fetchError);
       return 'CA-001'; // Código por defecto
     }
     
-    if (!data || data.length === 0) {
-      return 'CA-001'; // Primer código
+    // 2. Si no hay propiedades, retornar el primer código
+    if (!existingProperties || existingProperties.length === 0) {
+      console.log('✨ Primera propiedad, código: CA-001');
+      return 'CA-001';
     }
     
-    const lastCode = data[0].code;
-    const match = lastCode.match(/CA-(\d+)/);
+    // 3. Extraer números de los códigos existentes
+    const usedNumbers = new Set<number>();
+    existingProperties.forEach(prop => {
+      if (prop.code) {
+        const match = prop.code.match(/CA-(\d+)/);
+        if (match) {
+          usedNumbers.add(parseInt(match[1]));
+        }
+      }
+    });
     
-    if (match) {
-      const nextNumber = parseInt(match[1]) + 1;
-      return `CA-${nextNumber.toString().padStart(3, '0')}`;
+    console.log(`📊 Códigos en uso: ${usedNumbers.size}`);
+    
+    // 4. Buscar el primer número disponible (gaps en la secuencia)
+    let nextNumber = 1;
+    while (usedNumbers.has(nextNumber)) {
+      nextNumber++;
     }
     
-    return 'CA-001'; // Fallback
+    const newCode = `CA-${nextNumber.toString().padStart(3, '0')}`;
+    
+    if (nextNumber <= usedNumbers.size) {
+      console.log(`♻️ Reutilizando código disponible: ${newCode} (había gap en la secuencia)`);
+    } else {
+      console.log(`✅ Nuevo código generado: ${newCode}`);
+    }
+    
+    return newCode;
     
   } catch (error) {
     console.error('❌ Error en generatePropertyCode:', error);

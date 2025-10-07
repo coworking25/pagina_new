@@ -766,7 +766,7 @@ function AdminProperties() {
     setShowEditModal(true);
   };
 
-  const handleAddProperty = () => {
+  const handleAddProperty = async () => {
     setSelectedProperty(null);
     
     // Verificar si hay un borrador guardado
@@ -780,6 +780,17 @@ function AdminProperties() {
     } else {
       // Si no hay borrador, limpiar y abrir
       resetForm();
+      
+      // 🔢 GENERAR CÓDIGO AUTOMÁTICAMENTE
+      try {
+        const autoCode = await generatePropertyCode();
+        setFormData(prev => ({ ...prev, code: autoCode }));
+        console.log('🔢 Código generado automáticamente:', autoCode);
+      } catch (error) {
+        console.error('❌ Error generando código:', error);
+        alert('Error al generar código de propiedad. Por favor, recargue la página.');
+      }
+      
       setShowAddModal(true);
       console.log('🆕 Abriendo modal con formulario nuevo');
     }
@@ -1127,7 +1138,7 @@ function AdminProperties() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar por título o ubicación..."
+                placeholder="🔍 Buscar por código, título o ubicación..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
@@ -1468,45 +1479,30 @@ function AdminProperties() {
               Información Básica
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Título */}
-              {/* Código de Propiedad */}
+              {/* Código de Propiedad (Auto-generado, Solo Lectura) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  🏷️ Código de Propiedad
+                  🔢 Código de Propiedad
+                  <span className="ml-2 px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-xs rounded-full">
+                    Auto-generado
+                  </span>
                 </label>
                 <input
                   type="text"
                   name="code"
                   value={formData.code}
-                  onChange={handleFormChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
-                  placeholder="Ej: CA-001 (se genera automáticamente)"
+                  readOnly
+                  disabled
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white cursor-not-allowed font-mono"
+                  placeholder="Generando código..."
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Se genera automáticamente si está vacío
-                </p>
-              </div>
-
-              {/* Código de la Propiedad */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  🏷️ Código de la Propiedad
-                </label>
-                <input
-                  type="text"
-                  name="code"
-                  value={formData.code}
-                  onChange={handleFormChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
-                  placeholder="Ej: CA-001 (se genera automáticamente si se deja vacío)"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Si no especificas un código, se generará automáticamente al subir imágenes
+                  ✅ El código se genera automáticamente y no puede editarse
                 </p>
               </div>
 
               {/* Título de la Propiedad */}
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Título de la Propiedad *
                 </label>
