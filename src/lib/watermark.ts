@@ -16,9 +16,18 @@ interface WatermarkOptions {
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = reject;
+    // Solo usar crossOrigin para URLs externas, no para archivos locales
+    if (!url.startsWith('/') && !url.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
+    img.onload = () => {
+      console.log(`✅ Imagen cargada desde: ${url} (${img.width}x${img.height})`);
+      resolve(img);
+    };
+    img.onerror = (error) => {
+      console.error(`❌ Error cargando imagen desde: ${url}`, error);
+      reject(new Error(`No se pudo cargar la imagen desde: ${url}`));
+    };
     img.src = url;
   });
 }
@@ -118,7 +127,9 @@ export async function addWatermarkToImage(
   options: WatermarkOptions = {}
 ): Promise<File> {
   try {
-    console.log('🎨 Agregando marca de agua a:', imageFile.name);
+    console.log('🎨 Iniciando proceso de marca de agua...');
+    console.log('📄 Archivo original:', imageFile.name, `(${(imageFile.size / 1024).toFixed(2)} KB)`);
+    console.log('💧 URL de marca de agua:', watermarkUrl);
 
     // Opciones por defecto
     const {
@@ -128,15 +139,20 @@ export async function addWatermarkToImage(
       margin = 20
     } = options;
 
+    console.log('⚙️ Opciones:', { opacity, position, scale, margin });
+
     // Cargar imagen original
+    console.log('📥 Cargando imagen original...');
     const originalImage = await fileToImage(imageFile);
-    console.log(`📐 Imagen original: ${originalImage.width}x${originalImage.height}`);
+    console.log(`✅ Imagen original cargada: ${originalImage.width}x${originalImage.height}`);
 
     // Cargar marca de agua
+    console.log('📥 Cargando marca de agua desde:', watermarkUrl);
     const watermarkImage = await loadImage(watermarkUrl);
-    console.log(`💧 Marca de agua cargada: ${watermarkImage.width}x${watermarkImage.height}`);
+    console.log(`✅ Marca de agua cargada: ${watermarkImage.width}x${watermarkImage.height}`);
 
     // Crear canvas con el tamaño de la imagen original
+    console.log('🖼️ Creando canvas...');
     const canvas = document.createElement('canvas');
     canvas.width = originalImage.width;
     canvas.height = originalImage.height;
@@ -147,11 +163,14 @@ export async function addWatermarkToImage(
     }
 
     // Dibujar imagen original
+    console.log('🖌️ Dibujando imagen original en canvas...');
     ctx.drawImage(originalImage, 0, 0);
 
     // Calcular tamaño de la marca de agua (proporcional a la imagen)
     const watermarkWidth = originalImage.width * scale;
     const watermarkHeight = (watermarkImage.height / watermarkImage.width) * watermarkWidth;
+
+    console.log(`📏 Tamaño de marca de agua calculado: ${watermarkWidth.toFixed(0)}x${watermarkHeight.toFixed(0)}`);
 
     // Calcular posición
     const { x, y } = calculateWatermarkPosition(
@@ -163,16 +182,21 @@ export async function addWatermarkToImage(
       margin
     );
 
+    console.log(`📍 Posición calculada: (${x.toFixed(0)}, ${y.toFixed(0)})`);
+
     // Aplicar opacidad y dibujar marca de agua
+    console.log('🎨 Aplicando marca de agua...');
     ctx.globalAlpha = opacity;
     ctx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
     ctx.globalAlpha = 1.0;
 
-    console.log(`✅ Marca de agua aplicada en posición: ${position} (${x}, ${y})`);
+    console.log(`✅ Marca de agua aplicada exitosamente en posición: ${position}`);
 
     // Determinar formato de salida basado en el archivo original
     const mimeType = imageFile.type || 'image/jpeg';
     const quality = mimeType === 'image/png' ? 1.0 : 0.92;
+
+    console.log(`💾 Convirtiendo canvas a archivo (${mimeType}, calidad: ${quality})...`);
 
     // Convertir canvas a archivo
     const watermarkedFile = await canvasToFile(
@@ -182,14 +206,21 @@ export async function addWatermarkToImage(
       quality
     );
 
-    console.log(`💾 Archivo con marca de agua creado: ${watermarkedFile.size} bytes`);
+    console.log(`✅ Archivo con marca de agua creado: ${(watermarkedFile.size / 1024).toFixed(2)} KB`);
+    console.log(`📊 Tamaño original: ${(imageFile.size / 1024).toFixed(2)} KB → Con marca: ${(watermarkedFile.size / 1024).toFixed(2)} KB`);
     
     return watermarkedFile;
 
   } catch (error) {
-    console.error('❌ Error agregando marca de agua:', error);
+    console.error('❌ ERROR CRÍTICO agregando marca de agua:', error);
+    console.error('❌ Detalles del error:', {
+      message: (error as Error).message,
+      stack: (error as Error).stack,
+      imageFile: imageFile.name,
+      watermarkUrl
+    });
     // En caso de error, devolver imagen original
-    console.warn('⚠️ Devolviendo imagen original sin marca de agua');
+    console.warn('⚠️ FALLBACK: Devolviendo imagen original sin marca de agua');
     return imageFile;
   }
 }

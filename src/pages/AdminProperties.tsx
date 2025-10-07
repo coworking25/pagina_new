@@ -186,6 +186,7 @@ function AdminProperties() {
   
   // Estados para manejo de imágenes
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [useWatermark, setUseWatermark] = useState(true); // Estado para marca de agua
   
   // Estado para mostrar/ocultar alerta de borrador
   const [showDraftAlert, setShowDraftAlert] = useState(false);
@@ -557,7 +558,8 @@ function AdminProperties() {
         propertyCode,
         (current, total) => {
           console.log(`📊 Progreso: ${current}/${total}`);
-        }
+        },
+        useWatermark // Pasar el estado de marca de agua
       );
       
       // Agregar URLs a las imágenes del formulario
@@ -612,7 +614,8 @@ function AdminProperties() {
         selectedProperty.code || '',
         (current, total) => {
           console.log(`📊 Progreso: ${current}/${total}`);
-        }
+        },
+        useWatermark // Pasar el estado de marca de agua
       );
 
       // Crear nuevo array de imágenes combinando las existentes con las nuevas
@@ -1827,6 +1830,28 @@ function AdminProperties() {
               <Camera className="w-5 h-5 mr-2 text-purple-600" />
               Imágenes de la Propiedad
             </h3>
+            
+            {/* Checkbox para marca de agua */}
+            <div className="mb-4 flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+              <input
+                type="checkbox"
+                id="use-watermark"
+                checked={useWatermark}
+                onChange={(e) => setUseWatermark(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <label htmlFor="use-watermark" className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
+                <span className="text-lg">🎨</span>
+                Agregar marca de agua automáticamente a las imágenes
+                <span className={`ml-2 px-2 py-0.5 rounded text-xs font-semibold ${
+                  useWatermark 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                }`}>
+                  {useWatermark ? 'ACTIVADO' : 'DESACTIVADO'}
+                </span>
+              </label>
+            </div>
             
             {/* Área de carga de imágenes */}
             <div className="mb-6">

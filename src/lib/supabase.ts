@@ -2271,7 +2271,7 @@ export async function getDashboardStats(): Promise<{
 // ==========================================
 
 // Función para subir imagen a Supabase Storage (mejorada con código de propiedad)
-export async function uploadPropertyImage(file: File, propertyCode?: string): Promise<string> {
+export async function uploadPropertyImage(file: File, propertyCode?: string, withWatermark: boolean = true): Promise<string> {
   try {
     console.log(`📤 Subiendo imagen${propertyCode ? ` para ${propertyCode}` : ''}...`);
     
@@ -2286,9 +2286,45 @@ export async function uploadPropertyImage(file: File, propertyCode?: string): Pr
     if (file.size > maxSize) {
       throw new Error('Archivo muy grande. Máximo 5MB por imagen.');
     }
+
+    // ✨ AGREGAR MARCA DE AGUA SI ESTÁ HABILITADA
+    let fileToUpload = file;
+    if (withWatermark) {
+      try {
+        console.log('🎨 ========================================');
+        console.log('🎨 INICIANDO PROCESO DE MARCA DE AGUA');
+        console.log('🎨 ========================================');
+        console.log('📄 Archivo a procesar:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
+        
+        const { addWatermarkToImage } = await import('./watermark');
+        
+        fileToUpload = await addWatermarkToImage(file, '/marcaDeAgua.png', {
+          opacity: 0.7,
+          position: 'bottom-right',
+          scale: 0.15,
+          margin: 20
+        });
+        
+        console.log('✅ ========================================');
+        console.log('✅ MARCA DE AGUA APLICADA EXITOSAMENTE');
+        console.log('✅ ========================================');
+        console.log('📄 Archivo original:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
+        console.log('📄 Archivo procesado:', fileToUpload.name, `(${(fileToUpload.size / 1024).toFixed(2)} KB)`);
+        
+      } catch (watermarkError) {
+        console.error('❌ ========================================');
+        console.error('❌ ERROR AL AGREGAR MARCA DE AGUA');
+        console.error('❌ ========================================');
+        console.error('Error completo:', watermarkError);
+        console.warn('⚠️ Subiendo imagen original sin marca de agua');
+        fileToUpload = file; // Si falla, usar imagen original
+      }
+    } else {
+      console.log('ℹ️ Subiendo imagen sin marca de agua (opción deshabilitada por el usuario)');
+    }
     
     // Generar nombre único para el archivo
-    const fileExt = file.name.split('.').pop();
+    const fileExt = fileToUpload.name.split('.').pop();
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2);
     const fileName = `${timestamp}-${randomId}.${fileExt}`;
@@ -2303,7 +2339,7 @@ export async function uploadPropertyImage(file: File, propertyCode?: string): Pr
     // Subir archivo a Supabase Storage
     const { error } = await supabase.storage
       .from('property-images')
-      .upload(filePath, file, {
+      .upload(filePath, fileToUpload, {
         cacheControl: '3600',
         upsert: false
       });
@@ -2927,10 +2963,12 @@ export async function getActiveTenantsForProperties(propertyIds: number[] | stri
 export async function bulkUploadPropertyImages(
   files: File[], 
   propertyCode: string,
-  onProgress?: (current: number, total: number) => void
+  onProgress?: (current: number, total: number) => void,
+  withWatermark: boolean = true
 ): Promise<string[]> {
   
   console.log(`📤 Subida masiva: ${files.length} imágenes para ${propertyCode}`);
+  console.log(`🎨 Marca de agua: ${withWatermark ? 'ACTIVADA ✅' : 'DESACTIVADA ❌'}`);
   
   const uploadedUrls: string[] = [];
   const errors: string[] = [];
@@ -2938,7 +2976,7 @@ export async function bulkUploadPropertyImages(
   for (let i = 0; i < files.length; i++) {
     try {
       onProgress?.(i + 1, files.length);
-      const url = await uploadPropertyImage(files[i], propertyCode);
+      const url = await uploadPropertyImage(files[i], propertyCode, withWatermark);
       uploadedUrls.push(url);
       
     } catch (error) {

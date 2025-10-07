@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Marca de Agua</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .upload-area {
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f9f9f9;
+        }
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .preview-box {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .preview-box h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        .preview-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #37474f;
+        }
+        .log-error { color: #ef5350; }
+        .log-success { color: #66bb6a; }
+        .log-info { color: #42a5f5; }
+        .log-warning { color: #ffa726; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Test de Marca de Agua - Sistema de Propiedades</h1>
+        
+        <div class="info">
+            <strong>ℹ️ Instrucciones:</strong><br>
+            1. Selecciona una imagen de prueba<br>
+            2. El sistema aplicará automáticamente la marca de agua<br>
+            3. Verás la comparación entre la imagen original y la procesada<br>
+            4. Puedes descargar ambas versiones para comparar
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept="image/*">
+            <div>
+                <h2>📤 Arrastra una imagen aquí o haz clic para seleccionar</h2>
+                <p>Formatos soportados: JPG, PNG, WebP</p>
+            </div>
+        </div>
+
+        <div id="logContainer" class="log" style="display: none;">
+            <h3 style="margin-top: 0; color: #fff;">📋 Registro de Procesamiento</h3>
+            <div id="logContent"></div>
+        </div>
+
+        <div id="previewContainer" class="preview-container"></div>
+    </div>
+
+    <script type="module">
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const logContainer = document.getElementById('logContainer');
+        const logContent = document.getElementById('logContent');
+
+        let originalFile = null;
+
+        // Log personalizado
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContent.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        // Sobrescribir console.log para capturar todos los logs
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            log(args.join(' '), 'info');
+        };
+
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            log(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            log(args.join(' '), 'warning');
+        };
+
+        // Click en área de subida
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Prevenir comportamiento por defecto del drag & drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight al arrastrar
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'));
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'));
+        });
+
+        // Manejar drop
+        uploadArea.addEventListener('drop', e => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Manejar selección de archivo
+        fileInput.addEventListener('change', e => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        async function handleFile(file) {
+            logContainer.style.display = 'block';
+            logContent.innerHTML = '';
+            previewContainer.innerHTML = '';
+            originalFile = file;
+
+            log(`🎨 Iniciando prueba de marca de agua`, 'success');
+            log(`📄 Archivo seleccionado: ${file.name}`, 'info');
+            log(`📊 Tamaño: ${(file.size / 1024).toFixed(2)} KB`, 'info');
+            log(`🖼️ Tipo: ${file.type}`, 'info');
+
+            try {
+                // Importar la función de marca de agua
+                log(`📦 Importando módulo de marca de agua...`, 'info');
+                const { addWatermarkToImage } = await import('/src/lib/watermark.ts');
+                log(`✅ Módulo importado exitosamente`, 'success');
+
+                // Mostrar imagen original
+                log(`📸 Generando vista previa de imagen original...`, 'info');
+                const originalUrl = URL.createObjectURL(file);
+                createPreview('Original (Sin Marca de Agua)', originalUrl, file.size);
+
+                // Aplicar marca de agua
+                log(`🎨 Aplicando marca de agua...`, 'info');
+                const watermarkedFile = await addWatermarkToImage(file, '/marcaDeAgua.png', {
+                    opacity: 0.7,
+                    position: 'bottom-right',
+                    scale: 0.15,
+                    margin: 20
+                });
+
+                log(`✅ Marca de agua aplicada exitosamente!`, 'success');
+                log(`📊 Tamaño procesado: ${(watermarkedFile.size / 1024).toFixed(2)} KB`, 'success');
+                log(`📊 Diferencia: ${((watermarkedFile.size - file.size) / 1024).toFixed(2)} KB`, 'info');
+
+                // Mostrar imagen con marca de agua
+                const watermarkedUrl = URL.createObjectURL(watermarkedFile);
+                createPreview('Con Marca de Agua', watermarkedUrl, watermarkedFile.size, watermarkedFile);
+
+                log(`🎉 Proceso completado exitosamente!`, 'success');
+
+            } catch (error) {
+                log(`❌ Error durante el proceso: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        }
+
+        function createPreview(title, url, size, file = null) {
+            const box = document.createElement('div');
+            box.className = 'preview-box';
+
+            const titleEl = document.createElement('h3');
+            titleEl.textContent = title;
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.onload = () => {
+                log(`✅ Imagen cargada: ${img.naturalWidth}x${img.naturalHeight}`, 'success');
+            };
+
+            const info = document.createElement('div');
+            info.className = 'info';
+            info.innerHTML = `
+                <strong>Tamaño:</strong> ${(size / 1024).toFixed(2)} KB<br>
+                <strong>Dimensiones:</strong> Se cargarán al mostrar la imagen
+            `;
+
+            box.appendChild(titleEl);
+            box.appendChild(img);
+            box.appendChild(info);
+
+            if (file) {
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'button';
+                downloadBtn.textContent = '⬇️ Descargar esta versión';
+                downloadBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `watermarked_${file.name}`;
+                    a.click();
+                    log(`💾 Descarga iniciada: watermarked_${file.name}`, 'success');
+                };
+                box.appendChild(downloadBtn);
+            }
+
+            previewContainer.appendChild(box);
+        }
+    </script>
+</body>
+</html>
