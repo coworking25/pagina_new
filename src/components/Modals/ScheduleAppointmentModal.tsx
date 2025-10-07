@@ -398,19 +398,19 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-4xl max-h-[95vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sm:p-6 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Agendar Cita</h2>
-              <p className="text-blue-100 mt-1">
+              <h2 className="text-lg sm:text-2xl font-bold">Agendar Cita</h2>
+              <p className="text-blue-100 mt-1 text-sm sm:text-base">
                 Paso {currentStep} de 3 - {property.title}
               </p>
             </div>
@@ -418,12 +418,12 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
               onClick={onClose}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
 
           {/* Progress Bar */}
-          <div className="mt-4 flex space-x-2">
+          <div className="mt-3 sm:mt-4 flex space-x-2">
             {[1, 2, 3].map((step) => (
               <div
                 key={step}
@@ -435,17 +435,17 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
           </div>
         </div>
 
-        <div className="max-h-[calc(90vh-140px)] overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" style={{ maxHeight: window.innerWidth < 640 ? 'calc(95vh - 240px)' : 'calc(95vh - 200px)' }}>
           {/* Step 1: Información Personal y Tipo de Cita */}
           {currentStep === 1 && (
-            <div className="p-6 space-y-6">
-              {/* Información del Asesor */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 sm:p-6">
-                <div className="flex items-start space-x-3 sm:space-x-4">
+            <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+              {/* Información del Asesor - Compacto en móvil */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg sm:rounded-xl p-3 sm:p-6">
+                <div className="flex items-start space-x-2 sm:space-x-4">
                   <img
                     src={advisor.photo}
                     alt={advisor.name}
-                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
+                    className="w-10 h-10 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       console.error(`❌ Error cargando imagen del asesor ${advisor.name} en modal:`, advisor.photo);
@@ -456,35 +456,31 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
+                    <h3 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
                       {advisor.name}
                     </h3>
                     <p className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium truncate">
                       {advisor.specialty}
                     </p>
-                    <div className="flex items-center space-x-1 mt-2">
+                    <div className="flex items-center space-x-1 mt-1 sm:mt-2">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                          className={`w-2.5 h-2.5 sm:w-4 sm:h-4 ${
                             i < advisor.rating
                               ? 'text-yellow-400 fill-current'
                               : 'text-gray-300'
                           }`}
                         />
                       ))}
-                      <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 ml-2">
-                        {advisor.rating}/5 ({advisor.reviews} reseñas)
+                      <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 ml-1 sm:ml-2 truncate">
+                        {advisor.rating}/5
                       </span>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1 sm:space-y-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 sm:mt-3 text-xs text-gray-600 dark:text-gray-400 space-y-0.5 sm:space-y-0">
                       <div className="flex items-center space-x-1">
                         <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span className="truncate">Lun-Vie: {advisor.availability?.weekdays || '9:00-18:00'}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span className="truncate">{advisor.whatsapp}</span>
+                        <span className="truncate text-xs">Lun-Vie: {advisor.availability?.weekdays || '9:00-18:00'}</span>
                       </div>
                     </div>
                   </div>
@@ -492,7 +488,7 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
               </div>
 
               {/* Formulario Personal */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nombre completo *
@@ -775,13 +771,14 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
           )}
         </div>
 
-        {/* Footer con botones */}
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-          <div className="flex justify-between">
+        {/* Footer con botones - Optimizado para móviles */}
+        <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0 sm:space-x-3">
             <Button
               variant="outline"
               onClick={currentStep === 1 ? onClose : prevStep}
               disabled={isSubmitting}
+              className="w-full sm:w-auto text-sm sm:text-base py-2 sm:py-3"
             >
               {currentStep === 1 ? 'Cancelar' : 'Anterior'}
             </Button>
@@ -793,6 +790,7 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                   (currentStep === 1 && !canProceedFromStep1) ||
                   (currentStep === 2 && !canProceedFromStep2)
                 }
+                className="w-full sm:w-auto text-sm sm:text-base py-2 sm:py-3"
               >
                 Siguiente
               </Button>
@@ -800,15 +798,15 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto text-sm sm:text-base py-2 sm:py-3"
               >
                 {isSubmitting ? (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Procesando...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center space-x-2">
                     <Send className="w-4 h-4" />
                     <span>Confirmar Cita</span>
                   </div>
