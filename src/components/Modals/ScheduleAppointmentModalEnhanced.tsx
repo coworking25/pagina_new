@@ -365,11 +365,16 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
     flexDirection: 'column' as const
   };
   
+  // Ajuste dinámico para móviles - más espacio para los botones
   const contentStyle = {
     flexGrow: 1,
     overflowY: 'auto' as const,
-    maxHeight: 'calc(95vh - 200px)',
-    minHeight: '300px'
+    // En móvil: menos altura para dejar espacio a los botones
+    // En desktop: más altura disponible
+    maxHeight: window.innerWidth < 640 
+      ? 'calc(95vh - 280px)' // Móvil: más espacio para footer (280px)
+      : 'calc(95vh - 200px)', // Desktop: espacio normal (200px)
+    minHeight: '200px'
   };
 
   // Manejo de teclas para accesibilidad
@@ -804,14 +809,14 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
               )}
             </div>
 
-            {/* Footer con botones mejorado */}
-            <div className="p-4 sm:p-6 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 w-full rounded-b-xl sm:rounded-b-2xl">
-              <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
+            {/* Footer con botones mejorado - Optimizado para móviles */}
+            <div className="p-3 sm:p-6 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 w-full rounded-b-xl sm:rounded-b-2xl flex-shrink-0">
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center space-y-2 sm:space-y-0 sm:gap-3">
                 <button
                   type="button"
                   onClick={currentStep === 1 ? handleClose : prevStep}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border-2 border-gray-300 dark:border-gray-500 rounded-lg font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 border-2 border-gray-300 dark:border-gray-500 rounded-lg font-medium text-sm sm:text-base text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] transition-colors"
                   aria-label={currentStep === 1 ? 'Cerrar modal' : 'Ir al paso anterior'}
                 >
                   {currentStep === 1 ? 'Cancelar' : 'Anterior'}
@@ -825,7 +830,7 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                       (currentStep === 1 && !canProceedFromStep1) ||
                       (currentStep === 2 && !canProceedFromStep2)
                     }
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] transition-colors"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent rounded-lg font-medium text-sm sm:text-base text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] transition-colors"
                     aria-label="Ir al siguiente paso"
                   >
                     Siguiente
@@ -835,7 +840,7 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                     type="button"
                     onClick={handleSubmit}
                     disabled={isSubmitting || Object.keys(validateStep(3)).length > 0}
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent rounded-lg font-medium text-sm sm:text-base text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors"
                     aria-label="Confirmar y agendar cita"
                   >
                     {isSubmitting ? (
@@ -854,7 +859,7 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
               </div>
               
               {/* Indicador de paso en móvil */}
-              <div className="sm:hidden mt-3 text-center">
+              <div className="sm:hidden mt-2 text-center">
                 <span className="text-xs text-gray-500 dark:text-gray-400">
                   Paso {currentStep} de 3
                 </span>
