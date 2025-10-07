@@ -270,24 +270,29 @@ export async function checkAdvisorAvailability(
     // Convertir la fecha propuesta a objeto Date
     const proposedDate = new Date(appointmentDate);
 
-    // Calcular el rango de tiempo (la cita dura aproximadamente 1 hora)
+    // Calcular el rango de tiempo - solo verificamos solapamiento directo
+    // Una cita dura 1 hora, entonces verificamos ± 1 hora desde la hora propuesta
     const startTime = new Date(proposedDate);
     const endTime = new Date(proposedDate);
-    endTime.setHours(endTime.getHours() + 1); // Asumimos que las citas duran 1 hora
+    endTime.setHours(endTime.getHours() + 1); // Citas duran 1 hora
 
-    console.log('⏰ Rango de tiempo:', {
+    console.log('⏰ Rango de verificación:', {
       start: startTime.toISOString(),
-      end: endTime.toISOString()
+      end: endTime.toISOString(),
+      proposed: proposedDate.toISOString()
     });
 
     // Consultar citas existentes del asesor en ese rango de tiempo
+    // Buscamos citas que puedan solaparse con la cita propuesta
+    // Si una cita existente está entre [proposedDate, proposedDate+1h), hay conflicto
     let query = supabase
       .from('property_appointments')
       .select('*')
       .eq('advisor_id', advisorId)
-      .is('deleted_at', null)
+      .is('deleted_at', null) // Solo citas no eliminadas
       .neq('status', 'cancelled') // Excluir citas canceladas
-      .or(`appointment_date.gte.${startTime.toISOString()},appointment_date.lt.${endTime.toISOString()}`);
+      .gte('appointment_date', startTime.toISOString())
+      .lt('appointment_date', endTime.toISOString()); // Usar lt en vez de lte
 
     // Si estamos editando una cita existente, excluirla de la verificación
     if (excludeAppointmentId) {
