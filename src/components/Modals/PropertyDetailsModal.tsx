@@ -356,6 +356,7 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                           <Building className="w-3 h-3 sm:w-4 sm:h-4 mr-2 flex-shrink-0" />
                           <span className="capitalize">
                             {property.type === 'apartment' ? 'Apartamento' :
+                             property.type === 'apartaestudio' ? 'Apartaestudio' :
                              property.type === 'house' ? 'Casa' :
                              property.type === 'office' ? 'Oficina' :
                              property.type === 'commercial' ? 'Local Comercial' :

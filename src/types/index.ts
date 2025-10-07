@@ -10,7 +10,7 @@ export interface Property {
   bathrooms: number;
   area: number;
   location?: string;
-  type: 'apartment' | 'house' | 'office' | 'commercial';
+  type: 'apartment' | 'apartaestudio' | 'house' | 'office' | 'commercial';
   // Estados posibles: incluimos tanto los legacy ('sale','rent') como los canónicos
   status: 'sale' | 'rent' | 'sold' | 'rented' | 'available' | 'reserved' | 'maintenance' | 'pending';
   images: string[];

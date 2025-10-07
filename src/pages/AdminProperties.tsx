@@ -1164,6 +1164,7 @@ function AdminProperties() {
               >
                 <option value="all">Todos los tipos</option>
                 <option value="apartment">Apartamento</option>
+                <option value="apartaestudio">Apartaestudio</option>
                 <option value="house">Casa</option>
                 <option value="office">Oficina</option>
                 <option value="commercial">Local</option>
@@ -1295,6 +1296,7 @@ function AdminProperties() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">
                     {property.type === 'apartment' && 'Apartamento'}
+                    {property.type === 'apartaestudio' && 'Apartaestudio'}
                     {property.type === 'house' && 'Casa'}
                     {property.type === 'office' && 'Oficina'}
                     {property.type === 'commercial' && 'Local'}
@@ -1629,6 +1631,7 @@ function AdminProperties() {
                 >
                   <option value="house">🏠 Casa</option>
                   <option value="apartment">🏢 Apartamento</option>
+                  <option value="apartaestudio">🏠 Apartaestudio</option>
                   <option value="office">🏪 Oficina</option>
                   <option value="commercial">🏬 Comercial</option>
                 </select>
@@ -2496,6 +2499,7 @@ function AdminProperties() {
               >
                 <option value="house">Casa</option>
                 <option value="apartment">Apartamento</option>
+                <option value="apartaestudio">Apartaestudio</option>
                 <option value="office">Oficina</option>
                 <option value="commercial">Comercial</option>
               </select>

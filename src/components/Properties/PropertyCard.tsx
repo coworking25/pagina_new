@@ -401,7 +401,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             <Building className="w-4 h-4" />
             <span className="capitalize">
               {property.type === 'apartment' ? 'Apartamento' :
+               property.type === 'apartaestudio' ? 'Apartaestudio' :
                property.type === 'house' ? 'Casa' :
+               property.type === 'office' ? 'Oficina' :
+               property.type === 'commercial' ? 'Local' :
                property.type || 'Propiedad'}
             </span>
           </div>

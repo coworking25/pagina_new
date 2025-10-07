@@ -131,6 +131,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               >
                 <option value="">Todos</option>
                 <option value="apartment">Apartamento</option>
+                <option value="apartaestudio">Apartaestudio</option>
                 <option value="house">Casa</option>
                 <option value="office">Oficina</option>
                 <option value="commercial">Local Comercial</option>
