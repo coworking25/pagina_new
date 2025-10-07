@@ -8,6 +8,7 @@ interface WatermarkOptions {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center';
   scale?: number; // Escala de la marca de agua (0.1 = 10% del tamaño de la imagen)
   margin?: number; // Margen desde los bordes
+  rotation?: number; // Rotación en grados (0 = horizontal, -30 = diagonal como en el ejemplo)
 }
 
 /**
@@ -136,10 +137,11 @@ export async function addWatermarkToImage(
       opacity = 0.7,
       position = 'bottom-right',
       scale = 0.15, // 15% del ancho de la imagen
-      margin = 20
+      margin = 20,
+      rotation = 0 // Sin rotación por defecto
     } = options;
 
-    console.log('⚙️ Opciones:', { opacity, position, scale, margin });
+    console.log('⚙️ Opciones:', { opacity, position, scale, margin, rotation });
 
     // Cargar imagen original
     console.log('📥 Cargando imagen original...');
@@ -166,11 +168,29 @@ export async function addWatermarkToImage(
     console.log('🖌️ Dibujando imagen original en canvas...');
     ctx.drawImage(originalImage, 0, 0);
 
-    // Calcular tamaño de la marca de agua (proporcional a la imagen)
-    const watermarkWidth = originalImage.width * scale;
-    const watermarkHeight = (watermarkImage.height / watermarkImage.width) * watermarkWidth;
+    // Calcular tamaño de la marca de agua
+    // Si la imagen es vertical (9:16), ajustamos proporcionalmente
+    let watermarkWidth: number;
+    let watermarkHeight: number;
+    
+    const imageAspectRatio = originalImage.width / originalImage.height;
+    const watermarkAspectRatio = watermarkImage.width / watermarkImage.height;
+    
+    console.log(`📊 Aspect Ratio - Imagen: ${imageAspectRatio.toFixed(2)}, Marca de agua: ${watermarkAspectRatio.toFixed(2)}`);
+    
+    // Para imágenes verticales (9:16 ≈ 0.56), usamos el ancho como referencia
+    // Para imágenes horizontales, también usamos el ancho
+    watermarkWidth = originalImage.width * scale;
+    watermarkHeight = (watermarkImage.height / watermarkImage.width) * watermarkWidth;
+    
+    // Asegurar que la marca de agua no sea más alta que la imagen
+    if (watermarkHeight > originalImage.height * 0.8) {
+      watermarkHeight = originalImage.height * 0.8;
+      watermarkWidth = (watermarkImage.width / watermarkImage.height) * watermarkHeight;
+    }
 
     console.log(`📏 Tamaño de marca de agua calculado: ${watermarkWidth.toFixed(0)}x${watermarkHeight.toFixed(0)}`);
+    console.log(`📐 Proporción de marca de agua: ${(watermarkWidth / watermarkHeight).toFixed(2)}`);
 
     // Calcular posición
     const { x, y } = calculateWatermarkPosition(
@@ -187,10 +207,37 @@ export async function addWatermarkToImage(
     // Aplicar opacidad y dibujar marca de agua
     console.log('🎨 Aplicando marca de agua...');
     ctx.globalAlpha = opacity;
-    ctx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
+    
+    // Si hay rotación, aplicarla
+    if (rotation !== 0) {
+      console.log(`🔄 Aplicando rotación: ${rotation}°`);
+      ctx.save(); // Guardar estado del contexto
+      
+      // Mover el origen al centro de donde se dibujará la marca de agua
+      const centerX = x + watermarkWidth / 2;
+      const centerY = y + watermarkHeight / 2;
+      
+      ctx.translate(centerX, centerY);
+      ctx.rotate((rotation * Math.PI) / 180); // Convertir grados a radianes
+      
+      // Dibujar la marca de agua centrada en el nuevo origen
+      ctx.drawImage(
+        watermarkImage, 
+        -watermarkWidth / 2, 
+        -watermarkHeight / 2, 
+        watermarkWidth, 
+        watermarkHeight
+      );
+      
+      ctx.restore(); // Restaurar estado del contexto
+    } else {
+      // Sin rotación, dibujar normalmente
+      ctx.drawImage(watermarkImage, x, y, watermarkWidth, watermarkHeight);
+    }
+    
     ctx.globalAlpha = 1.0;
 
-    console.log(`✅ Marca de agua aplicada exitosamente en posición: ${position}`);
+    console.log(`✅ Marca de agua aplicada exitosamente en posición: ${position}${rotation !== 0 ? ` con rotación ${rotation}°` : ''}`);
 
     // Determinar formato de salida basado en el archivo original
     const mimeType = imageFile.type || 'image/jpeg';

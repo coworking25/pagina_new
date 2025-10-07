@@ -2298,11 +2298,12 @@ export async function uploadPropertyImage(file: File, propertyCode?: string, wit
         
         const { addWatermarkToImage } = await import('./watermark');
         
-        fileToUpload = await addWatermarkToImage(file, '/marcaDeAgua.png', {
-          opacity: 0.7,
-          position: 'bottom-right',
-          scale: 0.15,
-          margin: 20
+        fileToUpload = await addWatermarkToImage(file, '/LogoEnBlancoo.png', {
+          opacity: 0.25, // Transparencia sutil
+          position: 'center', // Centrado perfecto
+          scale: 0.6, // Marca de agua más grande (60% del ancho)
+          margin: 0,
+          rotation: 0 // SIN rotación - perfectamente alineada
         });
         
         console.log('✅ ========================================');
