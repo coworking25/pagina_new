@@ -1,6 +1,16 @@
 // Re-export all client-related types
 export * from './clients';
 
+export interface PropertyVideo {
+  url: string;
+  thumbnail?: string;
+  title?: string;
+  duration?: number;
+  size?: number;
+  uploaded_at?: string;
+  order?: number;
+}
+
 export interface Property {
   id: number;
   code?: string;  // Código único de la propiedad (ej: CA-001)
@@ -14,7 +24,9 @@ export interface Property {
   // Estados posibles: incluimos tanto los legacy ('sale','rent') como los canónicos
   status: 'sale' | 'rent' | 'sold' | 'rented' | 'available' | 'reserved' | 'maintenance' | 'pending';
   images: string[];
+  videos?: PropertyVideo[];  // Videos de la propiedad
   cover_image?: string;  // URL de la imagen de portada seleccionada
+  cover_video?: string;  // URL del video destacado
   amenities: string[];
   featured: boolean;
   description?: string;

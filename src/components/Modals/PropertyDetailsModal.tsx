@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail, Edit, Trash2, Building } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail, Edit, Trash2, Building, Camera, Film } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import { getAdvisorById } from '../../lib/supabase';
 import { trackPropertyView } from '../../lib/analytics';
@@ -9,6 +9,7 @@ import ImageGallery from '../UI/ImageGallery';
 import MortgageCalculator from '../UI/MortgageCalculator';
 import ContactFormModal from './ContactFormModal';
 import ScheduleAppointmentModal from './ScheduleAppointmentModal';
+import VideoPlayer from '../VideoPlayer';
 import { getPublicImageUrl } from '../../lib/supabase';
 
 interface PropertyDetailsModalProps {
@@ -31,6 +32,7 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'mortgage'>('overview');
+  const [activeMediaTab, setActiveMediaTab] = useState<'images' | 'videos'>('images');
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   
@@ -202,14 +204,81 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                 {/* Content */}
                 <div className="overflow-y-auto max-h-[calc(95vh-80px)] sm:max-h-[calc(95vh-100px)]">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 p-3 sm:p-6">
-                    {/* Left Column - Images and Gallery */}
+                    {/* Left Column - Images and Videos Gallery */}
                     <div className="space-y-4 sm:space-y-6">
-                      <ImageGallery
-                        images={publicImageUrls}
-                        title={property.title}
-                        currentIndex={currentImageIndex}
-                        onImageChange={setCurrentImageIndex}
-                      />
+                      
+                      {/* Tabs para Fotos y Videos */}
+                      <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+                        {/* Tabs Headers */}
+                        <div className="flex border-b border-gray-200 dark:border-gray-700">
+                          <button
+                            onClick={() => setActiveMediaTab('images')}
+                            className={`flex-1 px-4 py-3 font-medium transition-colors flex items-center justify-center text-sm sm:text-base ${
+                              activeMediaTab === 'images'
+                                ? 'bg-blue-600 text-white border-b-2 border-blue-600'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            <Camera className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                            Fotos ({publicImageUrls.length})
+                          </button>
+                          <button
+                            onClick={() => setActiveMediaTab('videos')}
+                            className={`flex-1 px-4 py-3 font-medium transition-colors flex items-center justify-center text-sm sm:text-base ${
+                              activeMediaTab === 'videos'
+                                ? 'bg-blue-600 text-white border-b-2 border-blue-600'
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            <Film className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                            Videos ({property.videos?.length || 0})
+                          </button>
+                        </div>
+
+                        {/* Tab Content - Imágenes */}
+                        {activeMediaTab === 'images' && (
+                          <div className="p-2">
+                            <ImageGallery
+                              images={publicImageUrls}
+                              title={property.title}
+                              currentIndex={currentImageIndex}
+                              onImageChange={setCurrentImageIndex}
+                            />
+                          </div>
+                        )}
+
+                        {/* Tab Content - Videos */}
+                        {activeMediaTab === 'videos' && (
+                          <div className="p-4">
+                            {property.videos && property.videos.length > 0 ? (
+                              <div className="grid grid-cols-1 gap-4">
+                                {property.videos.map((video, index) => (
+                                  <div key={index} className="relative">
+                                    <VideoPlayer
+                                      src={video.url}
+                                      thumbnail={video.thumbnail}
+                                      title={video.title}
+                                      className="h-64 sm:h-80 rounded-lg overflow-hidden"
+                                    />
+                                    {video.duration && (
+                                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                        Duración: {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-12">
+                                <Film className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-600 dark:text-gray-400">
+                                  No hay videos disponibles para esta propiedad
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
                       {/* Advisor Card - Optimizado para móvil */}
                       {loadingAdvisor ? (

@@ -1250,6 +1250,24 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
         processedImages = ['https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg'];
       }
       
+      // Procesar array de videos
+      let processedVideos: any[] = [];
+      
+      if (prop.videos && Array.isArray(prop.videos)) {
+        processedVideos = prop.videos;
+      } else if (typeof prop.videos === 'string') {
+        // Si es una cadena, intentar parsear como JSON
+        try {
+          const parsed = JSON.parse(prop.videos);
+          if (Array.isArray(parsed)) {
+            processedVideos = parsed;
+          }
+        } catch (e) {
+          console.warn('No se pudo parsear videos:', e);
+          processedVideos = [];
+        }
+      }
+      
       return {
         id: prop.id,
         title: prop.title,
@@ -1261,6 +1279,9 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
         type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: prop.status as 'sale' | 'rent' | 'sold' | 'rented',
         images: processedImages,
+        videos: processedVideos,
+        cover_image: prop.cover_image,
+        cover_video: prop.cover_video,
         amenities: prop.amenities || [],
         featured: prop.featured || false,
         description: prop.description,
@@ -3629,3 +3650,17 @@ export async function getDeletedRecords(tableName: string) {
     throw error;
   }
 }
+
+// ==========================================
+// RE-EXPORTAR FUNCIONES DE VIDEOS
+// ==========================================
+
+export {
+  uploadPropertyVideo,
+  bulkUploadPropertyVideos,
+  getPropertyVideos,
+  deletePropertyVideo,
+  updatePropertyVideos,
+  type PropertyVideo
+} from './supabase-videos';
+

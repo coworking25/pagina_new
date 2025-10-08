@@ -77,15 +77,17 @@ import {
   Plane,
   ShoppingBag,
   Mountain,
-  Sparkles
+  Sparkles,
+  Film
 } from 'lucide-react';
-import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties } from '../lib/supabase';
-import { Property, Advisor } from '../types';
+import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties, bulkUploadPropertyVideos, deletePropertyVideo } from '../lib/supabase';
+import { Property, Advisor, PropertyVideo } from '../types';
 import Modal from '../components/UI/Modal';
 import FloatingCard from '../components/UI/FloatingCard';
 import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentModal';
 import ContactModal from '../components/Modals/ContactModal';
 import { CoverImageSelector } from '../components/CoverImageSelector';
+import VideoPlayer from '../components/VideoPlayer';
 
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
@@ -112,6 +114,7 @@ function AdminProperties() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [activeMediaTab, setActiveMediaTab] = useState<'images' | 'videos'>('images');
   const [tenantMap, setTenantMap] = useState<Record<string, { id: string; full_name: string }>>({});
   
   // Estados para asesores
@@ -146,7 +149,9 @@ function AdminProperties() {
     status: 'sale',
     advisor_id: '',
     images: [] as string[],
+    videos: [] as PropertyVideo[],
     cover_image: '',
+    cover_video: '',
     featured: false
   };
 
@@ -187,6 +192,11 @@ function AdminProperties() {
   // Estados para manejo de imágenes
   const [uploadingImages, setUploadingImages] = useState(false);
   const [useWatermark, setUseWatermark] = useState(true); // Estado para marca de agua
+  
+  // Estados para manejo de videos
+  const [selectedVideos, setSelectedVideos] = useState<File[]>([]);
+  const [uploadingVideos, setUploadingVideos] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   
   // Estado para mostrar/ocultar alerta de borrador
   const [showDraftAlert, setShowDraftAlert] = useState(false);
@@ -649,6 +659,172 @@ function AdminProperties() {
     });
   };
 
+  // ==========================================
+  // FUNCIONES PARA MANEJO DE VIDEOS
+  // ==========================================
+
+  // Función para seleccionar videos
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validVideos = files.filter(file => {
+      const validTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
+      return validTypes.includes(file.type) && file.size <= 100 * 1024 * 1024;
+    });
+    
+    if (validVideos.length !== files.length) {
+      alert('Algunos archivos no son válidos. Solo MP4, WebM y MOV hasta 100MB.');
+    }
+    
+    setSelectedVideos(prev => [...prev, ...validVideos]);
+  };
+
+  // Función para subir videos
+  const handleUploadVideos = async () => {
+    if (selectedVideos.length === 0) return;
+    
+    let propertyCode = formData.code;
+    if (!propertyCode) {
+      propertyCode = await generatePropertyCode();
+      setFormData(prev => ({ ...prev, code: propertyCode }));
+      console.log(`🏷️ Código generado automáticamente: ${propertyCode}`);
+    }
+    
+    setUploadingVideos(true);
+    try {
+      const uploadedVideos = await bulkUploadPropertyVideos(
+        selectedVideos,
+        propertyCode,
+        (current, total) => {
+          const progress = (current / total) * 100;
+          setVideoUploadProgress(progress);
+        }
+      );
+      
+      // Actualizar formData
+      setFormData(prev => ({
+        ...prev,
+        videos: [...(prev.videos || []), ...uploadedVideos]
+      }));
+      
+      setSelectedVideos([]);
+      showNotification(`✅ ${uploadedVideos.length} videos subidos exitosamente`, 'success');
+      
+    } catch (error) {
+      console.error('Error subiendo videos:', error);
+      showNotification('Error al subir videos', 'error');
+    } finally {
+      setUploadingVideos(false);
+      setVideoUploadProgress(0);
+    }
+  };
+
+  // Función para eliminar video
+  const handleRemoveVideo = async (videoUrl: string, index: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este video?')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Eliminando video:', videoUrl);
+      
+      // Eliminar del storage
+      await deletePropertyVideo(videoUrl);
+      
+      // Actualizar estado local
+      const newVideos = (formData.videos || []).filter((_, i) => i !== index);
+      
+      setFormData(prev => ({
+        ...prev,
+        videos: newVideos
+      }));
+
+      // Si estamos editando una propiedad existente, actualizar en BD
+      if (selectedProperty) {
+        console.log('💾 Actualizando videos en BD...');
+        await updateProperty(selectedProperty.id, { videos: newVideos });
+        
+        // Actualizar selectedProperty también
+        setSelectedProperty({
+          ...selectedProperty,
+          videos: newVideos
+        });
+        
+        // Refrescar lista de propiedades
+        await refreshProperties();
+      }
+      
+      showNotification('✅ Video eliminado exitosamente', 'success');
+    } catch (error) {
+      console.error('❌ Error eliminando video:', error);
+      showNotification('Error al eliminar el video', 'error');
+    }
+  };
+
+  // Función para subir nuevos videos en el modal de edición
+  const handleEditVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0 || !selectedProperty) return;
+
+    const validVideos = files.filter(file => {
+      const validTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
+      return validTypes.includes(file.type) && file.size <= 100 * 1024 * 1024;
+    });
+
+    if (validVideos.length === 0) {
+      showNotification('No hay videos válidos para subir', 'error');
+      return;
+    }
+
+    setUploadingVideos(true);
+    try {
+      console.log('📤 Subiendo', validVideos.length, 'videos...');
+      
+      const uploadedVideos = await bulkUploadPropertyVideos(
+        validVideos,
+        selectedProperty.code || '',
+        (current, total) => {
+          const progress = (current / total) * 100;
+          setVideoUploadProgress(progress);
+          console.log(`📊 Progreso: ${progress.toFixed(0)}%`);
+        }
+      );
+
+      console.log('✅ Videos subidos:', uploadedVideos);
+
+      const newVideos = [...(selectedProperty.videos || []), ...uploadedVideos];
+
+      console.log('💾 Actualizando propiedad en BD...');
+      await updateProperty(selectedProperty.id, { videos: newVideos });
+      
+      console.log('🔄 Refrescando propiedades...');
+      await refreshProperties();
+      
+      // Actualizar selectedProperty con los nuevos videos
+      setSelectedProperty({
+        ...selectedProperty,
+        videos: newVideos
+      });
+
+      console.log('✅ Todo completado exitosamente');
+      showNotification(`✅ ${uploadedVideos.length} videos agregados exitosamente`, 'success');
+      
+      // Limpiar el input
+      e.target.value = '';
+      
+    } catch (error) {
+      console.error('❌ Error subiendo videos:', error);
+      showNotification('Error al subir los videos', 'error');
+    } finally {
+      setUploadingVideos(false);
+      setVideoUploadProgress(0);
+    }
+  };
+
+  // ==========================================
+  // FIN FUNCIONES DE VIDEOS
+  // ==========================================
+
+
   // Función para agregar amenidad personalizada
   const addCustomAmenity = () => {
     if (newCustomAmenity.trim() && !selectedAmenities.includes(newCustomAmenity.trim())) {
@@ -745,7 +921,9 @@ function AdminProperties() {
       status: property.status || 'sale',
       advisor_id: property.advisor_id || '',
       images: property.images || [],
+      videos: property.videos || [],
       cover_image: property.cover_image || '',
+      cover_video: property.cover_video || '',
       featured: property.featured || false
     });
     
@@ -1943,6 +2121,101 @@ function AdminProperties() {
             )}
           </div>
 
+          {/* Sección 4.5: Videos de la Propiedad */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Camera className="w-5 h-5 mr-2 text-purple-600" />
+              Videos de la Propiedad
+            </h3>
+
+            {/* Área de carga de videos */}
+            <div className="mb-6">
+              <div className="border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
+                <input
+                  type="file"
+                  id="video-upload"
+                  multiple
+                  accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                  onChange={handleVideoSelect}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="video-upload"
+                  className="cursor-pointer flex flex-col items-center"
+                >
+                  <Upload className="w-12 h-12 text-purple-400 mb-4" />
+                  <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Arrastra videos aquí o haz clic para seleccionar
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Formatos soportados: MP4, WebM, MOV, AVI (máximo 100MB por video)
+                  </p>
+                </label>
+              </div>
+            </div>
+
+            {/* Videos seleccionados para subir */}
+            {selectedVideos.length > 0 && (
+              <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-200 dark:border-purple-800">
+                <p className="text-sm text-purple-700 dark:text-purple-300 mb-3 font-medium">
+                  {selectedVideos.length} video(s) seleccionado(s) - Tamaño total: {(selectedVideos.reduce((acc, v) => acc + v.size, 0) / 1024 / 1024).toFixed(2)} MB
+                </p>
+                <div className="space-y-2 mb-3">
+                  {selectedVideos.map((video, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded">
+                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{video.name}</span>
+                      <span className="text-xs text-gray-500 ml-2">{(video.size / 1024 / 1024).toFixed(2)} MB</span>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleUploadVideos}
+                  disabled={uploadingVideos}
+                  className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {uploadingVideos ? `Subiendo... ${videoUploadProgress.toFixed(0)}%` : 'Subir Videos'}
+                </button>
+              </div>
+            )}
+
+            {/* Grid de videos existentes */}
+            {formData.videos && formData.videos.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formData.videos.map((video, index) => (
+                  <div key={index} className="relative group">
+                    <VideoPlayer
+                      src={video.url}
+                      thumbnail={video.thumbnail}
+                      title={video.title}
+                      className="h-48 rounded-lg overflow-hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVideo(video.url, index)}
+                      className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    {video.duration && (
+                      <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                        {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!formData.videos || formData.videos.length === 0 && selectedVideos.length === 0 && (
+              <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
+                <Camera className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 dark:text-gray-400">No hay videos agregados</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Los videos son opcionales pero ayudan a mostrar mejor la propiedad</p>
+              </div>
+            )}
+          </div>
+
           {/* Sección 5: Descripción */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -2022,95 +2295,155 @@ function AdminProperties() {
         {selectedProperty && (
           <div className="p-6 max-h-[80vh] overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Galería de Imágenes - Columna Principal */}
+              {/* Galería de Imágenes y Videos - Columna Principal */}
               <div className="lg:col-span-2">
                 <div className="mb-6">
-                  {/* Imagen Principal */}
-                  <div className="relative h-96 bg-gray-200 dark:bg-gray-700 rounded-xl mb-4 overflow-hidden">
-                    {selectedProperty.images && selectedProperty.images.length > 0 ? (
-                      <>
-                        <img
-                          src={selectedProperty.images[currentImageIndex]}
-                          alt={selectedProperty.title}
-                          className="w-full h-full object-cover"
-                        />
-                        
-                        {/* Navegación de Imágenes */}
-                        {selectedProperty.images.length > 1 && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCurrentImageIndex(prev => 
-                                  prev === 0 ? selectedProperty.images.length - 1 : prev - 1
-                                );
-                              }}
-                              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
-                            >
-                              <ChevronLeft className="h-6 w-6" />
-                            </button>
-                            
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCurrentImageIndex(prev => 
-                                  prev === selectedProperty.images.length - 1 ? 0 : prev + 1
-                                );
-                              }}
-                              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
-                            >
-                              <ChevronRight className="h-6 w-6" />
-                            </button>
-                          </>
-                        )}
-
-                        {/* Contador de Imágenes */}
-                        <div className="absolute top-4 right-4 bg-black bg-opacity-60 text-white px-3 py-1 rounded-lg text-sm">
-                          {currentImageIndex + 1} / {selectedProperty.images.length}
-                        </div>
-
-                        {/* Badge de Estado */}
-                        <div className="absolute top-4 left-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(selectedProperty.status)}`}>
-                            {selectedProperty.status === 'available' && 'Disponible'}
-                            {selectedProperty.status === 'sale' && 'En Venta'}
-                            {selectedProperty.status === 'rent' && 'En Arriendo'}
-                            {selectedProperty.status === 'sold' && 'Vendido'}
-                            {selectedProperty.status === 'rented' && 'Arrendado'}
-                            {selectedProperty.status === 'reserved' && 'Reservado'}
-                            {selectedProperty.status === 'maintenance' && 'Mantenimiento'}
-                            {selectedProperty.status === 'pending' && 'Pendiente'}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-16 h-16 text-gray-400" />
-                        <span className="ml-2 text-gray-500">Sin imágenes disponibles</span>
-                      </div>
-                    )}
+                  {/* Tabs para Fotos y Videos */}
+                  <div className="flex gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setActiveMediaTab('images')}
+                      className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                        activeMediaTab === 'images'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Fotos ({selectedProperty.images?.length || 0})</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveMediaTab('videos')}
+                      className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                        activeMediaTab === 'videos'
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <Film className="w-4 h-4" />
+                      <span>Videos ({selectedProperty.videos?.length || 0})</span>
+                    </button>
                   </div>
 
-                  {/* Thumbnails */}
-                  {selectedProperty.images && selectedProperty.images.length > 1 && (
-                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                      {selectedProperty.images.map((image, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentImageIndex(index)}
-                          className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                            index === currentImageIndex 
-                              ? 'border-blue-500 ring-2 ring-blue-200' 
-                              : 'border-gray-300 hover:border-gray-400'
-                          }`}
-                        >
-                          <img
-                            src={image}
-                            alt={`${selectedProperty.title} ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ))}
+                  {/* Contenido de Tab de Imágenes */}
+                  {activeMediaTab === 'images' && (
+                    <>
+                      {/* Imagen Principal */}
+                      <div className="relative h-96 bg-gray-200 dark:bg-gray-700 rounded-xl mb-4 overflow-hidden">
+                        {selectedProperty.images && selectedProperty.images.length > 0 ? (
+                          <>
+                            <img
+                              src={selectedProperty.images[currentImageIndex]}
+                              alt={selectedProperty.title}
+                              className="w-full h-full object-cover"
+                            />
+                            
+                            {/* Navegación de Imágenes */}
+                            {selectedProperty.images.length > 1 && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentImageIndex(prev => 
+                                      prev === 0 ? selectedProperty.images.length - 1 : prev - 1
+                                    );
+                                  }}
+                                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                                >
+                                  <ChevronLeft className="h-6 w-6" />
+                                </button>
+                                
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentImageIndex(prev => 
+                                      prev === selectedProperty.images.length - 1 ? 0 : prev + 1
+                                    );
+                                  }}
+                                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                                >
+                                  <ChevronRight className="h-6 w-6" />
+                                </button>
+                              </>
+                            )}
+
+                            {/* Contador de Imágenes */}
+                            <div className="absolute top-4 right-4 bg-black bg-opacity-60 text-white px-3 py-1 rounded-lg text-sm">
+                              {currentImageIndex + 1} / {selectedProperty.images.length}
+                            </div>
+
+                            {/* Badge de Estado */}
+                            <div className="absolute top-4 left-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(selectedProperty.status)}`}>
+                                {selectedProperty.status === 'available' && 'Disponible'}
+                                {selectedProperty.status === 'sale' && 'En Venta'}
+                                {selectedProperty.status === 'rent' && 'En Arriendo'}
+                                {selectedProperty.status === 'sold' && 'Vendido'}
+                                {selectedProperty.status === 'rented' && 'Arrendado'}
+                                {selectedProperty.status === 'reserved' && 'Reservado'}
+                                {selectedProperty.status === 'maintenance' && 'Mantenimiento'}
+                                {selectedProperty.status === 'pending' && 'Pendiente'}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="w-16 h-16 text-gray-400" />
+                            <span className="ml-2 text-gray-500">Sin imágenes disponibles</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Thumbnails */}
+                      {selectedProperty.images && selectedProperty.images.length > 1 && (
+                        <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                          {selectedProperty.images.map((image, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setCurrentImageIndex(index)}
+                              className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                                index === currentImageIndex 
+                                  ? 'border-blue-500 ring-2 ring-blue-200' 
+                                  : 'border-gray-300 hover:border-gray-400'
+                              }`}
+                            >
+                              <img
+                                src={image}
+                                alt={`${selectedProperty.title} ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Contenido de Tab de Videos */}
+                  {activeMediaTab === 'videos' && (
+                    <div className="space-y-4">
+                      {selectedProperty.videos && selectedProperty.videos.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {selectedProperty.videos.map((video, index) => (
+                            <div key={index} className="space-y-2">
+                              <VideoPlayer
+                                src={video.url}
+                                thumbnail={video.thumbnail}
+                                className="w-full rounded-lg"
+                              />
+                              {video.duration && (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  Duración: {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl flex flex-col items-center justify-center">
+                          <Film className="w-16 h-16 text-gray-400 mb-2" />
+                          <span className="text-gray-500">No hay videos disponibles</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2728,8 +3061,7 @@ function AdminProperties() {
                 <button
                   type="button"
                   onClick={() => {
-                    // Aquí podríamos abrir un modal para subir nuevas imágenes
-                    // Por ahora, solo mostramos las existentes
+                    document.getElementById('edit-image-upload')?.click();
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
                 >
@@ -2858,6 +3190,85 @@ function AdminProperties() {
                 <p className="text-sm text-green-700 dark:text-green-300">
                   💡 <strong>Nota:</strong> Las nuevas imágenes se agregarán al final de la lista.
                   Puedes reorganizarlas usando el selector de imagen de portada abajo.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Sección para Videos */}
+          {selectedProperty && (
+            <div className="mt-6 p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                  <Camera className="w-5 h-5 mr-2 text-purple-600" />
+                  Videos de la Propiedad ({selectedProperty.videos?.length || 0})
+                </h3>
+                <label className="cursor-pointer px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Agregar Videos
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                    multiple
+                    onChange={handleEditVideoUpload}
+                    className="hidden"
+                    disabled={uploadingVideos}
+                  />
+                </label>
+              </div>
+
+              {/* Grid de videos existentes */}
+              {selectedProperty.videos && selectedProperty.videos.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {selectedProperty.videos.map((video, index) => (
+                    <div key={index} className="relative group">
+                      <VideoPlayer
+                        src={video.url}
+                        thumbnail={video.thumbnail}
+                        title={video.title}
+                        className="h-48 rounded-lg overflow-hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVideo(video.url, index)}
+                        className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                      {video.duration && (
+                        <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                          {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {uploadingVideos && (
+                <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                    <span className="ml-2 text-purple-600">Subiendo videos... {videoUploadProgress.toFixed(0)}%</span>
+                  </div>
+                </div>
+              )}
+
+              {!selectedProperty.videos || selectedProperty.videos.length === 0 && (
+                <div className="text-center py-8 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-xl bg-purple-50/30 dark:bg-purple-900/10">
+                  <Camera className="h-12 w-12 text-purple-400 mx-auto mb-3" />
+                  <p className="text-purple-600 dark:text-purple-400 font-medium">
+                    No hay videos agregados aún
+                  </p>
+                  <p className="text-sm text-purple-500 dark:text-purple-500 mt-1">
+                    Usa el botón "Agregar Videos" para subir videos de la propiedad
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <p className="text-sm text-purple-700 dark:text-purple-300">
+                  💡 <strong>Formatos permitidos:</strong> MP4, WebM, MOV, AVI (máximo 100MB por video)
                 </p>
               </div>
             </div>

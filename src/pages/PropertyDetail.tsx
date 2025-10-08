@@ -15,10 +15,13 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Maximize
+  Maximize,
+  Camera,
+  Film
 } from 'lucide-react';
 import { Property } from '../types';
 import { getProperties } from '../lib/supabase';
+import VideoPlayer from '../components/VideoPlayer';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +32,7 @@ const PropertyDetail: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [activeMediaTab, setActiveMediaTab] = useState<'images' | 'videos'>('images');
 
   useEffect(() => {
     loadProperty();
@@ -41,7 +45,8 @@ const PropertyDetail: React.FC = () => {
       setLoading(true);
       const properties = await getProperties();
       console.log('🔍 Buscando propiedad con ID:', id);
-      console.log('📋 Propiedades disponibles:', properties.map(p => ({ id: p.id, title: p.title })));
+      console.log('📋 Total propiedades cargadas:', properties.length);
+      console.log('📋 Propiedades disponibles:', properties.map(p => ({ id: p.id, title: p.title, videos: p.videos?.length || 0 })));
       
       // Intentar buscar por ID como string y como número
       const foundProperty = properties.find(p => 
@@ -57,7 +62,29 @@ const PropertyDetail: React.FC = () => {
       }
       
       console.log('✅ Propiedad encontrada:', foundProperty);
-      setProperty(foundProperty);
+      console.log('🎬 Videos de la propiedad:', foundProperty.videos);
+      console.log('🎬 Tipo de videos:', typeof foundProperty.videos);
+      console.log('🎬 Es array:', Array.isArray(foundProperty.videos));
+      console.log('🎬 Cantidad de videos:', foundProperty.videos?.length || 0);
+      
+      // 🔧 FIX: Parsear videos si vienen como string
+      let processedProperty = { ...foundProperty };
+      
+      if (typeof foundProperty.videos === 'string') {
+        console.warn('⚠️ Videos vienen como string, parseando...');
+        try {
+          const parsed = JSON.parse(foundProperty.videos);
+          if (Array.isArray(parsed)) {
+            processedProperty.videos = parsed;
+            console.log('✅ Videos parseados correctamente:', processedProperty.videos);
+          }
+        } catch (e) {
+          console.error('❌ Error parseando videos:', e);
+          processedProperty.videos = [];
+        }
+      }
+      
+      setProperty(processedProperty);
     } catch (err) {
       setError('Error al cargar la propiedad');
       console.error('Error loading property:', err);
@@ -192,92 +219,148 @@ const PropertyDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Galería de Imágenes */}
-      <div className="relative h-96 md:h-[500px] lg:h-[600px] overflow-hidden">
-        {property.images && property.images.length > 0 ? (
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={currentImageIndex}
-              src={property.images[currentImageIndex]}
-              alt={property.title}
-              className="w-full h-full object-cover"
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.5 }}
-            />
-          </AnimatePresence>
-        ) : (
-          <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-            <span className="text-gray-500 dark:text-gray-400">Sin imágenes disponibles</span>
-          </div>
-        )}
+      {/* Galería de Imágenes y Videos con Tabs */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-8">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setActiveMediaTab('images')}
+            className={`flex-1 px-6 py-4 font-medium transition-colors flex items-center justify-center ${
+              activeMediaTab === 'images'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-600'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            <Camera className="h-5 w-5 mr-2" />
+            Fotos ({property.images?.length || 0})
+          </button>
+          <button
+            onClick={() => setActiveMediaTab('videos')}
+            className={`flex-1 px-6 py-4 font-medium transition-colors flex items-center justify-center ${
+              activeMediaTab === 'videos'
+                ? 'bg-blue-600 text-white border-b-2 border-blue-600'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            <Film className="h-5 w-5 mr-2" />
+            Videos ({property.videos?.length || 0})
+          </button>
+        </div>
 
-        {/* Navegación de Imágenes */}
-        {property.images && property.images.length > 1 && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                prevImage();
-              }}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                nextImage();
-              }}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-          </>
-        )}
+        {/* Contenido de Imágenes */}
+        {activeMediaTab === 'images' && (
+          <div className="relative h-96 md:h-[500px] lg:h-[600px] overflow-hidden">
+            {property.images && property.images.length > 0 ? (
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentImageIndex}
+                  src={property.images[currentImageIndex]}
+                  alt={property.title}
+                  className="w-full h-full object-cover"
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.5 }}
+                />
+              </AnimatePresence>
+            ) : (
+              <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                <Camera className="h-16 w-16 text-gray-400 mb-2" />
+                <span className="text-gray-500 dark:text-gray-400">Sin imágenes disponibles</span>
+              </div>
+            )}
 
-        {/* Indicadores de Imagen */}
-        {property.images && property.images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {property.images.map((_, index) => (
+            {/* Navegación de Imágenes */}
+            {property.images && property.images.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    prevImage();
+                  }}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nextImage();
+                  }}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            )}
+
+            {/* Indicadores de Imagen */}
+            {property.images && property.images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                {property.images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === currentImageIndex 
+                        ? 'bg-white scale-110' 
+                        : 'bg-white bg-opacity-50 hover:bg-opacity-80'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Botón Ver Todas las Fotos */}
+            {property.images && property.images.length > 1 && (
               <button
-                key={index}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setCurrentImageIndex(index);
+                  setIsGalleryOpen(true);
                 }}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentImageIndex 
-                    ? 'bg-white scale-110' 
-                    : 'bg-white bg-opacity-50 hover:bg-opacity-80'
-                }`}
-              />
-            ))}
+                className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg hover:bg-opacity-70 transition-all flex items-center space-x-2"
+              >
+                <Maximize className="h-4 w-4" />
+                <span>Ver todas ({property.images.length})</span>
+              </button>
+            )}
           </div>
         )}
 
-        {/* Botón Ver Todas las Fotos */}
-        {property.images && property.images.length > 1 && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsGalleryOpen(true);
-            }}
-            className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg hover:bg-opacity-70 transition-all flex items-center space-x-2"
-          >
-            <Maximize className="h-4 w-4" />
-            <span>Ver todas ({property.images.length})</span>
-          </button>
+        {/* Contenido de Videos */}
+        {activeMediaTab === 'videos' && (
+          <div className="p-6">
+            {property.videos && property.videos.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {property.videos.map((video, index) => (
+                  <div key={index} className="relative">
+                    <VideoPlayer
+                      src={video.url}
+                      thumbnail={video.thumbnail}
+                      title={video.title}
+                      className="h-80 rounded-lg overflow-hidden"
+                    />
+                    {video.duration && (
+                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        Duración: {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <Film className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 text-lg">No hay videos disponibles para esta propiedad</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Los videos ayudan a conocer mejor la propiedad</p>
+              </div>
+            )}
+          </div>
         )}
-
-        {/* Badge de Estado */}
-        <div className="absolute top-4 left-4">
-          <span className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getStatusColor(property.status)}`}>
-            {getStatusText(property.status)}
-          </span>
-        </div>
       </div>
 
       {/* Contenido Principal */}
@@ -290,6 +373,13 @@ const PropertyDetail: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6"
             >
+              {/* Badge de Estado */}
+              <div className="mb-4">
+                <span className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getStatusColor(property.status)}`}>
+                  {getStatusText(property.status)}
+                </span>
+              </div>
+
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 {property.title}
               </h1>
