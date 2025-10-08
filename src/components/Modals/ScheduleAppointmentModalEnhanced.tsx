@@ -37,7 +37,6 @@ interface AppointmentForm {
   preferredDate: string;
   preferredTime: string;
   visitType: string;
-  attendees: string;
   specialRequests: string;
   contactMethod: string;
   marketingConsent: boolean;
@@ -126,7 +125,6 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
     preferredDate: '',
     preferredTime: '',
     visitType: '',
-    attendees: '1',
     specialRequests: '',
     contactMethod: 'whatsapp',
     marketingConsent: false
@@ -232,7 +230,7 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
         appointment_date: combineDateAndTime(formData.preferredDate, formData.preferredTime),
         appointment_type: formData.appointmentType,
         visit_type: formData.visitType,
-        attendees: parseInt(formData.attendees),
+        attendees: 1,
         special_requests: formData.specialRequests.trim() || undefined,
         contact_method: formData.contactMethod,
         marketing_consent: formData.marketingConsent
@@ -325,7 +323,6 @@ ${propertyInfo}
 • Modalidad: ${visitTypeLabel}
 • Fecha preferida: ${formatDate(formData.preferredDate)}
 • Hora preferida: ${formatTime(formData.preferredTime)}
-• Número de asistentes: ${formData.attendees}
 
 ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.specialRequests}\n\n` : ''}
 
@@ -753,21 +750,6 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
 
                   {/* Detalles adicionales */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Número de asistentes
-                      </label>
-                      <select
-                        value={formData.attendees}
-                        onChange={(e) => updateFormData('attendees', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        {[1, 2, 3, 4, 5].map(num => (
-                          <option key={num} value={num}>{num} persona{num > 1 ? 's' : ''}</option>
-                        ))}
-                      </select>
-                    </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Método de contacto preferido

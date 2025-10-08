@@ -32,7 +32,6 @@ interface FormData {
   appointment_date: string;
   appointment_type: 'visita' | 'consulta' | 'avaluo' | 'asesoria';
   visit_type: 'presencial' | 'virtual' | 'mixta';
-  attendees: number;
   special_requests: string;
   contact_method: 'whatsapp' | 'phone' | 'email';
   marketing_consent: boolean;
@@ -55,7 +54,6 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     appointment_date: '',
     appointment_type: 'visita',
     visit_type: 'presencial',
-    attendees: 1,
     special_requests: '',
     contact_method: 'whatsapp',
     marketing_consent: false
@@ -133,7 +131,6 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
         appointment_date: appointment.appointment_date,
         appointment_type: appointment.appointment_type,
         visit_type: appointment.visit_type,
-        attendees: appointment.attendees,
         special_requests: appointment.special_requests || '',
         contact_method: appointment.contact_method,
         marketing_consent: appointment.marketing_consent
@@ -163,10 +160,6 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
       if (appointmentDate < now) {
         newErrors.appointment_date = 'La fecha de la cita no puede ser en el pasado';
       }
-    }
-
-    if (formData.attendees < 1) {
-      (newErrors as any).attendees = 'Debe haber al menos 1 asistente';
     }
 
     // Validar disponibilidad del asesor
@@ -328,24 +321,6 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
                 <option value="virtual">Virtual</option>
                 <option value="mixta">Mixta</option>
               </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Número de Asistentes
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.attendees}
-                onChange={(e) => handleInputChange('attendees', parseInt(e.target.value) || 1)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.attendees ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              {errors.attendees && (
-                <p className="text-red-500 text-xs mt-1">{errors.attendees}</p>
-              )}
             </div>
           </div>
         </div>
