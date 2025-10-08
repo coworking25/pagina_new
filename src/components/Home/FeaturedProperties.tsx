@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Property } from '../../types';
-import { getFeaturedProperties, isAdmin } from '../../lib/supabase';
+import { getFeaturedProperties, isAdmin, getAdvisorById } from '../../lib/supabase';
 import { advisors } from '../../data/advisors';
 import PropertyCard from '../Properties/PropertyCard';
 import Button from '../UI/Button';
@@ -141,7 +141,28 @@ const FeaturedProperties: React.FC = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const handleContact = (property: Property) => {
+  const handleContact = async (property: Property) => {
+    // Obtener el asesor asignado a la propiedad
+    if (property.advisor_id) {
+      try {
+        const advisor = await getAdvisorById(property.advisor_id);
+        if (advisor && advisor.whatsapp) {
+          // Crear mensaje personalizado para WhatsApp
+          const message = `Hola, estoy interesado en la propiedad *${property.title}* (${property.code || `ID: ${property.id}`}) ubicada en ${property.location || 'ubicación no especificada'}. ¿Podrías darme más información?`;
+          const encodedMessage = encodeURIComponent(message);
+          const whatsappUrl = `https://wa.me/${advisor.whatsapp}?text=${encodedMessage}`;
+          
+          // Abrir WhatsApp en una nueva pestaña
+          window.open(whatsappUrl, '_blank');
+          return;
+        }
+      } catch (error) {
+        console.error('Error al obtener asesor:', error);
+      }
+    }
+    
+    // Si no tiene asesor o hubo un error, abrir el modal de contacto como fallback
+    console.log('No se pudo redirigir a WhatsApp, abriendo modal de contacto');
     setSelectedProperty(property);
     setIsContactModalOpen(true);
   };
