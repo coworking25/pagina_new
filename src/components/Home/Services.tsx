@@ -18,11 +18,13 @@ import Card from '../UI/Card';
 import Button from '../UI/Button';
 import ServiceInquiryModal from '../Modals/ServiceInquiryModal';
 import TestimonialsCarousel from './TestimonialsCarousel';
+import MortgageCalculator from '../UI/MortgageCalculator';
 
 const Services: React.FC = () => {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedServiceIndex, setExpandedServiceIndex] = useState<number | null>(null);
+  const [showMortgageCalculator, setShowMortgageCalculator] = useState(false);
 
   const services = [
     {
@@ -384,6 +386,77 @@ const Services: React.FC = () => {
             );
           })}
         </div>
+
+        {/* Sección especial: Calculadora de Hipoteca */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="mb-12"
+        >
+          <Card className="p-6 md:p-8 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border-2 border-indigo-200 dark:border-indigo-700">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+              <div className="flex items-center gap-4 mb-4 md:mb-0">
+                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Calculadora de Hipoteca
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Simula el financiamiento de tu próxima propiedad
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant={showMortgageCalculator ? 'outline' : 'primary'}
+                icon={showMortgageCalculator ? ChevronUp : ChevronDown}
+                iconPosition="right"
+                onClick={() => setShowMortgageCalculator(!showMortgageCalculator)}
+                className="w-full md:w-auto"
+              >
+                {showMortgageCalculator ? 'Ocultar Calculadora' : 'Abrir Calculadora'}
+              </Button>
+            </div>
+
+            {/* Calculadora expandible */}
+            <AnimatePresence>
+              {showMortgageCalculator && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-4 border-t border-indigo-200 dark:border-indigo-700">
+                    <MortgageCalculator />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Información adicional */}
+            {!showMortgageCalculator && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-indigo-200 dark:border-indigo-700">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pre-aprobación</p>
+                  <p className="font-semibold text-indigo-600 dark:text-indigo-400">7-15 días</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tasa promedio</p>
+                  <p className="font-semibold text-indigo-600 dark:text-indigo-400">12.5% EA</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Costo del servicio</p>
+                  <p className="font-semibold text-indigo-600 dark:text-indigo-400">Gratis</p>
+                </div>
+              </div>
+            )}
+          </Card>
+        </motion.div>
 
         {/* Testimonials Carousel */}
         <motion.div

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, TrendingUp, Phone, Mail, Edit, Trash2, Building, Camera, Film } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, Phone, Mail, Edit, Trash2, Building, Camera, Film } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import { getAdvisorById } from '../../lib/supabase';
 import { trackPropertyView } from '../../lib/analytics';
 import Button from '../UI/Button';
 import ImageGallery from '../UI/ImageGallery';
-import MortgageCalculator from '../UI/MortgageCalculator';
 import ContactFormModal from './ContactFormModal';
 import ScheduleAppointmentModal from './ScheduleAppointmentModal';
 import VideoPlayer from '../VideoPlayer';
@@ -31,7 +30,6 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'mortgage'>('overview');
   const [activeMediaTab, setActiveMediaTab] = useState<'images' | 'videos'>('images');
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -129,11 +127,6 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
       navigator.clipboard.writeText(window.location.href);
     }
   };
-
-  const tabs = [
-    { id: 'overview', label: 'Descripción', icon: MapPin },
-    { id: 'mortgage', label: 'Calculadora', icon: TrendingUp },
-  ];
 
   return (
     <>
@@ -461,66 +454,39 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Tabs - Optimizado para móvil */}
-                      <div>
-                        <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                          {tabs.map((tab) => (
-                            <button
-                              key={tab.id}
-                              onClick={() => setActiveTab(tab.id as any)}
-                              className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
-                                activeTab === tab.id
-                                  ? 'bg-white dark:bg-gray-800 text-green-600 dark:text-green-400 shadow-sm'
-                                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                              }`}
-                            >
-                              <tab.icon className="w-3 h-3 sm:w-4 sm:h-4" />
-                              <span className="hidden sm:inline">{tab.label}</span>
-                              <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Tab Content - Optimizado para móvil */}
-                        <div className="mt-4 sm:mt-6">
-                          {activeTab === 'overview' && (
-                            <div className="space-y-4 sm:space-y-6">
-                              {/* Description */}
-                              {property.description && (
-                                <div>
-                                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3">
-                                    Descripción
-                                  </h4>
-                                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
-                                    {property.description}
-                                  </p>
-                                </div>
-                              )}
-
-                              {/* Amenities */}
-                              {property.amenities && property.amenities.length > 0 && (
-                                <div>
-                                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3">
-                                    Amenidades
-                                  </h4>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {property.amenities.map((amenity, index) => (
-                                      <div
-                                        key={index}
-                                        className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400"
-                                      >
-                                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                                        <span className="truncate">{amenity}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                      {/* Contenido - Optimizado para móvil */}
+                      <div className="mt-4 sm:mt-6">
+                        <div className="space-y-4 sm:space-y-6">
+                          {/* Description */}
+                          {property.description && (
+                            <div>
+                              <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3">
+                                Descripción
+                              </h4>
+                              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
+                                {property.description}
+                              </p>
                             </div>
                           )}
 
-                          {activeTab === 'mortgage' && (
-                            <MortgageCalculator propertyPrice={property.price} />
+                          {/* Amenities */}
+                          {property.amenities && property.amenities.length > 0 && (
+                            <div>
+                              <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3">
+                                Amenidades
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {property.amenities.map((amenity, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400"
+                                  >
+                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                                    <span className="truncate">{amenity}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>

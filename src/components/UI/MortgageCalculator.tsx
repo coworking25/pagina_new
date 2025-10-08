@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Calculator, DollarSign, Percent, Calendar } from 'lucide-react';
 
 interface MortgageCalculatorProps {
-  propertyPrice: number;
+  propertyPrice?: number;
 }
 
-const MortgageCalculator: React.FC<MortgageCalculatorProps> = ({ propertyPrice }) => {
+const MortgageCalculator: React.FC<MortgageCalculatorProps> = ({ propertyPrice: initialPrice }) => {
+  const [propertyPrice, setPropertyPrice] = useState(initialPrice || 200000000);
   const [downPayment, setDownPayment] = useState(propertyPrice * 0.3);
   const [interestRate, setInterestRate] = useState(12.5);
   const [loanTerm, setLoanTerm] = useState(15);
@@ -16,6 +17,13 @@ const MortgageCalculator: React.FC<MortgageCalculatorProps> = ({ propertyPrice }
   useEffect(() => {
     calculateMortgage();
   }, [downPayment, interestRate, loanTerm, propertyPrice]);
+
+  useEffect(() => {
+    if (initialPrice && initialPrice !== propertyPrice) {
+      setPropertyPrice(initialPrice);
+      setDownPayment(initialPrice * 0.3);
+    }
+  }, [initialPrice]);
 
   const calculateMortgage = () => {
     const principal = propertyPrice - downPayment;
@@ -60,6 +68,29 @@ const MortgageCalculator: React.FC<MortgageCalculatorProps> = ({ propertyPrice }
       </div>
 
       <div className="space-y-4">
+        {/* Valor de la Propiedad */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Valor de la Propiedad
+          </label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="number"
+              value={propertyPrice}
+              onChange={(e) => {
+                const newPrice = Number(e.target.value);
+                setPropertyPrice(newPrice);
+                // Ajustar cuota inicial proporcionalmente
+                const percentage = downPayment / propertyPrice;
+                setDownPayment(newPrice * percentage);
+              }}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              placeholder="Ej: 200000000"
+            />
+          </div>
+        </div>
+
         {/* Cuota Inicial */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
