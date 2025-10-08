@@ -23,12 +23,12 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Servicios</h4>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><Link to="/properties?type=rent" className="hover:text-green-400 transition-colors">Arrendamientos</Link></li>
-              <li><Link to="/properties?type=sale" className="hover:text-green-400 transition-colors">Ventas</Link></li>
-              <li><Link to="/services/appraisals" className="hover:text-green-400 transition-colors">Avalúos</Link></li>
-              <li><Link to="/services/accounting" className="hover:text-green-400 transition-colors">Asesorías Contables</Link></li>
-              <li><Link to="/services/construction" className="hover:text-green-400 transition-colors">Construcción</Link></li>
-              <li><Link to="/services/renovation" className="hover:text-green-400 transition-colors">Remodelación</Link></li>
+              <li><Link to="/services/arrendamientos" className="hover:text-green-400 transition-colors">Arrendamientos</Link></li>
+              <li><Link to="/services/ventas" className="hover:text-green-400 transition-colors">Ventas</Link></li>
+              <li><Link to="/services/avaluos" className="hover:text-green-400 transition-colors">Avalúos</Link></li>
+              <li><Link to="/services/asesorias-contables" className="hover:text-green-400 transition-colors">Asesorías Contables</Link></li>
+              <li><Link to="/services/construccion" className="hover:text-green-400 transition-colors">Construcción</Link></li>
+              <li><Link to="/services/remodelacion" className="hover:text-green-400 transition-colors">Remodelación</Link></li>
             </ul>
           </div>
 

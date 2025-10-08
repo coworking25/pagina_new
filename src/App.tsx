@@ -9,6 +9,7 @@ import ScrollToTop from './components/UI/ScrollToTop';
 import Home from './pages/Home';
 import Properties from './pages/Properties';
 import PropertyDetail from './pages/PropertyDetail';
+import ServiceDetail from './pages/ServiceDetail';
 import Advisors from './pages/Advisors';
 import Documentation from './pages/Documentation';
 import Contact from './pages/Contact';
@@ -55,6 +56,7 @@ const AppLayout = () => {
             <Route path="/test" element={<TestPage />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
+            <Route path="/services/:serviceId" element={<ServiceDetail />} />
             <Route path="/advisors" element={<Advisors />} />
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/contact" element={<Contact />} />
