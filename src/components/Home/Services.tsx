@@ -12,7 +12,9 @@ import {
   CreditCard,
   Scissors,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Calendar,
+  Percent
 } from 'lucide-react';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
@@ -395,30 +397,37 @@ const Services: React.FC = () => {
           viewport={{ once: true }}
           className="mb-12"
         >
-          <Card className="p-6 md:p-8 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border-2 border-indigo-200 dark:border-indigo-700">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-              <div className="flex items-center gap-4 mb-4 md:mb-0">
-                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <CreditCard className="w-6 h-6 text-white" />
+          <Card className="overflow-hidden border-0 shadow-xl">
+            {/* Header con gradiente verde */}
+            <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 md:p-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-4 mb-4 md:mb-0">
+                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
+                    <Calculator className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-1">
+                      Calculadora de Hipoteca
+                    </h3>
+                    <p className="text-green-50 text-sm md:text-base">
+                      Simula el financiamiento de tu próxima propiedad
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Calculadora de Hipoteca
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Simula el financiamiento de tu próxima propiedad
-                  </p>
-                </div>
+                <Button
+                  variant={showMortgageCalculator ? 'secondary' : 'outline'}
+                  icon={showMortgageCalculator ? ChevronUp : ChevronDown}
+                  iconPosition="right"
+                  onClick={() => setShowMortgageCalculator(!showMortgageCalculator)}
+                  className={`w-full md:w-auto ${
+                    showMortgageCalculator 
+                      ? 'bg-white text-green-600 hover:bg-green-50' 
+                      : '!text-white !border-white/30 hover:!bg-white/10'
+                  }`}
+                >
+                  {showMortgageCalculator ? 'Ocultar Calculadora' : 'Calcular Ahora'}
+                </Button>
               </div>
-              <Button
-                variant={showMortgageCalculator ? 'outline' : 'primary'}
-                icon={showMortgageCalculator ? ChevronUp : ChevronDown}
-                iconPosition="right"
-                onClick={() => setShowMortgageCalculator(!showMortgageCalculator)}
-                className="w-full md:w-auto"
-              >
-                {showMortgageCalculator ? 'Ocultar Calculadora' : 'Abrir Calculadora'}
-              </Button>
             </div>
 
             {/* Calculadora expandible */}
@@ -429,29 +438,40 @@ const Services: React.FC = () => {
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
+                  className="overflow-hidden bg-white dark:bg-gray-800"
                 >
-                  <div className="pt-4 border-t border-indigo-200 dark:border-indigo-700">
+                  <div className="p-6 md:p-8">
                     <MortgageCalculator />
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Información adicional */}
+            {/* Información adicional cuando está colapsada */}
             {!showMortgageCalculator && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-indigo-200 dark:border-indigo-700">
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pre-aprobación</p>
-                  <p className="font-semibold text-indigo-600 dark:text-indigo-400">7-15 días</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tasa promedio</p>
-                  <p className="font-semibold text-indigo-600 dark:text-indigo-400">12.5% EA</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Costo del servicio</p>
-                  <p className="font-semibold text-indigo-600 dark:text-indigo-400">Gratis</p>
+              <div className="bg-gray-50 dark:bg-gray-800/50">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 p-6 md:p-8">
+                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Pre-aprobación</p>
+                    <p className="text-xl font-bold text-green-600 dark:text-green-400">7-15 días</p>
+                  </div>
+                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <Percent className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Tasa promedio</p>
+                    <p className="text-xl font-bold text-green-600 dark:text-green-400">12.5% EA</p>
+                  </div>
+                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Costo del servicio</p>
+                    <p className="text-xl font-bold text-green-600 dark:text-green-400">Gratis</p>
+                  </div>
                 </div>
               </div>
             )}
