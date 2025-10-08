@@ -14,11 +14,14 @@ import {
 import { Advisor } from '../types';
 import { advisors as localAdvisors } from '../data/advisors';
 import Button from '../components/UI/Button';
+import ScheduleAppointmentModalEnhanced from '../components/Modals/ScheduleAppointmentModalEnhanced';
 import { CONTACT_INFO, WHATSAPP_MESSAGES } from '../constants/contact';
 
 const Advisors: React.FC = () => {
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   useEffect(() => {
     const loadAdvisors = () => {
@@ -43,6 +46,11 @@ const Advisors: React.FC = () => {
       `¡Hola ${advisor.name}! Me interesa obtener información sobre propiedades. ¿Podrías ayudarme?`
     );
     window.open(`https://wa.me/${advisor.whatsapp}?text=${message}`, '_blank');
+  };
+
+  const handleScheduleAppointment = (advisor: Advisor) => {
+    setSelectedAdvisor(advisor);
+    setIsScheduleModalOpen(true);
   };
 
   if (loading) {
@@ -271,19 +279,15 @@ const Advisors: React.FC = () => {
                     </motion.a>
                   </div>
 
-                  {advisor.calendar_link && (
-                    <motion.a
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      href={advisor.calendar_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center px-4 py-2 bg-[#40534C] hover:bg-[#2C3A36] text-white rounded-lg transition-all duration-300 shadow-md hover:shadow-lg"
-                    >
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Agendar Cita
-                    </motion.a>
-                  )}
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleScheduleAppointment(advisor)}
+                    className="w-full flex items-center justify-center px-4 py-2 bg-[#40534C] hover:bg-[#2C3A36] text-white rounded-lg transition-all duration-300 shadow-md hover:shadow-lg"
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Agendar Cita
+                  </motion.button>
                 </div>
               </div>
             </motion.div>
@@ -315,6 +319,19 @@ const Advisors: React.FC = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Schedule Appointment Modal */}
+      {selectedAdvisor && (
+        <ScheduleAppointmentModalEnhanced
+          property={null} // No hay propiedad específica cuando se agenda desde asesores
+          advisor={selectedAdvisor}
+          isOpen={isScheduleModalOpen}
+          onClose={() => {
+            setIsScheduleModalOpen(false);
+            setSelectedAdvisor(null);
+          }}
+        />
+      )}
     </div>
   );
 };

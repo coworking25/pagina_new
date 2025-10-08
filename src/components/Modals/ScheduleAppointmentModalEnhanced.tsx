@@ -23,7 +23,7 @@ import TimeSlotSelector from '../UI/TimeSlotSelector';
 import { savePropertyAppointment } from '../../lib/supabase';
 
 interface ScheduleAppointmentModalProps {
-  property: Property;
+  property: Property | null;
   advisor: Advisor;
   isOpen: boolean;
   onClose: () => void;
@@ -227,7 +227,7 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
         client_name: formData.name.trim(),
         client_email: formData.email.trim().toLowerCase(),
         client_phone: formData.phone.replace(/[\s-()]/g, ''),
-        property_id: property.id,
+        property_id: property?.id || null,
         advisor_id: advisor.id,
         appointment_date: combineDateAndTime(formData.preferredDate, formData.preferredTime),
         appointment_type: formData.appointmentType,
@@ -304,13 +304,17 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
     const appointmentTypeLabel = appointmentTypes.find(t => t.id === formData.appointmentType)?.label || formData.appointmentType;
     const visitTypeLabel = visitTypes.find(t => t.id === formData.visitType)?.label || formData.visitType;
 
-    return `¡Hola ${advisor.name}! 👋
-
+    const propertyInfo = property ? `
 Me interesa agendar una cita para la siguiente propiedad:
 
 🏠 *${property.title}*
 ${property.location ? `📍 ${property.location}\n` : ''}💰 ${property.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}
+` : `
+Me interesa agendar una cita de asesoría inmobiliaria.
+`;
 
+    return `¡Hola ${advisor.name}! 👋
+${propertyInfo}
 📋 *Datos del contacto:*
 • Nombre: ${formData.name}
 • Email: ${formData.email}
@@ -407,7 +411,7 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
               <p id="modal-description" className="text-blue-100 mt-1 text-sm sm:text-base">
                 {submissionStatus === 'success' 
                   ? 'Cita agendada exitosamente' 
-                  : `Paso ${currentStep} de 3 - ${property.title}`}
+                  : `Paso ${currentStep} de 3${property ? ` - ${property.title}` : ' - Asesoría Inmobiliaria'}`}
               </p>
             </div>
             <button
@@ -723,11 +727,13 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                         <span className="text-gray-600 dark:text-gray-400">Contacto:</span>
                         <span className="font-medium text-gray-900 dark:text-white break-all">{formData.name}</span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-600 dark:text-gray-400">Propiedad:</span>
-                        <span className="font-medium text-gray-900 dark:text-white break-words">{property.title}</span>
-                      </div>
+                      {property && (
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-gray-600 dark:text-gray-400">Propiedad:</span>
+                          <span className="font-medium text-gray-900 dark:text-white break-words">{property.title}</span>
+                        </div>
+                      )}
                       <div className="flex items-center space-x-2">
                         <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <span className="text-gray-600 dark:text-gray-400">Fecha y hora:</span>

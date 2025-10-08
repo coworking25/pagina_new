@@ -374,7 +374,7 @@ export async function savePropertyAppointment(appointmentData: {
   client_name: string;
   client_email: string;
   client_phone?: string;
-  property_id: number;
+  property_id?: number | null;
   advisor_id: string;
   appointment_date: string;
   appointment_type: string;
