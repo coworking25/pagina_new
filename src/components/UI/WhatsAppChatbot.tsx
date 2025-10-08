@@ -46,8 +46,8 @@ const faqs: FAQ[] = [
   {
     id: '5',
     question: '¿Qué zonas cubren?',
-    answer: 'Cubrimos toda el área metropolitana: Laureles, Poblado, Envigado, Sabaneta, La Estrella, Itagüí, Bello y municipios cercanos. Nos especializamos en zonas premium y estratos 4, 5 y 6.',
-    keywords: ['zonas', 'ubicación', 'dónde', 'sectores', 'barrios', 'laureles', 'poblado', 'envigado', 'donde trabajan']
+    answer: 'Cubrimos toda el área metropolitana del Valle de Aburrá: El Poblado, Laureles, Belén, Envigado, Sabaneta, Itagüí, La Estrella, San Antonio de Prado, Caldas y municipios cercanos. Nos especializamos en zonas premium y estratos 4, 5 y 6.',
+    keywords: ['zonas', 'ubicación', 'dónde', 'sectores', 'barrios', 'laureles', 'poblado', 'envigado', 'donde trabajan', 'itagui', 'estrella', 'caldas', 'sabaneta']
   },
   {
     id: '6',
@@ -178,12 +178,12 @@ const WhatsAppChatbot: React.FC = () => {
     
     if (lowerText.includes('apartament')) {
       return {
-        text: '🏢 Tenemos excelentes apartamentos desde $1.000.000 hasta $8.000.000. Ubicados en Laureles, Poblado y Envigado. Opciones amobladas y sin amoblar.',
+        text: '🏢 Tenemos excelentes apartamentos desde $1.000.000 hasta $8.000.000. Ubicados en El Poblado, Laureles, Belén, Envigado, Sabaneta e Itagüí. Opciones amobladas y sin amoblar.',
         options: ['Ver apartamentos', 'Filtrar por precio', 'Hablar con un asesor']
       };
     } else if (lowerText.includes('casa')) {
       return {
-        text: '🏠 Contamos con casas desde $2.000.000 hasta $15.000.000 en sectores como Envigado, Sabaneta y La Estrella. Con jardín y parqueadero.',
+        text: '🏠 Contamos con casas desde $2.000.000 hasta $15.000.000 en sectores como Envigado, Sabaneta, La Estrella, Itagüí, Caldas y San Antonio de Prado. Con jardín y parqueadero.',
         options: ['Ver casas', 'Casas con piscina', 'Hablar con un asesor']
       };
     } else if (lowerText.includes('oficina')) {
@@ -278,7 +278,7 @@ const WhatsAppChatbot: React.FC = () => {
 
       case '$1M - $3M':
         addMessage(
-          '💡 En ese rango tenemos apartamentos en Laureles y casas en La Estrella. Excelentes opciones con buena ubicación.',
+          '💡 En ese rango tenemos apartamentos en Laureles, Belén, Itagüí y casas en La Estrella y Caldas. Excelentes opciones con buena ubicación.',
           true,
           ['Ver propiedades en este rango', 'Garantías disponibles', 'Hablar con un asesor']
         );
@@ -286,7 +286,7 @@ const WhatsAppChatbot: React.FC = () => {
 
       case '$3M - $6M':
         addMessage(
-          '💡 Perfecto rango! Tenemos apartamentos en Poblado y casas en Envigado con muy buena ubicación y amenidades.',
+          '💡 Perfecto rango! Tenemos apartamentos en El Poblado, Laureles, Envigado y casas en Sabaneta, Envigado con muy buena ubicación y amenidades.',
           true,
           ['Ver propiedades en este rango', 'Documentos necesarios', 'Hablar con un asesor']
         );
@@ -429,9 +429,9 @@ const WhatsAppChatbot: React.FC = () => {
     if (lowerText.includes('ubicación') || lowerText.includes('zona') || lowerText.includes('barrio') || 
         lowerText.includes('laureles') || lowerText.includes('poblado') || lowerText.includes('envigado')) {
       addMessage(
-        '📍 Trabajamos en las mejores zonas: Laureles, Poblado, Envigado, Sabaneta, La Estrella e Itagüí. ¿Hay alguna zona de tu preferencia?',
+        '📍 Trabajamos en las mejores zonas del Valle de Aburrá: El Poblado, Laureles, Belén, Envigado, Sabaneta, Itagüí, La Estrella, San Antonio de Prado y Caldas. ¿Hay alguna zona de tu preferencia?',
         true,
-        ['Laureles', 'Poblado', 'Envigado', 'Sabaneta', 'Ver todas las zonas', 'Hablar con un asesor']
+        ['El Poblado', 'Laureles', 'Envigado', 'Sabaneta', 'Itagüí', 'Ver todas las zonas', 'Hablar con un asesor']
       );
       return;
     }
@@ -493,7 +493,7 @@ const WhatsAppChatbot: React.FC = () => {
       case '3': // Proceso
         return ['Documentos necesarios', 'Garantías', 'Tiempos', 'Hablar con un asesor'];
       case '5': // Zonas
-        return ['Ver propiedades en Laureles', 'Ver propiedades en Poblado', 'Todas las zonas', 'Hablar con un asesor'];
+        return ['El Poblado', 'Laureles', 'Envigado', 'Sabaneta', 'Itagüí', 'Todas las zonas', 'Hablar con un asesor'];
       case '8': // Servicios adicionales
         return ['Avalúos', 'Asesoría contable', 'Remodelación', 'Administración'];
       case '9': // Ver propiedades

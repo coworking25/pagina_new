@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, MapPin, DollarSign, Building, ArrowRight, Bed, Bath } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../UI/Button';
+import { ZONES } from '../../constants/zones';
 
 interface SearchFilters {
   query: string;
@@ -27,12 +28,6 @@ const AdvancedSearch: React.FC = () => {
     bedrooms: '',
     bathrooms: ''
   });
-
-  const zones = [
-    'El Poblado',
-    'Sabaneta',
-    'Envigado'
-  ];
 
   const transactionTypes = [
     'Arriendo',
@@ -124,7 +119,7 @@ const AdvancedSearch: React.FC = () => {
             className="w-full pl-12 pr-4 py-4 text-base bg-gray-100 dark:bg-white/10 backdrop-blur-md border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400"
           >
             <option value="" className="text-gray-900">Zona</option>
-            {zones.map(zone => (
+            {ZONES.map(zone => (
               <option key={zone} value={zone} className="text-gray-900">{zone}</option>
             ))}
           </select>

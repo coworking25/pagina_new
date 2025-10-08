@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, Filter, X } from 'lucide-react';
 import Button from '../UI/Button';
+import { ZONES } from '../../constants/zones';
 
 interface FilterState {
   search: string;
@@ -100,9 +101,9 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
                 className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="">Todas</option>
-                <option value="El Poblado">El Poblado</option>
-                <option value="Sabaneta">Sabaneta</option>
-                <option value="Envigado">Envigado</option>
+                {ZONES.map(zone => (
+                  <option key={zone} value={zone}>{zone}</option>
+                ))}
               </select>
             </div>
 
