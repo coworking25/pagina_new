@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Properties from './pages/Properties';
 import PropertyDetail from './pages/PropertyDetail';
 import ServiceDetail from './pages/ServiceDetail';
+import FAQ from './pages/FAQ';
 import Advisors from './pages/Advisors';
 import Documentation from './pages/Documentation';
 import Contact from './pages/Contact';
@@ -57,6 +58,7 @@ const AppLayout = () => {
             <Route path="/properties" element={<Properties />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
             <Route path="/services/:serviceId" element={<ServiceDetail />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/advisors" element={<Advisors />} />
             <Route path="/documentation" element={<Documentation />} />
             <Route path="/contact" element={<Contact />} />
