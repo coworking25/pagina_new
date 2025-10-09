@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Phone, Mail, Calendar, Clock, Send, User, MapPin } from 'lucide-react';
 import { Property, Advisor, ContactForm } from '../../types';
@@ -37,6 +37,26 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
     phone?: string;
     message?: string;
   }>({});
+
+  // 🎯 ACCESIBILIDAD: Cerrar modal con tecla ESC
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen && !isSubmitting) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscKey);
+      // Prevenir scroll del body cuando el modal está abierto
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, isSubmitting, onClose]);
 
   // 🎯 FUNCIONES DE VALIDACIÓN
   const validateEmail = (email: string): boolean => {
@@ -248,7 +268,13 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="contact-modal-title"
+      aria-describedby="contact-modal-description"
+    >
       <div className="flex min-h-screen items-center justify-center p-4">
         {/* Backdrop */}
         <motion.div
@@ -257,6 +283,7 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
           exit={{ opacity: 0 }}
           onClick={onClose}
           className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          aria-hidden="true"
         />
 
         {/* Modal */}
@@ -270,12 +297,16 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
           <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <MessageCircle className="w-6 h-6" />
-                <h3 className="text-xl font-semibold">Contactar Asesor</h3>
+                <MessageCircle className="w-6 h-6" aria-hidden="true" />
+                <h3 id="contact-modal-title" className="text-xl font-semibold">
+                  Contactar Asesor
+                </h3>
               </div>
               <button
                 onClick={onClose}
                 className="text-white/80 hover:text-white transition-colors"
+                aria-label="Cerrar modal de contacto"
+                title="Cerrar (ESC)"
               >
                 ✕
               </button>

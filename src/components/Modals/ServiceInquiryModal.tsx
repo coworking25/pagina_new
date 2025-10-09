@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -53,6 +53,26 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
   }>({});
 
   const advisorPhone = '+57 314 886 04 04';
+
+  // 🎯 ACCESIBILIDAD: Cerrar modal con tecla ESC
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscKey);
+      // Prevenir scroll del body cuando el modal está abierto
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
 
   // 🎯 FUNCIONES DE VALIDACIÓN
   const validateEmail = (email: string): boolean => {
@@ -659,7 +679,13 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
   if (!isOpen || !service) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="service-modal-title"
+      aria-describedby="service-modal-description"
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, x: 300 }}
         animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -670,14 +696,16 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
-            <MessageCircle className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <MessageCircle className="w-6 h-6 text-blue-600" aria-hidden="true" />
+            <h2 id="service-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">
               Consulta de Servicio
             </h2>
           </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            aria-label="Cerrar modal de consulta de servicio"
+            title="Cerrar (ESC)"
           >
             <X className="w-6 h-6" />
           </button>

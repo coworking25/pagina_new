@@ -21,7 +21,7 @@
  * 
  * Para admin/interno, usar: ScheduleAppointmentModal.tsx
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Clock, 
   User, 
@@ -152,6 +152,33 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
     contactMethod: 'whatsapp',
     marketingConsent: false
   });
+
+  // 🎯 ACCESIBILIDAD: Cerrar modal con tecla ESC
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen && !isSubmitting) {
+        // Si hay cambios sin guardar, advertir al usuario
+        if (hasUnsavedChanges && currentStep > 1) {
+          const confirmClose = window.confirm('¿Estás seguro de que quieres cerrar? Se perderán los cambios no guardados.');
+          if (confirmClose) {
+            onClose();
+          }
+        } else {
+          onClose();
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscKey);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, isSubmitting, hasUnsavedChanges, currentStep, onClose]);
 
   const appointmentTypes = [
     { id: 'visita', label: 'Visita a la propiedad', icon: Home, description: 'Recorrido por la propiedad' },
@@ -508,7 +535,8 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
             <button
               onClick={handleClose}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
-              aria-label="Cerrar modal"
+              aria-label="Cerrar modal de agendar cita"
+              title="Cerrar (ESC)"
               tabIndex={0}
             >
               <X className="w-5 h-5 sm:w-6 sm:h-6" />
