@@ -47,7 +47,7 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
 
   const [questionsAndAnswers, setQuestionsAndAnswers] = useState<{question: string, answer: string}[]>([]);
 
-  const advisorPhone = '+57 302 824 04 88';
+  const advisorPhone = '+57 314 886 04 04';
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -74,46 +74,95 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
     );
   };
 
-  const generateWhatsAppMessage = () => {
+  const generateWhatsAppMessage = (consultaId?: string) => {
     const urgencyText = {
-      urgent: 'Es urgente',
-      normal: 'No es urgente',
-      flexible: 'Tengo flexibilidad de tiempo'
+      urgent: '🔴 Es urgente - Necesito respuesta hoy',
+      normal: '🟡 Normal - En los próximos días',
+      flexible: '🟢 Flexible - Cuando tengan tiempo'
     };
 
-    let message = `🏠 *Consulta sobre ${service?.title}*\n\n`;
-    message += `👋 Hola, mi nombre es *${formData.name}*\n\n`;
+    const contactMethod = {
+      whatsapp: '📱 WhatsApp',
+      phone: '📞 Llamada telefónica',
+      email: '📧 Correo electrónico'
+    };
+
+    // Fecha y hora actual
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('es-CO', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric'
+    });
+    const formattedTime = now.toLocaleTimeString('es-CO', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Construir mensaje mejorado
+    let message = `🏠 *CONSULTA SOBRE ${service?.title?.toUpperCase()}*\n\n`;
+
+    // ID de referencia si existe
+    if (consultaId) {
+      message += `� *Referencia:* #${consultaId.substring(0, 8).toUpperCase()}\n`;
+    }
+    message += `📅 ${formattedDate}, ${formattedTime}\n\n`;
+
+    message += `─────────────────────\n`;
+    message += `👤 *DATOS DEL CLIENTE*\n\n`;
+    message += `👋 Nombre: *${formData.name}*\n`;
+    message += `📱 Teléfono: ${formData.phone}\n`;
+    
+    if (formData.email) {
+      message += `📧 Email: ${formData.email}\n`;
+    }
+    
+    message += `💬 Contacto preferido: ${contactMethod[formData.preferredContact as keyof typeof contactMethod]}\n\n`;
+
+    message += `─────────────────────\n`;
+    message += `📋 *DETALLES DEL SERVICIO*\n\n`;
+    message += `🏷️ Servicio: ${service?.title}\n`;
+    message += `⏱️ Tiempo estimado: ${service?.estimatedTime}\n`;
+    message += `💵 Rango de precios: ${service?.priceRange}\n\n`;
 
     if (formData.details) {
-      message += `📝 *Detalles de mi consulta:*\n${formData.details}\n\n`;
+      message += `📝 *Detalles de la consulta:*\n${formData.details}\n\n`;
     }
 
+    // Preguntas y respuestas con contador
     if (questionsAndAnswers.length > 0) {
-      message += `❓ *Preguntas y respuestas específicas:*\n`;
+      const answeredQuestions = questionsAndAnswers.filter(qa => qa.answer.trim()).length;
+      message += `─────────────────────\n`;
+      message += `❓ *PREGUNTAS ESPECÍFICAS* (${answeredQuestions}/${questionsAndAnswers.length} respondidas)\n\n`;
+      
       questionsAndAnswers.forEach(qa => {
         message += `• *${qa.question}*\n`;
         if (qa.answer.trim()) {
-          message += `  ↳ ${qa.answer}\n`;
+          message += `  ↳ ${qa.answer}\n\n`;
         } else {
-          message += `  ↳ (Sin respuesta específica)\n`;
+          message += `  ↳ (Sin respuesta específica)\n\n`;
         }
       });
-      message += '\n';
     }
 
+    // Presupuesto destacado
     if (formData.budget) {
-      message += `💰 *Presupuesto aproximado:* ${formData.budget}\n\n`;
+      message += `─────────────────────\n`;
+      message += `💰 *PRESUPUESTO DISPONIBLE*\n`;
+      message += `   ${formData.budget}\n\n`;
     }
 
+    // Urgencia
+    message += `─────────────────────\n`;
     message += `⏰ *Urgencia:* ${urgencyText[formData.urgency as keyof typeof urgencyText]}\n\n`;
 
-    if (formData.email) {
-      message += `📧 *Email:* ${formData.email}\n\n`;
-    }
-
-    message += `📱 *Teléfono:* ${formData.phone}\n\n`;
-    message += `¿Podrían contactarme para discutir mi proyecto?\n\n`;
-    message += `¡Gracias! 😊`;
+    // Footer con llamado a la acción
+    message += `─────────────────────\n`;
+    message += `🎯 *PRÓXIMO PASO:*\n`;
+    message += `Esperando su pronta respuesta para coordinar los detalles y agendar una cita.\n\n`;
+    message += `✨ Consulta generada desde coworkinginmobiliario.com\n`;
+    message += `🕐 ${formattedDate}, ${formattedTime}`;
 
     return message;
   };
@@ -158,8 +207,8 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
 
       console.log('✅ Consulta guardada en BD:', result);
 
-      // Generar y enviar mensaje de WhatsApp
-      const message = generateWhatsAppMessage();
+      // Generar y enviar mensaje de WhatsApp con ID de consulta
+      const message = generateWhatsAppMessage(result.id);
       const encodedMessage = encodeURIComponent(message);
       const whatsappUrl = `https://wa.me/${advisorPhone.replace(/\s+/g, '')}?text=${encodedMessage}`;
 
