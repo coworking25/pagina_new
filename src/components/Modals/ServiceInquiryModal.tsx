@@ -46,8 +46,58 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
   });
 
   const [questionsAndAnswers, setQuestionsAndAnswers] = useState<{question: string, answer: string}[]>([]);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+  }>({});
 
   const advisorPhone = '+57 314 886 04 04';
+
+  // 🎯 FUNCIONES DE VALIDACIÓN
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    // Acepta formatos: 3001234567, 300 123 4567, 300-123-4567, +57 300 123 4567
+    const phoneRegex = /^(\+?57\s?)?[3][0-9]{9}$/;
+    const cleanPhone = phone.replace(/[\s\-]/g, '');
+    return phoneRegex.test(cleanPhone);
+  };
+
+  const validateName = (name: string): boolean => {
+    // Solo letras, espacios y tildes
+    const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/;
+    return nameRegex.test(name.trim());
+  };
+
+  const validateStep1 = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    // Validar nombre
+    if (!formData.name.trim()) {
+      newErrors.name = 'El nombre es obligatorio';
+    } else if (!validateName(formData.name)) {
+      newErrors.name = 'El nombre solo puede contener letras y espacios';
+    }
+
+    // Validar email (opcional pero si se ingresa debe ser válido)
+    if (formData.email.trim() && !validateEmail(formData.email)) {
+      newErrors.email = 'Por favor ingresa un email válido';
+    }
+
+    // Validar teléfono
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'El teléfono es obligatorio';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Ingresa un teléfono colombiano válido (300 123 4567)';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -55,6 +105,14 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
       ...prev,
       [name]: value
     }));
+
+    // Limpiar error del campo cuando el usuario escribe
+    if (errors[name as keyof typeof errors]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
   };
 
   const handleQuestionToggle = (question: string) => {
@@ -377,9 +435,16 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
               value={formData.name}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                errors.name 
+                  ? 'border-red-500 dark:border-red-400' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
               placeholder="Tu nombre completo"
             />
+            {errors.name && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name}</p>
+            )}
           </div>
 
           <div>
@@ -392,9 +457,16 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
               value={formData.phone}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                errors.phone 
+                  ? 'border-red-500 dark:border-red-400' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
               placeholder="+57 300 123 4567"
             />
+            {errors.phone && (
+              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.phone}</p>
+            )}
           </div>
         </div>
 
@@ -407,9 +479,16 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
             name="email"
             value={formData.email}
             onChange={handleInputChange}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+              errors.email 
+                ? 'border-red-500 dark:border-red-400' 
+                : 'border-gray-300 dark:border-gray-600'
+            }`}
             placeholder="tu@email.com"
           />
+          {errors.email && (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -468,7 +547,11 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
           Atrás
         </Button>
         <Button
-          onClick={() => setStep(3)}
+          onClick={() => {
+            if (validateStep1()) {
+              setStep(3);
+            }
+          }}
           icon={ArrowRight}
           iconPosition="right"
           disabled={!formData.name || !formData.phone}

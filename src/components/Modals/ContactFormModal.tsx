@@ -31,6 +31,64 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    message?: string;
+  }>({});
+
+  // 🎯 FUNCIONES DE VALIDACIÓN
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    // Acepta formatos: 3001234567, 300 123 4567, 300-123-4567, +57 300 123 4567
+    const phoneRegex = /^(\+?57\s?)?[3][0-9]{9}$/;
+    const cleanPhone = phone.replace(/[\s\-]/g, '');
+    return phoneRegex.test(cleanPhone);
+  };
+
+  const validateName = (name: string): boolean => {
+    // Solo letras, espacios y tildes
+    const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/;
+    return nameRegex.test(name.trim());
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    // Validar nombre
+    if (!formData.name.trim()) {
+      newErrors.name = 'El nombre es obligatorio';
+    } else if (!validateName(formData.name)) {
+      newErrors.name = 'El nombre solo puede contener letras y espacios';
+    }
+
+    // Validar email
+    if (!formData.email.trim()) {
+      newErrors.email = 'El email es obligatorio';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Por favor ingresa un email válido (ejemplo@correo.com)';
+    }
+
+    // Validar teléfono
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'El teléfono es obligatorio';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Por favor ingresa un teléfono colombiano válido (300 123 4567)';
+    }
+
+    // Validar mensaje
+    if (formData.message && formData.message.length > 500) {
+      newErrors.message = 'El mensaje no puede exceder 500 caracteres';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -38,6 +96,14 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
       ...prev,
       [name]: value
     }));
+
+    // Limpiar error del campo cuando el usuario escribe
+    if (errors[name as keyof typeof errors]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
   };
 
   const generateWhatsAppMessage = () => {
@@ -77,8 +143,9 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.phone) {
-      alert('Por favor completa todos los campos obligatorios');
+    // 🎯 Validar formulario
+    if (!validateForm()) {
+      console.log('❌ Formulario con errores de validación');
       return;
     }
 
@@ -330,10 +397,17 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
+                        errors.name 
+                          ? 'border-red-500 dark:border-red-400' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
                       placeholder="Tu nombre completo"
                     />
                   </div>
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name}</p>
+                  )}
                 </div>
 
                 <div>
@@ -348,10 +422,17 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
                       value={formData.phone}
                       onChange={handleInputChange}
                       required
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
+                        errors.phone 
+                          ? 'border-red-500 dark:border-red-400' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
                       placeholder="+57 300 123 4567"
                     />
                   </div>
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.phone}</p>
+                  )}
                 </div>
               </div>
 
@@ -367,10 +448,17 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
+                      errors.email 
+                        ? 'border-red-500 dark:border-red-400' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
                     placeholder="tu@email.com"
                   />
                 </div>
+                {errors.email && (
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email}</p>
+                )}
               </div>
 
               {/* Tipo de Consulta */}
