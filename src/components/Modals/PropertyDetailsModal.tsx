@@ -330,6 +330,8 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                               src={currentAdvisor.photo}
                               alt={currentAdvisor.name}
                               className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover flex-shrink-0 mx-auto sm:mx-0 border-2 border-white dark:border-gray-700 shadow-md"
+                              loading="lazy"
+                              decoding="async"
                             />
                             <div className="flex-1 min-w-0 text-center sm:text-left">
                               <h5 className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg truncate">

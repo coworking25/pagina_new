@@ -199,6 +199,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           src={publicImageUrls[currentImageIndex] || 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg'}
           alt={property.title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
+          decoding="async"
         />
 
         {/* Overlay con efecto hover */}
