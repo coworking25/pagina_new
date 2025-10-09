@@ -6,9 +6,11 @@ import Footer from './components/Layout/Footer';
 import AdminLayout from './components/Layout/AdminLayout';
 import WhatsAppChatbot from './components/UI/WhatsAppChatbot';
 import ScrollToTop from './components/UI/ScrollToTop';
+import ScrollToTopOnRouteChange from './components/UI/ScrollToTopOnRouteChange';
 import Home from './pages/Home';
 import Properties from './pages/Properties';
 import PropertyDetail from './pages/PropertyDetail';
+import Services from './pages/Services';
 import ServiceDetail from './pages/ServiceDetail';
 import FAQ from './pages/FAQ';
 import Privacy from './pages/Privacy';
@@ -59,6 +61,7 @@ const AppLayout = () => {
             <Route path="/test" element={<TestPage />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
+            <Route path="/services" element={<Services />} />
             <Route path="/services/:serviceId" element={<ServiceDetail />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/privacy" element={<Privacy />} />
@@ -177,6 +180,7 @@ function App() {
         <NotificationProvider>
           <AdminBadgeProvider>
             <Router>
+              <ScrollToTopOnRouteChange />
               <AppLayout />
             </Router>
           </AdminBadgeProvider>
