@@ -89,7 +89,7 @@ const Services: React.FC = () => {
     {
       icon: CreditCard,
       title: 'Hipotecas',
-      description: 'Asesoría completa en créditos hipotecarios para la compra de tu vivienda o inversión.',
+      description: 'Es un préstamo para comprar, mejorar o construir vivienda, dejando el inmueble como garantía. Se paga en cuotas mensuales durante un plazo acordado.',
       color: 'from-indigo-500 to-indigo-600',
       features: ['Pre-aprobación rápida', 'Comparación de tasas', 'Acompañamiento completo'],
       estimatedTime: '7-15 días hábiles',
