@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { type LucideIcon } from 'lucide-react';
 
 interface ButtonProps {
@@ -25,23 +24,17 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   type = 'button',
 }) => {
-  // 🎯 Handler mejorado que funciona en todos los dispositivos
-  const handleInteraction = (e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
-    // Prevenir propagación del evento para evitar clicks en elementos padres
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+    e.preventDefault();
     
-    // Prevenir comportamiento por defecto en touch events
-    if (e.type === 'touchend') {
-      e.preventDefault();
-    }
-    
-    // Ejecutar onClick solo si no está disabled
     if (onClick && !disabled) {
+      console.log('🔘 Button clicked:', children);
       onClick();
     }
   };
 
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation select-none';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95';
   
   const variants = {
     primary: 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-green-500/25 focus:ring-green-500',
@@ -57,20 +50,16 @@ const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <motion.button
-      whileHover={{ scale: disabled ? 1 : 1.02 }}
-      whileTap={{ scale: disabled ? 1 : 0.98 }}
+    <button
       type={type}
-      onClick={handleInteraction}
-      onTouchEnd={handleInteraction}
+      onClick={handleClick}
       disabled={disabled}
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
-      style={{ WebkitTapHighlightColor: 'transparent' }}
     >
-      {Icon && iconPosition === 'left' && <Icon className="w-4 h-4 pointer-events-none" />}
-      <span className="pointer-events-none">{children}</span>
-      {Icon && iconPosition === 'right' && <Icon className="w-4 h-4 pointer-events-none" />}
-    </motion.button>
+      {Icon && iconPosition === 'left' && <Icon className="w-4 h-4" />}
+      <span>{children}</span>
+      {Icon && iconPosition === 'right' && <Icon className="w-4 h-4" />}
+    </button>
   );
 };
 
