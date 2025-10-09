@@ -365,35 +365,24 @@ const Properties: React.FC = () => {
           const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
           const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
-          console.log('📱 Abriendo WhatsApp desde PropertyCard (iOS/Safari compatible)');
+          console.log('📱 Abriendo WhatsApp en nueva ventana/app');
 
-          // 🎯 PASO 3: Abrir WhatsApp con método compatible iOS/Safari
+          // 🎯 PASO 3: Abrir WhatsApp SIEMPRE en nueva ventana (nunca en la misma página)
           const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
           const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
           if (isIOS || isSafari) {
-            // iOS/Safari: usar link directo (más confiable)
+            // iOS/Safari: usar link temporal con target _blank
             const link = document.createElement('a');
             link.href = whatsappUrl;
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
-            
-            setTimeout(() => {
-              if (document.body.contains(link)) {
-                document.body.removeChild(link);
-              }
-            }, 1000);
+            document.body.removeChild(link);
           } else {
-            // Otros navegadores: window.open
-            const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-            
-            // Fallback si popup bloqueado
-            if (!newWindow) {
-              window.location.href = whatsappUrl;
-            }
+            // Desktop/Android: window.open en nueva pestaña
+            window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
           }
           
           return;
