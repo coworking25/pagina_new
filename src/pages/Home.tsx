@@ -40,7 +40,9 @@ const Home: React.FC = () => {
         <Hero />
         <CompanyPresentation />
         <FeaturedProperties />
-        <Services />
+        <div id="services-section">
+          <Services />
+        </div>
       </div>
     );
   } catch (error) {

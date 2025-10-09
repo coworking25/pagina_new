@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sun, Moon, Monitor, Home, Building, Users, Phone } from 'lucide-react';
+import { Menu, X, Sun, Moon, Monitor, Home, Building, Users, Phone, Briefcase } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import Logo from '../UI/Logo';
 
@@ -9,11 +9,36 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme, setTheme, resolvedTheme } = useTheme();
+
+  const handleServicesClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Si estamos en la página principal, hacer scroll
+    if (location.pathname === '/') {
+      const servicesSection = document.getElementById('services-section');
+      if (servicesSection) {
+        servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      // Si no estamos en la página principal, navegar y luego hacer scroll
+      navigate('/');
+      setTimeout(() => {
+        const servicesSection = document.getElementById('services-section');
+        if (servicesSection) {
+          servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+    
+    setIsMenuOpen(false);
+  };
 
   const navigation = [
     { name: 'Inicio', href: '/', icon: Home },
     { name: 'Propiedades', href: '/properties', icon: Building },
+    { name: 'Servicios', href: '#services', icon: Briefcase, onClick: handleServicesClick },
     { name: 'Asesores', href: '/advisors', icon: Users },
     { name: 'Contacto', href: '/contact', icon: Phone },
   ];
@@ -40,12 +65,33 @@ const Header: React.FC = () => {
             <div className="hidden md:flex items-center space-x-8">
               {navigation.map((item) => {
                 const Icon = item.icon;
+                const isActiveLink = isActive(item.href);
+                
+                if (item.onClick) {
+                  // Para elementos con onClick (como Servicios)
+                  return (
+                    <button
+                      key={item.name}
+                      onClick={item.onClick}
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        isActiveLink
+                          ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.name}</span>
+                    </button>
+                  );
+                }
+                
+                // Para links normales
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      isActive(item.href)
+                      isActiveLink
                         ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
                         : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
                     }`}
@@ -138,13 +184,34 @@ const Header: React.FC = () => {
               <div className="space-y-2">
                 {navigation.map((item) => {
                   const Icon = item.icon;
+                  const isActiveLink = isActive(item.href);
+                  
+                  if (item.onClick) {
+                    // Para elementos con onClick (como Servicios)
+                    return (
+                      <button
+                        key={item.name}
+                        onClick={item.onClick}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          isActiveLink
+                            ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                            : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span>{item.name}</span>
+                      </button>
+                    );
+                  }
+                  
+                  // Para links normales
                   return (
                     <Link
                       key={item.name}
                       to={item.href}
                       onClick={() => setIsMenuOpen(false)}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        isActive(item.href)
+                        isActiveLink
                           ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
                           : 'text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-800/50'
                       }`}
