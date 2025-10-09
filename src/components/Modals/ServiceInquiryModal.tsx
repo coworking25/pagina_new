@@ -105,7 +105,7 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
 
     // ID de referencia si existe
     if (consultaId) {
-      message += `� *Referencia:* #${consultaId.substring(0, 8).toUpperCase()}\n`;
+      message += `🔖 *Referencia:* #${consultaId.substring(0, 8).toUpperCase()}\n`;
     }
     message += `📅 ${formattedDate}, ${formattedTime}\n\n`;
 
@@ -210,10 +210,23 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
       // Generar y enviar mensaje de WhatsApp con ID de consulta
       const message = generateWhatsAppMessage(result.id);
       const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${advisorPhone.replace(/\s+/g, '')}?text=${encodedMessage}`;
+      
+      // Limpiar el número: quitar espacios, guiones y el signo +
+      const cleanPhone = advisorPhone.replace(/[\s\-\+]/g, '');
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
-      console.log('📱 Abriendo WhatsApp con URL:', whatsappUrl);
-      window.open(whatsappUrl, '_blank');
+      console.log('📱 Número limpio:', cleanPhone);
+      console.log('📱 URL de WhatsApp:', whatsappUrl);
+      console.log('📱 Longitud del mensaje:', message.length);
+      
+      // Abrir WhatsApp en nueva ventana
+      const whatsappWindow = window.open(whatsappUrl, '_blank');
+      
+      if (!whatsappWindow) {
+        console.warn('⚠️ El navegador bloqueó la ventana emergente');
+        // Intentar con location.href como fallback
+        window.location.href = whatsappUrl;
+      }
 
       alert('✅ ¡Consulta enviada exitosamente! Se ha guardado en la base de datos y abierto WhatsApp.');
 
