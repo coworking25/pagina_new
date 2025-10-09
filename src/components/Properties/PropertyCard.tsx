@@ -464,4 +464,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   );
 };
 
-export default PropertyCard;
+// 🚀 Memoizar componente para evitar re-renders innecesarios
+export default React.memo(PropertyCard, (prevProps, nextProps) => {
+  // Solo re-renderizar si cambian estas propiedades críticas
+  return (
+    prevProps.property.id === nextProps.property.id &&
+    prevProps.property.status === nextProps.property.status &&
+    prevProps.property.featured === nextProps.property.featured &&
+    prevProps.showAdminActions === nextProps.showAdminActions
+  );
+});

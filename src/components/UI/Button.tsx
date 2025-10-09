@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { type LucideIcon } from 'lucide-react';
 
 interface ButtonProps {
@@ -24,14 +24,15 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   type = 'button',
 }) => {
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  // 🚀 Optimización: Memoizar handler para evitar re-renders de componentes hijos
+  const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     
     if (onClick && !disabled) {
       console.log('🔘 Button clicked:', children);
       onClick();
     }
-  };
+  }, [onClick, disabled, children]);
 
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95';
   
@@ -62,4 +63,5 @@ const Button: React.FC<ButtonProps> = ({
   );
 };
 
-export default Button;
+// 🚀 Memoizar componente para evitar re-renders innecesarios
+export default React.memo(Button);
