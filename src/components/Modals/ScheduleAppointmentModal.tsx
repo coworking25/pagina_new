@@ -350,10 +350,28 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
 ¡Espero tu confirmación! 😊`;
 
       const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${advisor.whatsapp}?text=${encodedMessage}`;
+      const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
-      // Abrir WhatsApp
-      window.open(whatsappUrl, '_blank');
+      console.log('📱 Abriendo WhatsApp (iOS/Safari compatible)');
+
+      // Abrir WhatsApp con detección de iOS/Safari
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      if (isIOS || isSafari) {
+        // iOS/Safari: usar link temporal con target _blank
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Desktop/Android: window.open en nueva pestaña
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      }
       
       // Mostrar mensaje de éxito
       alert('✅ Cita agendada exitosamente. Te hemos redirigido a WhatsApp para confirmar con el asesor.');

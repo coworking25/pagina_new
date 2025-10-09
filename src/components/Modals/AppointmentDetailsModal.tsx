@@ -128,8 +128,27 @@ Equipo de Inmobiliaria`;
     if (!appointment.client_phone) return;
 
     const message = `Hola ${appointment.client_name}, tu cita está confirmada para el ${formatDate(appointment.appointment_date)}. Tipo: ${appointment.appointment_type} - ${appointment.visit_type}.`;
-    const whatsappLink = `https://wa.me/${appointment.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappLink, '_blank');
+    const cleanPhone = appointment.client_phone.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    
+    console.log('📱 Abriendo WhatsApp desde AppointmentDetailsModal (iOS/Safari compatible)');
+    
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (isIOS || isSafari) {
+      // iOS/Safari: usar link temporal con target _blank
+      const link = document.createElement('a');
+      link.href = whatsappUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // Desktop/Android: window.open en nueva pestaña
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const handlePhoneCall = () => {

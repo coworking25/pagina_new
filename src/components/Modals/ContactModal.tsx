@@ -63,6 +63,31 @@ const ContactModal: React.FC<ContactModalProps> = ({
 
   const whatsappUrl = `https://wa.me/573148860404?text=${encodeURIComponent(whatsappMessage)}`;
 
+  const handleWhatsAppClick = () => {
+    console.log('📱 Abriendo WhatsApp (iOS/Safari compatible)');
+    
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (isIOS || isSafari) {
+      // iOS/Safari: usar link temporal con target _blank
+      const link = document.createElement('a');
+      link.href = whatsappUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // Desktop/Android: window.open en nueva pestaña
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handlePhoneClick = () => {
+    window.open('tel:+573148860404', '_blank');
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -104,7 +129,7 @@ const ContactModal: React.FC<ContactModalProps> = ({
           <Button
             variant="primary"
             icon={MessageCircle}
-            onClick={() => window.open(whatsappUrl, '_blank')}
+            onClick={handleWhatsAppClick}
             className="w-full"
           >
             WhatsApp Directo
@@ -112,7 +137,7 @@ const ContactModal: React.FC<ContactModalProps> = ({
           <Button
             variant="outline"
             icon={Phone}
-            onClick={() => window.open('tel:+573148860404')}
+            onClick={handlePhoneClick}
             className="w-full"
           >
             Llamar Ahora
