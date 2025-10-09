@@ -145,15 +145,47 @@ const FeaturedProperties: React.FC = () => {
     // Obtener el asesor asignado a la propiedad
     if (property.advisor_id) {
       try {
+        // 🎯 PASO 1: Obtener asesor
         const advisor = await getAdvisorById(property.advisor_id);
+        
         if (advisor && advisor.whatsapp) {
-          // Crear mensaje personalizado para WhatsApp
+          // 🎯 PASO 2: Crear mensaje personalizado para WhatsApp
           const message = `Hola, estoy interesado en la propiedad *${property.title}* (${property.code || `ID: ${property.id}`}) ubicada en ${property.location || 'ubicación no especificada'}. ¿Podrías darme más información?`;
           const encodedMessage = encodeURIComponent(message);
-          const whatsappUrl = `https://wa.me/${advisor.whatsapp}?text=${encodedMessage}`;
+          const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+          const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+          console.log('📱 Abriendo WhatsApp desde FeaturedProperties (iOS/Safari compatible)');
+
+          // 🎯 PASO 3: Abrir WhatsApp con método compatible iOS/Safari
+          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+          if (isIOS || isSafari) {
+            // iOS/Safari: usar link directo (más confiable)
+            const link = document.createElement('a');
+            link.href = whatsappUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            
+            setTimeout(() => {
+              if (document.body.contains(link)) {
+                document.body.removeChild(link);
+              }
+            }, 1000);
+          } else {
+            // Otros navegadores: window.open
+            const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+            
+            // Fallback si popup bloqueado
+            if (!newWindow) {
+              window.location.href = whatsappUrl;
+            }
+          }
           
-          // Abrir WhatsApp en una nueva pestaña
-          window.open(whatsappUrl, '_blank');
           return;
         }
       } catch (error) {
