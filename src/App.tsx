@@ -1,37 +1,42 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
-import AdminLayout from './components/Layout/AdminLayout';
 import WhatsAppChatbot from './components/UI/WhatsAppChatbot';
 import ScrollToTop from './components/UI/ScrollToTop';
 import ScrollToTopOnRouteChange from './components/UI/ScrollToTopOnRouteChange';
-import Home from './pages/Home';
-import Properties from './pages/Properties';
-import PropertyDetail from './pages/PropertyDetail';
-import Services from './pages/Services';
-import ServiceDetail from './pages/ServiceDetail';
-import FAQ from './pages/FAQ';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
-import Advisors from './pages/Advisors';
-import Documentation from './pages/Documentation';
-import Contact from './pages/Contact';
-import Login from './pages/Login';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminAppointments from './pages/AdminAppointments';
-import AdminClients from './pages/AdminClients';
-import AdminProperties from './pages/AdminProperties';
-import AdminAdvisors from './pages/AdminAdvisors';
-import AdminInquiries from './pages/AdminInquiries';
-import AdminSettings from './pages/AdminSettings';
-import TestPage from './pages/TestPage';
+import PageLoader from './components/UI/PageLoader';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminBadgeProvider } from './contexts/AdminBadgeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import './utils/debug';
+
+// Code Splitting: Lazy loading de páginas públicas
+const Home = lazy(() => import('./pages/Home'));
+const Properties = lazy(() => import('./pages/Properties'));
+const PropertyDetail = lazy(() => import('./pages/PropertyDetail'));
+const Services = lazy(() => import('./pages/Services'));
+const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
+const FAQ = lazy(() => import('./pages/FAQ'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Advisors = lazy(() => import('./pages/Advisors'));
+const Documentation = lazy(() => import('./pages/Documentation'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Login = lazy(() => import('./pages/Login'));
+const TestPage = lazy(() => import('./pages/TestPage'));
+
+// Code Splitting: Lazy loading de páginas admin
+const AdminLayout = lazy(() => import('./components/Layout/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminAppointments = lazy(() => import('./pages/AdminAppointments'));
+const AdminClients = lazy(() => import('./pages/AdminClients'));
+const AdminProperties = lazy(() => import('./pages/AdminProperties'));
+const AdminAdvisors = lazy(() => import('./pages/AdminAdvisors'));
+const AdminInquiries = lazy(() => import('./pages/AdminInquiries'));
+const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 
 // Componente para manejar el layout según la ruta
 const AppLayout = () => {
@@ -54,42 +59,43 @@ const AppLayout = () => {
         {/* Solo mostrar Header y Footer en rutas públicas (no admin ni login) */}
         {!isAdminRoute && !isLoginPage && <Header />}
         
-        <AnimatePresence mode="wait">
-          <Routes>
-            {/* Rutas Públicas */}
-            <Route path="/" element={<Home />} />
-            <Route path="/test" element={<TestPage />} />
-            <Route path="/properties" element={<Properties />} />
-            <Route path="/property/:id" element={<PropertyDetail />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/services/:serviceId" element={<ServiceDetail />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/advisors" element={<Advisors />} />
-            <Route path="/documentation" element={<Documentation />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
-            
-            {/* Rutas Admin */}
-            <Route 
-              path="/admin/*" 
-              element={
-                <ProtectedRoute>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="appointments" element={<AdminAppointments />} />
-              <Route path="clients" element={<AdminClients />} />
-              <Route path="properties" element={<AdminProperties />} />
-              <Route path="advisors" element={<AdminAdvisors />} />
-              <Route path="service-inquiries" element={<AdminInquiries />} />
-              <Route path="documents" element={<div>Documentos - En desarrollo</div>} />
-              <Route path="reports" element={<div>Reportes - En desarrollo</div>} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
+        <Suspense fallback={<PageLoader />}>
+          <AnimatePresence mode="wait">
+            <Routes>
+              {/* Rutas Públicas */}
+              <Route path="/" element={<Home />} />
+              <Route path="/test" element={<TestPage />} />
+              <Route path="/properties" element={<Properties />} />
+              <Route path="/property/:id" element={<PropertyDetail />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/services/:serviceId" element={<ServiceDetail />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/advisors" element={<Advisors />} />
+              <Route path="/documentation" element={<Documentation />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/login" element={<Login />} />
+              
+              {/* Rutas Admin */}
+              <Route 
+                path="/admin/*" 
+                element={
+                  <ProtectedRoute>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="appointments" element={<AdminAppointments />} />
+                <Route path="clients" element={<AdminClients />} />
+                <Route path="properties" element={<AdminProperties />} />
+                <Route path="advisors" element={<AdminAdvisors />} />
+                <Route path="service-inquiries" element={<AdminInquiries />} />
+                <Route path="documents" element={<div>Documentos - En desarrollo</div>} />
+                <Route path="reports" element={<div>Reportes - En desarrollo</div>} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
             
             {/* Ruta de fallback para 404 */}
             <Route 
@@ -115,6 +121,7 @@ const AppLayout = () => {
             />
           </Routes>
         </AnimatePresence>
+      </Suspense>
 
         {/* Solo mostrar Footer en rutas públicas (no admin ni login) */}
         {!isAdminRoute && !isLoginPage && <Footer />}
