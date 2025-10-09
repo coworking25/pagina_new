@@ -249,4 +249,9 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
   );
 };
 
-export default PropertyFilters;
+export default React.memo(PropertyFilters, (prevProps, nextProps) => {
+  // Solo re-renderizar si los filtros realmente cambiaron
+  return (
+    JSON.stringify(prevProps.filters) === JSON.stringify(nextProps.filters)
+  );
+});

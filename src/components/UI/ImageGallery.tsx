@@ -240,4 +240,10 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   );
 };
 
-export default ImageGallery;
+export default React.memo(ImageGallery, (prevProps, nextProps) => {
+  return (
+    prevProps.currentIndex === nextProps.currentIndex &&
+    prevProps.images.length === nextProps.images.length &&
+    prevProps.title === nextProps.title
+  );
+});
