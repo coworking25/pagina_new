@@ -140,7 +140,23 @@ const ServiceProcess: React.FC = () => {
             const message = encodeURIComponent(
               '¡Hola! Me interesa iniciar un proyecto inmobiliario con ustedes. ¿Podríamos agendar una cita para conocer más detalles?'
             );
-            window.open(`https://wa.me/+573028240488?text=${message}`, '_blank');
+            const whatsappUrl = `https://wa.me/573028240488?text=${message}`;
+            
+            // 🎯 iOS/Safari compatible
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+            if (isIOS || isSafari) {
+              const link = document.createElement('a');
+              link.href = whatsappUrl;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            } else {
+              window.open(whatsappUrl, '_blank');
+            }
           }}
           className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center space-x-2 mx-auto"
         >

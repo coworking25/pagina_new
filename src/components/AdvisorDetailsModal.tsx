@@ -45,7 +45,24 @@ function AdvisorDetailsModal({ advisor, isOpen, onClose }: AdvisorDetailsModalPr
     const message = encodeURIComponent(
       `¡Hola ${advisor.name}! Me interesa obtener información sobre propiedades. ¿Podrías ayudarme?`
     );
-    window.open(`https://wa.me/${advisor.whatsapp}?text=${message}`, '_blank');
+    const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
+    
+    // 🎯 iOS/Safari compatible
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (isIOS || isSafari) {
+      const link = document.createElement('a');
+      link.href = whatsappUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      window.open(whatsappUrl, '_blank');
+    }
   };
 
   return (

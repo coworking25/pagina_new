@@ -515,7 +515,24 @@ const WhatsAppChatbot: React.FC = () => {
     const message = encodeURIComponent(
       '¡Hola Jaider! Vengo del chatbot de la página web y me gustaría recibir asesoría personalizada sobre sus servicios inmobiliarios. Me interesa agendar una cita para conocer más sobre las opciones disponibles.'
     );
-    window.open(`https://wa.me/${CONTACT_INFO.phones.whatsapp}?text=${message}`, '_blank');
+    const cleanPhone = CONTACT_INFO.phones.whatsapp.replace(/[\s\-\+]/g, '');
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
+    
+    // 🎯 iOS/Safari compatible
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (isIOS || isSafari) {
+      const link = document.createElement('a');
+      link.href = whatsappUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      window.open(whatsappUrl, '_blank');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -473,7 +473,26 @@ const PropertyDetail: React.FC = () => {
                 
                 <button
                   className="w-full flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  onClick={() => window.open(`https://wa.me/573148860404?text=Hola, estoy interesado en la propiedad: ${property.title}`, '_blank')}
+                  onClick={() => {
+                    const message = encodeURIComponent(`Hola, estoy interesado en la propiedad: ${property.title}`);
+                    const whatsappUrl = `https://wa.me/573148860404?text=${message}`;
+                    
+                    // 🎯 iOS/Safari compatible
+                    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+                    if (isIOS || isSafari) {
+                      const link = document.createElement('a');
+                      link.href = whatsappUrl;
+                      link.target = '_blank';
+                      link.rel = 'noopener noreferrer';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    } else {
+                      window.open(whatsappUrl, '_blank');
+                    }
+                  }}
                 >
                   <MessageCircle className="h-5 w-5" />
                   <span>WhatsApp</span>

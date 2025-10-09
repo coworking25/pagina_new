@@ -125,7 +125,27 @@ const Contact: React.FC = () => {
       title: 'WhatsApp',
       details: ['WhatsApp disponible', '+57 314 886 0404'],
       color: 'from-emerald-500 to-emerald-600',
-      action: () => window.open('https://wa.me/573148860404?text=Hola, me gustaría obtener información sobre sus servicios', '_blank'),
+      action: () => {
+        const message = 'Hola, me gustaría obtener información sobre sus servicios';
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/573148860404?text=${encodedMessage}`;
+        
+        // 🎯 iOS/Safari compatible
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+        if (isIOS || isSafari) {
+          const link = document.createElement('a');
+          link.href = whatsappUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          window.open(whatsappUrl, '_blank');
+        }
+      },
       actionLabel: 'Abrir WhatsApp'
     },
     {
@@ -167,7 +187,27 @@ const Contact: React.FC = () => {
                 <Button
                   variant="primary"
                   icon={MessageCircle}
-                  onClick={() => window.open('https://wa.me/573148860404?text=Hola, me gustaría obtener información sobre sus servicios', '_blank')}
+                  onClick={() => {
+                    const message = 'Hola, me gustaría obtener información sobre sus servicios';
+                    const encodedMessage = encodeURIComponent(message);
+                    const whatsappUrl = `https://wa.me/573148860404?text=${encodedMessage}`;
+                    
+                    // 🎯 iOS/Safari compatible
+                    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+                    if (isIOS || isSafari) {
+                      const link = document.createElement('a');
+                      link.href = whatsappUrl;
+                      link.target = '_blank';
+                      link.rel = 'noopener noreferrer';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    } else {
+                      window.open(whatsappUrl, '_blank');
+                    }
+                  }}
                   className="w-full"
                 >
                   WhatsApp Directo

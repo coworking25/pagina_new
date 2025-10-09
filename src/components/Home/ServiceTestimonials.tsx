@@ -121,7 +121,23 @@ const ServiceTestimonials: React.FC = () => {
             const message = encodeURIComponent(
               '¡Hola! Me interesa conocer más sobre sus servicios inmobiliarios. ¿Podrían brindarme más información?'
             );
-            window.open(`https://wa.me/+573028240488?text=${message}`, '_blank');
+            const whatsappUrl = `https://wa.me/573028240488?text=${message}`;
+            
+            // 🎯 iOS/Safari compatible
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+            if (isIOS || isSafari) {
+              const link = document.createElement('a');
+              link.href = whatsappUrl;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            } else {
+              window.open(whatsappUrl, '_blank');
+            }
           }}
           className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
         >
