@@ -53,12 +53,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   };
 
   // Función para manejar click en el corazón
-  const handleLikeClick = async (e: React.MouseEvent) => {
+  const handleLikeClick = async (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     
     if (isLoadingLike) return;
     
     setIsLoadingLike(true);
+    console.log('❤️ Toggle like para propiedad:', property.id);
     
     try {
       if (isFavorite) {
@@ -84,16 +85,37 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   };
 
   // Función para abrir el modal de detalles
-  const handleImageClick = (e: React.MouseEvent) => {
+  const handleImageClick = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
+    console.log('🖼️ Click en imagen, abriendo modal de detalles');
     onViewDetails(property);
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Solo abrir modal si no se hizo clic en botones de acción
-    if ((e.target as HTMLElement).closest('button')) {
-      return;
+  const handleCardClick = (e: React.MouseEvent | React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // 🎯 Lista completa de selectores a ignorar para evitar conflictos
+    const ignoreSelectors = [
+      'button',              // Cualquier botón
+      '.action-buttons',     // Contenedor de botones de acción
+      'svg',                 // Íconos SVG
+      'path',                // Paths dentro de SVGs
+      'circle',              // Círculos en SVGs
+      'line',                // Líneas en SVGs
+      '[role="button"]',     // Elementos con rol de botón
+      'a',                   // Enlaces
+    ];
+    
+    // Verificar si el click fue en algún elemento a ignorar
+    for (const selector of ignoreSelectors) {
+      if (target.closest(selector)) {
+        console.log('🚫 Click ignorado en:', selector, 'target:', target.tagName);
+        return;
+      }
     }
+    
+    // Si llegamos aquí, el click fue en el card (no en botones/elementos interactivos)
+    console.log('✅ Abriendo modal de detalles desde card');
     onViewDetails(property);
   };
 
@@ -181,12 +203,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   };
 
   return (
-    <div onClick={handleCardClick}>
+    <div 
+      onClick={handleCardClick}
+      onTouchEnd={handleCardClick}
+    >
       <Card className="overflow-hidden group cursor-pointer">
         {/* Image Section - Clicable */}
         <div 
           className="relative h-48 overflow-hidden cursor-pointer"
           onClick={handleImageClick}
+          onTouchEnd={handleImageClick}
         >
         <motion.img
           key={currentImageIndex}
@@ -235,6 +261,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         {/* Favorite Button */}
         <button
           onClick={handleLikeClick}
+          onTouchEnd={handleLikeClick}
           disabled={isLoadingLike}
           className="absolute bottom-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50"
         >
@@ -423,7 +450,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-3 gap-2" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="grid grid-cols-3 gap-2 action-buttons" 
+          onClick={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
           <Button
             variant="outline"
             size="sm"

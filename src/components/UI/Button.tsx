@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { DivideIcon as LucideIcon } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -25,7 +25,23 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   type = 'button',
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  // 🎯 Handler mejorado que funciona en todos los dispositivos
+  const handleInteraction = (e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
+    // Prevenir propagación del evento para evitar clicks en elementos padres
+    e.stopPropagation();
+    
+    // Prevenir comportamiento por defecto en touch events
+    if (e.type === 'touchend') {
+      e.preventDefault();
+    }
+    
+    // Ejecutar onClick solo si no está disabled
+    if (onClick && !disabled) {
+      onClick();
+    }
+  };
+
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation select-none';
   
   const variants = {
     primary: 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-green-500/25 focus:ring-green-500',
@@ -42,16 +58,18 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
       type={type}
-      onClick={onClick}
+      onClick={handleInteraction}
+      onTouchEnd={handleInteraction}
       disabled={disabled}
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
+      style={{ WebkitTapHighlightColor: 'transparent' }}
     >
-      {Icon && iconPosition === 'left' && <Icon className="w-4 h-4" />}
-      {children}
-      {Icon && iconPosition === 'right' && <Icon className="w-4 h-4" />}
+      {Icon && iconPosition === 'left' && <Icon className="w-4 h-4 pointer-events-none" />}
+      <span className="pointer-events-none">{children}</span>
+      {Icon && iconPosition === 'right' && <Icon className="w-4 h-4 pointer-events-none" />}
     </motion.button>
   );
 };
