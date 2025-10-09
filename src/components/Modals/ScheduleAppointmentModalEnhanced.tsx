@@ -1,3 +1,26 @@
+/**
+ * ScheduleAppointmentModalEnhanced
+ * 
+ * PROPÓSITO: Modal de citas MEJORADO para uso PÚBLICO (páginas de usuario final).
+ * 
+ * CARACTERÍSTICAS:
+ * - Multi-paso (3 pasos): Detalles → Fecha/Hora → Confirmación
+ * - Validación completa de formularios
+ * - Mejor UX con animaciones y feedback visual
+ * - Integración con WhatsApp
+ * - Tracking de analytics
+ * 
+ * USAR ESTE MODAL CUANDO:
+ * - Se llama desde Properties.tsx (página pública de propiedades)
+ * - Se llama desde Advisors.tsx (página pública de asesores)
+ * - Se llama desde GlobalModals.tsx (modales globales públicos)
+ * - Se necesita una experiencia de usuario completa y profesional
+ * 
+ * NO USAR PARA:
+ * - Dashboard administrativo interno
+ * 
+ * Para admin/interno, usar: ScheduleAppointmentModal.tsx
+ */
 import React, { useState } from 'react';
 import { 
   Clock, 

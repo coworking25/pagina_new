@@ -1,3 +1,19 @@
+/**
+ * ScheduleAppointmentModal
+ * 
+ * PROPÓSITO: Modal de citas simplificado para uso INTERNO en el Dashboard Administrativo.
+ * 
+ * USAR ESTE MODAL CUANDO:
+ * - Se llama desde AdminProperties.tsx (página de administración de propiedades)
+ * - Se llama desde PropertyDetailsModal.tsx (modal de detalles internos)
+ * - Se necesita una interfaz simple y rápida para administradores
+ * 
+ * NO USAR PARA:
+ * - Páginas públicas (Properties.tsx, Advisors.tsx)
+ * - Flujos de usuario final
+ * 
+ * Para páginas públicas, usar: ScheduleAppointmentModalEnhanced.tsx
+ */
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
