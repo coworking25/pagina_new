@@ -162,10 +162,19 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
       console.error('Error sending message:', error);
       setIsSubmitting(false);
       
-      // Intentar abrir WhatsApp de todas formas
+      // Intentar abrir WhatsApp de todas formas en nueva ventana (nunca redireccionar)
       const whatsappMessage = generateWhatsAppMessage();
       const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
-      window.location.href = `https://wa.me/${cleanPhone}?text=${whatsappMessage}`;
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${whatsappMessage}`;
+      
+      console.log('⚠️ Error en tracking, pero abriendo WhatsApp de todas formas');
+      const link = document.createElement('a');
+      link.href = whatsappUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 

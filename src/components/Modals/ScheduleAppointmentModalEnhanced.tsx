@@ -320,12 +320,21 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
         setErrorMessage('Hubo un problema al guardar tu cita. Por favor intenta nuevamente.');
       }
       
-      // Intentar abrir WhatsApp de todas formas si hubo error
+      // Intentar abrir WhatsApp de todas formas si hubo error (nunca redireccionar)
       if (formData.contactMethod === 'whatsapp') {
         const message = formatWhatsAppMessage();
         const encodedMessage = encodeURIComponent(message);
         const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
-        window.location.href = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+        
+        console.log('⚠️ Error al guardar cita, pero abriendo WhatsApp de todas formas');
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
     } finally {
       setIsSubmitting(false);
