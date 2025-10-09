@@ -77,8 +77,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
             alt={`${title} - Imagen ${currentIndex + 1}`}
             className="w-full h-full object-cover cursor-pointer"
             onClick={() => openLightbox(currentIndex)}
-            loading="lazy"
-            decoding="async"
           />
           
           {/* Overlay de controles */}
@@ -143,8 +141,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                   src={image}
                   alt={`${title} ${index + 1}`}
                   className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
                 />
                 {index === 7 && images.length > 8 && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -178,8 +174,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                 src={images[lightboxIndex]}
                 alt={`${title} - Imagen ${lightboxIndex + 1}`}
                 className="max-w-full max-h-full object-contain"
-                loading="eager"
-                decoding="async"
               />
 
               {/* Controles del lightbox */}
@@ -234,8 +228,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                       src={image}
                       alt={`Miniatura ${index + 1}`}
                       className="w-full h-full object-cover"
-                      loading="lazy"
-                      decoding="async"
                     />
                   </button>
                 ))}
