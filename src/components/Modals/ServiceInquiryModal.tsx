@@ -184,7 +184,44 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
 
       const serviceType = serviceTypeMap[service?.title || ''] || 'arrendamientos';
 
-      // Primero guardar en la base de datos
+      // 🎯 PASO 1: Generar mensaje de WhatsApp PRIMERO (sin ID temporalmente)
+      const tempMessage = generateWhatsAppMessage();
+      const encodedMessage = encodeURIComponent(tempMessage);
+      const cleanPhone = advisorPhone.replace(/[\s\-\+]/g, '');
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+      console.log('📱 Número limpio:', cleanPhone);
+      console.log('📱 Abriendo WhatsApp ANTES de guardar en BD (iOS/Safari compatible)');
+
+      // 🎯 PASO 2: Abrir WhatsApp INMEDIATAMENTE (antes del await para evitar bloqueo de Safari/iOS)
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      let whatsappOpened = false;
+
+      if (isIOS || isSafari) {
+        // iOS/Safari: usar link directo (más confiable)
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        whatsappOpened = true;
+        
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
+        }, 1000);
+      } else {
+        // Otros navegadores: window.open
+        const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        whatsappOpened = !!newWindow;
+      }
+
+      // 🎯 PASO 3: Guardar en base de datos (async - no bloquea la apertura de WhatsApp)
       const inquiryData = {
         client_name: formData.name,
         client_email: formData.email || undefined,
@@ -207,32 +244,23 @@ const ServiceInquiryModal: React.FC<ServiceInquiryModalProps> = ({
 
       console.log('✅ Consulta guardada en BD:', result);
 
-      // Generar y enviar mensaje de WhatsApp con ID de consulta
-      const message = generateWhatsAppMessage(result.id);
-      const encodedMessage = encodeURIComponent(message);
-      
-      // Limpiar el número: quitar espacios, guiones y el signo +
-      const cleanPhone = advisorPhone.replace(/[\s\-\+]/g, '');
-      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
-
-      console.log('📱 Número limpio:', cleanPhone);
-      console.log('📱 URL de WhatsApp:', whatsappUrl);
-      console.log('📱 Longitud del mensaje:', message.length);
-      
-      // Método más confiable: crear link temporal y hacer click
-      const link = document.createElement('a');
-      link.href = whatsappUrl;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      
-      setTimeout(() => {
-        if (document.body.contains(link)) {
-          document.body.removeChild(link);
-        }
-      }, 1000);
+      // 🎯 Fallback: Si WhatsApp no se abrió, intentar de nuevo
+      if (!whatsappOpened) {
+        console.log('⚠️ WhatsApp no se abrió, intentando fallback...');
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
+        }, 1000);
+      }
 
       alert('✅ ¡Consulta enviada exitosamente! Se ha guardado en la base de datos y abierto WhatsApp.');
 

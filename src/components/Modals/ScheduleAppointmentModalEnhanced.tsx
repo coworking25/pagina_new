@@ -220,7 +220,45 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
     setErrorMessage('');
 
     try {
-      // 1. Guardar datos en la base de datos
+      // 🎯 PASO 1: Preparar datos para WhatsApp PRIMERO (si aplica)
+      let whatsappOpened = false;
+      
+      if (formData.contactMethod === 'whatsapp') {
+        const message = formatWhatsAppMessage();
+        const encodedMessage = encodeURIComponent(message);
+        const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+        console.log('📱 Abriendo WhatsApp ANTES de guardar en BD (iOS/Safari compatible)');
+
+        // 🎯 PASO 2: Abrir WhatsApp INMEDIATAMENTE (antes del await)
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+        if (isIOS || isSafari) {
+          // iOS/Safari: usar link directo (más confiable)
+          const link = document.createElement('a');
+          link.href = whatsappUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          whatsappOpened = true;
+          
+          setTimeout(() => {
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
+          }, 1000);
+        } else {
+          // Otros navegadores: window.open
+          const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+          whatsappOpened = !!newWindow;
+        }
+      }
+
+      // 🎯 PASO 3: Guardar en base de datos (async - no bloquea la apertura)
       const appointmentData = {
         client_name: formData.name.trim(),
         client_email: formData.email.trim().toLowerCase(),
@@ -237,13 +275,29 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
       };
       
       await savePropertyAppointment(appointmentData);
-      
-      // 2. Formatear mensaje para WhatsApp si se seleccionó esa opción
-      if (formData.contactMethod === 'whatsapp') {
+      console.log('✅ Cita guardada en BD correctamente');
+
+      // 🎯 Fallback: Si WhatsApp no se abrió, intentar de nuevo
+      if (formData.contactMethod === 'whatsapp' && !whatsappOpened) {
+        console.log('⚠️ WhatsApp no se abrió, intentando fallback...');
         const message = formatWhatsAppMessage();
         const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/${advisor.whatsapp}?text=${encodedMessage}`;
-        window.open(whatsappUrl, '_blank');
+        const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+        
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
+        }, 1000);
       }
       
       setSubmissionStatus('success');
@@ -264,6 +318,14 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
         setErrorMessage('Los datos ingresados no son válidos. Por favor revísalos e intenta nuevamente.');
       } else {
         setErrorMessage('Hubo un problema al guardar tu cita. Por favor intenta nuevamente.');
+      }
+      
+      // Intentar abrir WhatsApp de todas formas si hubo error
+      if (formData.contactMethod === 'whatsapp') {
+        const message = formatWhatsAppMessage();
+        const encodedMessage = encodeURIComponent(message);
+        const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+        window.location.href = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
       }
     } finally {
       setIsSubmitting(false);

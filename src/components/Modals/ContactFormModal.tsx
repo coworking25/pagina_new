@@ -85,7 +85,42 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
     setIsSubmitting(true);
 
     try {
-      // Registrar tracking de contacto
+      // 🎯 PASO 1: Generar mensaje de WhatsApp PRIMERO
+      const whatsappMessage = generateWhatsAppMessage();
+      const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${whatsappMessage}`;
+
+      console.log('📱 Abriendo WhatsApp ANTES del tracking (iOS/Safari compatible)');
+
+      // 🎯 PASO 2: Abrir WhatsApp INMEDIATAMENTE (antes del await)
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      let whatsappOpened = false;
+
+      if (isIOS || isSafari) {
+        // iOS/Safari: usar link directo (más confiable)
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        whatsappOpened = true;
+        
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
+        }, 1000);
+      } else {
+        // Otros navegadores: window.open
+        const newWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+        whatsappOpened = !!newWindow;
+      }
+
+      // 🎯 PASO 3: Registrar tracking (async - no bloquea la apertura)
       await trackPropertyContact(
         String(property.id),
         'whatsapp',
@@ -97,14 +132,25 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
         }
       );
       
-      // Aquí puedes agregar la lógica para guardar en la base de datos
-      console.log('Form data:', formData);
-      
-      // Generar mensaje de WhatsApp y abrir
-      const whatsappMessage = generateWhatsAppMessage();
-      const whatsappUrl = `https://wa.me/${advisor.whatsapp}?text=${whatsappMessage}`;
-      
-      window.open(whatsappUrl, '_blank');
+      console.log('✅ Tracking registrado correctamente');
+
+      // 🎯 Fallback: Si WhatsApp no se abrió, intentar de nuevo
+      if (!whatsappOpened) {
+        console.log('⚠️ WhatsApp no se abrió, intentando fallback...');
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
+        }, 1000);
+      }
       
       // Cerrar modal después de un breve delay
       setTimeout(() => {
@@ -115,6 +161,11 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
     } catch (error) {
       console.error('Error sending message:', error);
       setIsSubmitting(false);
+      
+      // Intentar abrir WhatsApp de todas formas
+      const whatsappMessage = generateWhatsAppMessage();
+      const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+      window.location.href = `https://wa.me/${cleanPhone}?text=${whatsappMessage}`;
     }
   };
 
