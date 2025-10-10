@@ -213,7 +213,7 @@ const Properties: React.FC = () => {
 
       let filtered = [...properties];
 
-      // Search filter - buscar en título, ubicación y tipo
+      // Search filter - buscar en título, ubicación, tipo y código
       if (filters.search && filters.search.trim()) {
         const searchLower = filters.search.toLowerCase().trim();
         filtered = filtered.filter(property => {
@@ -222,8 +222,12 @@ const Properties: React.FC = () => {
           const title = property.title?.toLowerCase() || '';
           const location = property.location?.toLowerCase() || '';
           const type = property.type?.toLowerCase() || '';
+          const code = property.code?.toLowerCase() || '';
           
-          return title.includes(searchLower) || location.includes(searchLower) || type.includes(searchLower);
+          return title.includes(searchLower) || 
+                 location.includes(searchLower) || 
+                 type.includes(searchLower) ||
+                 code.includes(searchLower);
         });
       }
 

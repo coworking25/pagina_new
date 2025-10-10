@@ -374,8 +374,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
       {/* Content Section */}
       <div className="p-6">
-        {/* Title and Location */}
+        {/* Title and Code */}
         <div className="mb-4">
+          {/* Código de propiedad */}
+          {property.code && (
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-mono font-semibold bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50 shadow-sm">
+                <Building className="w-3 h-3 mr-1" />
+                {property.code}
+              </span>
+            </div>
+          )}
           <h3 
             className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             onClick={handleImageClick}

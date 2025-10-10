@@ -1653,6 +1653,16 @@ function AdminProperties() {
 
               {/* Property Info */}
               <div className="p-6">
+                {/* Código de propiedad */}
+                {property.code && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50 shadow-sm">
+                      <Building className="w-3.5 h-3.5 mr-1.5" />
+                      {property.code}
+                    </span>
+                  </div>
+                )}
+
                 <h3 
                   className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   onClick={() => handleViewProperty(property)}
@@ -2642,9 +2652,18 @@ function AdminProperties() {
 
                 {/* Información Detallada */}
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                    Información de la Propiedad
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      Información de la Propiedad
+                    </h3>
+                    {/* Código de propiedad destacado */}
+                    {selectedProperty.code && (
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-mono font-bold bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-500 dark:to-blue-600 text-white shadow-lg shadow-blue-500/50 border-2 border-blue-400 dark:border-blue-300">
+                        <Building className="w-4 h-4 mr-2" />
+                        {selectedProperty.code}
+                      </span>
+                    )}
+                  </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="text-center p-4 bg-white dark:bg-gray-700 rounded-lg">
