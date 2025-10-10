@@ -78,7 +78,10 @@ import {
   ShoppingBag,
   Mountain,
   Sparkles,
-  Film
+  Film,
+  CheckSquare,
+  Square as CheckboxIcon,
+  Minus
 } from 'lucide-react';
 import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties, bulkUploadPropertyVideos, deletePropertyVideo } from '../lib/supabase';
 import { Property, Advisor, PropertyVideo } from '../types';
@@ -88,6 +91,8 @@ import ScheduleAppointmentModal from '../components/Modals/ScheduleAppointmentMo
 import ContactModal from '../components/Modals/ContactModal';
 import { CoverImageSelector } from '../components/CoverImageSelector';
 import VideoPlayer from '../components/VideoPlayer';
+import { useMultiSelect } from '../hooks/useMultiSelect';
+import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
 
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
@@ -108,6 +113,12 @@ function AdminProperties() {
 
   console.log('🔍 AdminProperties: Estados inicializados');
   
+  // Hook de selección múltiple
+  const multiSelect = useMultiSelect({
+    items: properties,
+    getItemId: (property) => property.id || 0
+  });
+
   // Estados para modales y ventanas flotantes
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -1161,6 +1172,103 @@ function AdminProperties() {
     }
   };
 
+  // ========================================
+  // FUNCIONES DE ACCIONES MASIVAS
+  // ========================================
+
+  const handleBulkDelete = async () => {
+    const count = multiSelect.selectedCount;
+    if (window.confirm(`¿Estás seguro de que quieres eliminar ${count} ${count === 1 ? 'propiedad' : 'propiedades'}?`)) {
+      try {
+        console.log('🗑️ Eliminando propiedades en masa:', multiSelect.selectedItems.length);
+        
+        const deletePromises = multiSelect.selectedItems.map(property => 
+          property.id ? deleteProperty(property.id) : Promise.resolve()
+        );
+        
+        await Promise.all(deletePromises);
+        
+        await refreshProperties();
+        multiSelect.clearSelection();
+        
+        showNotification(`${count} ${count === 1 ? 'propiedad eliminada' : 'propiedades eliminadas'} exitosamente`, 'success');
+      } catch (error: any) {
+        console.error('❌ Error eliminando propiedades:', error);
+        showNotification(error.message || 'Error al eliminar las propiedades', 'error');
+      }
+    }
+  };
+
+  const handleBulkChangeStatus = async (newStatus: Property['status']) => {
+    const count = multiSelect.selectedCount;
+    if (window.confirm(`¿Cambiar el estado de ${count} ${count === 1 ? 'propiedad' : 'propiedades'}?`)) {
+      try {
+        console.log('🔄 Cambiando estado en masa a:', newStatus);
+        
+        const updatePromises = multiSelect.selectedItems.map(property => 
+          property.id ? updatePropertyStatus(property.id, newStatus) : Promise.resolve()
+        );
+        
+        await Promise.all(updatePromises);
+        
+        await refreshProperties();
+        multiSelect.clearSelection();
+        
+        showNotification(`Estado actualizado para ${count} ${count === 1 ? 'propiedad' : 'propiedades'}`, 'success');
+      } catch (error: any) {
+        console.error('❌ Error actualizando estado:', error);
+        showNotification(error.message || 'Error al actualizar el estado', 'error');
+      }
+    }
+  };
+
+  const handleBulkToggleFeatured = async () => {
+    const count = multiSelect.selectedCount;
+    try {
+      console.log('⭐ Alternando destacadas en masa');
+      
+      const updatePromises = multiSelect.selectedItems.map(property => {
+        if (!property.id) return Promise.resolve();
+        return updateProperty(property.id, { featured: !property.featured });
+      });
+      
+      await Promise.all(updatePromises);
+      
+      await refreshProperties();
+      multiSelect.clearSelection();
+      
+      showNotification(`${count} ${count === 1 ? 'propiedad actualizada' : 'propiedades actualizadas'}`, 'success');
+    } catch (error: any) {
+      console.error('❌ Error alternando destacadas:', error);
+      showNotification(error.message || 'Error al actualizar las propiedades', 'error');
+    }
+  };
+
+  const handleBulkAssignAdvisor = async () => {
+    const advisorId = prompt('Ingresa el ID del asesor a asignar:');
+    if (!advisorId) return;
+    
+    const count = multiSelect.selectedCount;
+    try {
+      console.log('👤 Asignando asesor en masa:', advisorId);
+      
+      const updatePromises = multiSelect.selectedItems.map(property => {
+        if (!property.id) return Promise.resolve();
+        return updateProperty(property.id, { advisor_id: advisorId });
+      });
+      
+      await Promise.all(updatePromises);
+      
+      await refreshProperties();
+      multiSelect.clearSelection();
+      
+      showNotification(`Asesor asignado a ${count} ${count === 1 ? 'propiedad' : 'propiedades'}`, 'success');
+    } catch (error: any) {
+      console.error('❌ Error asignando asesor:', error);
+      showNotification(error.message || 'Error al asignar el asesor', 'error');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1324,6 +1432,44 @@ function AdminProperties() {
         animate={{ opacity: 1, y: 0 }}
       >
         <FloatingCard className="p-6">
+          {/* Select All Checkbox */}
+          <div className="mb-4 flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+            <button
+              onClick={multiSelect.toggleSelectAll}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all
+                ${multiSelect.isAllSelected 
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
+                  : multiSelect.isSomeSelected
+                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }
+              `}
+            >
+              {multiSelect.isAllSelected ? (
+                <CheckSquare className="w-5 h-5" />
+              ) : multiSelect.isSomeSelected ? (
+                <Minus className="w-5 h-5" />
+              ) : (
+                <CheckboxIcon className="w-5 h-5" />
+              )}
+              <span>
+                {multiSelect.selectedCount > 0 
+                  ? `${multiSelect.selectedCount} seleccionada${multiSelect.selectedCount === 1 ? '' : 's'}` 
+                  : 'Seleccionar todo'}
+              </span>
+            </button>
+            
+            {multiSelect.selectedCount > 0 && (
+              <button
+                onClick={multiSelect.clearSelection}
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                Limpiar selección
+              </button>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="relative">
@@ -1386,7 +1532,30 @@ function AdminProperties() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <FloatingCard hover glowEffect elevation="high" className="overflow-hidden group">
+            <FloatingCard hover glowEffect elevation="high" className="overflow-hidden group relative">
+              {/* Checkbox de selección */}
+              <div className="absolute top-3 left-3 z-10">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (property.id) multiSelect.toggleSelect(property.id);
+                  }}
+                  className={`
+                    p-2 rounded-lg shadow-lg transition-all transform hover:scale-110
+                    ${multiSelect.isSelected(property.id || 0)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                    }
+                  `}
+                >
+                  {multiSelect.isSelected(property.id || 0) ? (
+                    <CheckSquare className="w-5 h-5" />
+                  ) : (
+                    <CheckboxIcon className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+
               {/* Property Image - Clicable */}
               <div 
                 className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 cursor-pointer"
@@ -3357,6 +3526,43 @@ function AdminProperties() {
           property={selectedProperty}
         />
       )}
+
+      {/* Barra de Acciones Masivas */}
+      <BulkActionBar
+        selectedCount={multiSelect.selectedCount}
+        onClearSelection={multiSelect.clearSelection}
+        entityName="propiedades"
+        actions={[
+          {
+            id: 'delete',
+            label: 'Eliminar',
+            icon: BulkActionIcons.Delete,
+            variant: 'danger',
+            onClick: handleBulkDelete
+          },
+          {
+            id: 'feature',
+            label: 'Destacar/Quitar',
+            icon: BulkActionIcons.Feature,
+            variant: 'primary',
+            onClick: handleBulkToggleFeatured
+          },
+          {
+            id: 'available',
+            label: 'Marcar Disponible',
+            icon: BulkActionIcons.Check,
+            variant: 'success',
+            onClick: () => handleBulkChangeStatus('available')
+          },
+          {
+            id: 'assign',
+            label: 'Asignar Asesor',
+            icon: BulkActionIcons.AssignUser,
+            variant: 'default',
+            onClick: handleBulkAssignAdvisor
+          }
+        ]}
+      />
     </div>
   );
 }

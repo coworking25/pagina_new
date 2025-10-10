@@ -15,7 +15,11 @@ import {
   XCircle,
   AlertCircle,
   Plus,
-  MessageCircle
+  MessageCircle,
+  CheckSquare,
+  Square as CheckboxIcon,
+  Minus,
+  Download
 } from 'lucide-react';
 import { updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple, sendWhatsAppToClient, getPropertyAppointmentsPaginated } from '../lib/supabase';
 import AppointmentDetailsModal from '../components/Modals/AppointmentDetailsModal';
@@ -25,6 +29,8 @@ import { PropertyAppointment, Advisor, Property } from '../types';
 import { useNotificationContext } from '../contexts/NotificationContext';
 import { usePagination } from '../hooks/usePagination';
 import Pagination from '../components/UI/Pagination';
+import { useMultiSelect } from '../hooks/useMultiSelect';
+import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
 
 function AdminAppointments() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -67,6 +73,12 @@ function AdminAppointments() {
     initialLimit: 15,
     initialSortBy: 'appointment_date',
     initialSortOrder: 'desc'
+  });
+
+  // Hook de selección múltiple
+  const multiSelect = useMultiSelect({
+    items: appointments,
+    getItemId: (appointment) => appointment.id || ''
   });
 
   useEffect(() => {
