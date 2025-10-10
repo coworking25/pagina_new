@@ -95,11 +95,21 @@ const Properties: React.FC = () => {
       console.log('🔍 Muestra de datos de la primera propiedad:', {
         id: data[0].id,
         title: data[0].title,
+        code: data[0].code, // ← VERIFICAR SI LLEGA EL CÓDIGO
         images: data[0].images,
         price: data[0].price,
         type: data[0].type,
         status: data[0].status
       });
+      
+      // Verificar códigos en todas las propiedades
+      const propertiesWithCode = data.filter(p => p.code).length;
+      console.log(`🏷️ Propiedades con código: ${propertiesWithCode}/${data.length}`);
+      if (propertiesWithCode < data.length) {
+        console.warn('⚠️ Algunas propiedades NO tienen código:', 
+          data.filter(p => !p.code).map(p => ({ id: p.id, title: p.title }))
+        );
+      }
 
       // Validar y mapear propiedades
       const mapped = (data || []).map((property: any, index: number) => {

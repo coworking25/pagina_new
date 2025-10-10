@@ -1273,6 +1273,7 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
       
       return {
         id: prop.id,
+        code: prop.code, // ← CÓDIGO DE PROPIEDAD
         title: prop.title,
         location: prop.location,
         price: prop.price,
@@ -1364,6 +1365,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
         
         return {
           id: prop.id,
+          code: prop.code, // ← CÓDIGO DE PROPIEDAD
           title: prop.title,
           location: prop.location,
           price: prop.price,
@@ -1416,6 +1418,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       
       return {
         id: prop.id,
+        code: prop.code, // ← CÓDIGO DE PROPIEDAD
         title: prop.title,
         location: prop.location,
         price: prop.price,
