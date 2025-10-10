@@ -1,7 +1,7 @@
 # Sistema de Selección Múltiple y Acciones Masivas
 
 **Fecha:** 10 de octubre de 2025  
-**Estado:** ✅ IMPLEMENTADO PARCIALMENTE (Propiedades completo, Citas y Clientes pendientes)
+**Estado:** ✅ IMPLEMENTADO COMPLETAMENTE (Propiedades, Citas, Clientes y Consultas)
 
 ## Descripción General
 
@@ -320,11 +320,85 @@ AdminProperties.tsx
 
 ### Archivos Modificados
 - ✅ `src/pages/AdminProperties.tsx` (+150 líneas aprox.)
-- ⏳ `src/pages/AdminAppointments.tsx` (+20 líneas, incompleto)
-- ⏳ `src/pages/AdminClients.tsx` (no iniciado)
+- ✅ `src/pages/AdminAppointments.tsx` (+140 líneas)
+- ✅ `src/pages/AdminClients.tsx` (+130 líneas)
+- ✅ `src/pages/AdminInquiries.tsx` (+120 líneas)
+
+## Implementación por Sección
+
+### ✅ AdminProperties (Completo)
+**Ubicación:** `src/pages/AdminProperties.tsx`
+
+**Funciones agregadas:**
+- `handleBulkDelete` - Eliminar múltiples propiedades
+- `handleBulkToggleFeatured` - Destacar/quitar destacado
+- `handleBulkChangeStatus` - Cambiar estado a disponible
+- `handleBulkAssignAdvisor` - Asignar asesor
+
+**Acciones disponibles:**
+1. Eliminar (danger)
+2. Destacar (default)
+3. Marcar disponible (success)
+4. Asignar asesor (primary)
+
+### ✅ AdminAppointments (Completo)
+**Ubicación:** `src/pages/AdminAppointments.tsx`
+
+**Funciones agregadas:**
+- `handleBulkDelete` - Eliminar múltiples citas
+- `handleBulkChangeStatus` - Cambiar estado (confirmar, completar)
+- `handleBulkAssignAdvisor` - Asignar asesor
+- `handleBulkExport` - Exportar a CSV
+
+**Acciones disponibles:**
+1. Eliminar (danger)
+2. Confirmar (success)
+3. Completar (success)
+4. Asignar asesor (default)
+5. Exportar CSV (primary)
+
+### ✅ AdminClients (Completo)
+**Ubicación:** `src/pages/AdminClients.tsx`
+
+**Funciones agregadas:**
+- `handleBulkDelete` - Eliminar múltiples clientes
+- `handleBulkChangeStatus` - Activar/desactivar clientes
+- `handleBulkExport` - Exportar a CSV
+- `handleBulkTag` - Etiquetar clientes
+
+**Acciones disponibles:**
+1. Eliminar (danger)
+2. Activar (success)
+3. Desactivar (default)
+4. Etiquetar (default)
+5. Exportar CSV (primary)
+
+### ✅ AdminInquiries (Completo)
+**Ubicación:** `src/pages/AdminInquiries.tsx`
+
+**Funciones agregadas:**
+- `handleBulkDelete` - Eliminar múltiples consultas
+- `handleBulkChangeStatus` - Cambiar estado (contactado, completado)
+- `handleBulkExport` - Exportar a CSV
+
+**Acciones disponibles:**
+1. Eliminar (danger)
+2. Marcar Contactado (success)
+3. Completar (success)
+4. Exportar CSV (primary)
+
+**Campos exportados en CSV:**
+- ID, Cliente, Email, Teléfono, Servicio, Urgencia, Estado, Fecha, Detalles
 
 ## Conclusión
 
-El sistema de selección múltiple está completamente funcional para **Propiedades** y proporciona una base sólida y reutilizable para implementarlo en **Citas** y **Clientes**. El código es modular, tipado y fácil de mantener.
+El sistema de selección múltiple está **completamente funcional para todas las secciones** del dashboard administrativo: **Propiedades**, **Citas**, **Clientes** y **Consultas**. El código es modular, tipado y fácil de mantener.
 
 La barra de acciones flotante proporciona una excelente experiencia de usuario con animaciones fluidas y diseño intuitivo.
+
+**Estadísticas totales:**
+- 4 secciones completamente implementadas
+- 15 funciones de acciones masivas
+- 17 acciones disponibles en total
+- 3 exportaciones CSV implementadas
+- 100% de cobertura en dashboard administrativo

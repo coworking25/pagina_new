@@ -20,10 +20,17 @@ import {
   MessageCircle as WhatsApp,
   Send,
   Save,
-  X
+  X,
+  CheckSquare,
+  Square as CheckboxIcon,
+  Minus,
+  Download,
+  Tag
 } from 'lucide-react';
 import { supabase, updateServiceInquiry, deleteServiceInquiry } from '../lib/supabase';
 import type { ServiceInquiry } from '../types';
+import { useMultiSelect } from '../hooks/useMultiSelect';
+import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
 
 function AdminInquiries() {
   const location = useLocation();
@@ -113,6 +120,99 @@ function AdminInquiries() {
       }
     } catch (error) {
       console.error('❌ Error al eliminar consulta:', error);
+    }
+  };
+
+  // ========================================
+  // FUNCIONES DE ACCIONES MASIVAS
+  // ========================================
+
+  const handleBulkDelete = async () => {
+    const count = multiSelect.selectedCount;
+    if (!confirm(`¿Estás seguro de que quieres eliminar ${count} ${count === 1 ? 'consulta' : 'consultas'}?`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Eliminando consultas en masa:', multiSelect.selectedItems.length);
+      
+      const deletePromises = multiSelect.selectedItems.map(inquiry => 
+        inquiry.id ? deleteServiceInquiry(inquiry.id) : Promise.resolve(false)
+      );
+      
+      await Promise.all(deletePromises);
+      
+      await fetchInquiries();
+      multiSelect.clearSelection();
+      
+      alert(`✅ ${count} ${count === 1 ? 'consulta eliminada' : 'consultas eliminadas'} exitosamente`);
+    } catch (error: any) {
+      console.error('❌ Error eliminando consultas:', error);
+      alert(`❌ ${error.message || 'Error al eliminar las consultas'}`);
+    }
+  };
+
+  const handleBulkChangeStatus = async (newStatus: ServiceInquiry['status']) => {
+    const count = multiSelect.selectedCount;
+    if (!confirm(`¿Cambiar el estado de ${count} ${count === 1 ? 'consulta' : 'consultas'} a "${newStatus}"?`)) {
+      return;
+    }
+
+    try {
+      console.log('🔄 Cambiando estado en masa a:', newStatus);
+      
+      const updatePromises = multiSelect.selectedItems.map(inquiry => 
+        inquiry.id ? updateServiceInquiry(inquiry.id, { status: newStatus }) : Promise.resolve(null)
+      );
+      
+      await Promise.all(updatePromises);
+      
+      await fetchInquiries();
+      multiSelect.clearSelection();
+      
+      alert(`✅ Estado actualizado para ${count} ${count === 1 ? 'consulta' : 'consultas'}`);
+    } catch (error: any) {
+      console.error('❌ Error actualizando estado:', error);
+      alert(`❌ ${error.message || 'Error al actualizar el estado'}`);
+    }
+  };
+
+  const handleBulkExport = () => {
+    try {
+      const headers = ['ID', 'Cliente', 'Email', 'Teléfono', 'Servicio', 'Urgencia', 'Estado', 'Fecha', 'Detalles'];
+      const rows = multiSelect.selectedItems.map(inq => [
+        inq.id || '',
+        inq.client_name || '',
+        inq.client_email || '',
+        inq.client_phone || '',
+        inq.service_type || '',
+        inq.urgency || '',
+        inq.status || '',
+        inq.created_at || '',
+        inq.details || ''
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `consultas_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      alert(`✅ ${multiSelect.selectedCount} consultas exportadas a CSV`);
+    } catch (error) {
+      console.error('❌ Error exportando consultas:', error);
+      alert('❌ Error al exportar las consultas');
     }
   };
 
@@ -393,6 +493,12 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
     return matchesSearch && matchesStatus && matchesUrgency;
   });
 
+  // Hook de selección múltiple
+  const multiSelect = useMultiSelect({
+    items: filteredInquiries,
+    getItemId: (inquiry) => inquiry.id || ''
+  });
+
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
@@ -525,6 +631,51 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
         </div>
       </div>
 
+      {/* Bulk Selection Controls */}
+      {filteredInquiries.length > 0 && (
+        <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => {
+                if (multiSelect.isAllSelected) {
+                  multiSelect.clearSelection();
+                } else {
+                  multiSelect.selectAll();
+                }
+              }}
+              className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-all ${
+                multiSelect.isAllSelected
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : multiSelect.isSomeSelected
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-blue-500'
+              }`}
+            >
+              {multiSelect.isAllSelected ? (
+                <CheckSquare className="w-3 h-3" />
+              ) : multiSelect.isSomeSelected ? (
+                <Minus className="w-3 h-3" />
+              ) : null}
+            </button>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {multiSelect.selectedCount > 0 
+                ? `${multiSelect.selectedCount} seleccionada${multiSelect.selectedCount !== 1 ? 's' : ''}`
+                : 'Seleccionar todas'
+              }
+            </span>
+          </div>
+          
+          {multiSelect.selectedCount > 0 && (
+            <button
+              onClick={multiSelect.clearSelection}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            >
+              Limpiar selección
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Inquiries Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {loading ? (
@@ -545,7 +696,24 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
               className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-all hover:bg-gray-50 dark:hover:bg-gray-700 p-6 border-l-4 border-blue-500"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
+                  {/* Checkbox de selección */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      multiSelect.toggleSelect(inquiry.id || '');
+                    }}
+                    className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-all ${
+                      multiSelect.isSelected(inquiry.id || '')
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-blue-500'
+                    }`}
+                  >
+                    {multiSelect.isSelected(inquiry.id || '') && (
+                      <CheckboxIcon className="w-3 h-3" />
+                    )}
+                  </button>
+                  
                   <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   <h3 className="font-semibold text-gray-900 dark:text-white">
                     {inquiry.client_name}
@@ -990,6 +1158,43 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
           </motion.div>
         </div>
       )}
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={multiSelect.selectedCount}
+        onClearSelection={multiSelect.clearSelection}
+        entityName="consultas"
+        actions={[
+          {
+            id: 'delete',
+            label: 'Eliminar',
+            icon: BulkActionIcons.Delete,
+            variant: 'danger',
+            onClick: handleBulkDelete
+          },
+          {
+            id: 'contacted',
+            label: 'Marcar Contactado',
+            icon: BulkActionIcons.Email,
+            variant: 'success',
+            onClick: () => handleBulkChangeStatus('contacted')
+          },
+          {
+            id: 'completed',
+            label: 'Completar',
+            icon: BulkActionIcons.Check,
+            variant: 'success',
+            onClick: () => handleBulkChangeStatus('completed')
+          },
+          {
+            id: 'export',
+            label: 'Exportar CSV',
+            icon: BulkActionIcons.Download,
+            variant: 'primary',
+            onClick: handleBulkExport
+          }
+        ]}
+      />
     </div>
   );
 }
