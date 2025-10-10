@@ -134,16 +134,22 @@ function AdminInquiries() {
     }
 
     try {
-      console.log('🗑️ Eliminando consultas en masa:', multiSelect.selectedItems.length);
+      // Capturar los IDs antes de cualquier operación
+      const idsToDelete = Array.from(multiSelect.selectedIds);
+      console.log('🗑️ Eliminando consultas en masa:', idsToDelete);
       
-      const deletePromises = multiSelect.selectedItems.map(inquiry => 
-        inquiry.id ? deleteServiceInquiry(inquiry.id) : Promise.resolve(false)
+      // Limpiar selección ANTES de eliminar para evitar problemas de renderizado
+      multiSelect.clearSelection();
+      
+      // Eliminar usando los IDs capturados
+      const deletePromises = idsToDelete.map(id => 
+        deleteServiceInquiry(String(id))
       );
       
       await Promise.all(deletePromises);
       
+      // Refrescar la lista
       await fetchInquiries();
-      multiSelect.clearSelection();
       
       alert(`✅ ${count} ${count === 1 ? 'consulta eliminada' : 'consultas eliminadas'} exitosamente`);
     } catch (error: any) {
@@ -159,16 +165,22 @@ function AdminInquiries() {
     }
 
     try {
-      console.log('🔄 Cambiando estado en masa a:', newStatus);
+      // Capturar los IDs antes de cualquier operación
+      const idsToUpdate = Array.from(multiSelect.selectedIds);
+      console.log('🔄 Cambiando estado en masa a:', newStatus, idsToUpdate);
       
-      const updatePromises = multiSelect.selectedItems.map(inquiry => 
-        inquiry.id ? updateServiceInquiry(inquiry.id, { status: newStatus }) : Promise.resolve(null)
+      // Limpiar selección ANTES de actualizar
+      multiSelect.clearSelection();
+      
+      // Actualizar usando los IDs capturados
+      const updatePromises = idsToUpdate.map(id => 
+        updateServiceInquiry(String(id), { status: newStatus })
       );
       
       await Promise.all(updatePromises);
       
+      // Refrescar la lista
       await fetchInquiries();
-      multiSelect.clearSelection();
       
       alert(`✅ Estado actualizado para ${count} ${count === 1 ? 'consulta' : 'consultas'}`);
     } catch (error: any) {
@@ -179,8 +191,12 @@ function AdminInquiries() {
 
   const handleBulkExport = () => {
     try {
+      // Capturar los items seleccionados ANTES de cualquier operación
+      const itemsToExport = [...multiSelect.selectedItems];
+      const count = itemsToExport.length;
+      
       const headers = ['ID', 'Cliente', 'Email', 'Teléfono', 'Servicio', 'Urgencia', 'Estado', 'Fecha', 'Detalles'];
-      const rows = multiSelect.selectedItems.map(inq => [
+      const rows = itemsToExport.map(inq => [
         inq.id || '',
         inq.client_name || '',
         inq.client_email || '',
@@ -209,7 +225,7 @@ function AdminInquiries() {
       link.click();
       document.body.removeChild(link);
       
-      alert(`✅ ${multiSelect.selectedCount} consultas exportadas a CSV`);
+      alert(`✅ ${count} consultas exportadas a CSV`);
     } catch (error) {
       console.error('❌ Error exportando consultas:', error);
       alert('❌ Error al exportar las consultas');

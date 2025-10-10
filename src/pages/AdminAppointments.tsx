@@ -517,6 +517,168 @@ function AdminAppointments() {
     }
   };
 
+  // ========================================
+  // FUNCIONES DE ACCIONES MASIVAS
+  // ========================================
+
+  const handleBulkDelete = async () => {
+    const count = multiSelect.selectedCount;
+    if (window.confirm(`¿Estás seguro de que quieres eliminar ${count} ${count === 1 ? 'cita' : 'citas'}?`)) {
+      try {
+        // Capturar los IDs antes de cualquier operación
+        const idsToDelete = Array.from(multiSelect.selectedIds);
+        console.log('🗑️ Eliminando citas en masa:', idsToDelete);
+        
+        // Limpiar selección ANTES de eliminar
+        multiSelect.clearSelection();
+        
+        // Eliminar usando los IDs capturados
+        const deletePromises = idsToDelete.map(id => 
+          deleteAppointment(String(id))
+        );
+        
+        await Promise.all(deletePromises);
+        
+        // Refrescar la lista
+        await loadAppointments();
+        
+        alert(`✅ ${count} ${count === 1 ? 'cita eliminada' : 'citas eliminadas'} exitosamente`);
+      } catch (error: any) {
+        console.error('❌ Error eliminando citas:', error);
+        alert(`❌ ${error.message || 'Error al eliminar las citas'}`);
+      }
+    }
+  };
+
+  const handleBulkChangeStatus = async (newStatus: PropertyAppointment['status']) => {
+    const count = multiSelect.selectedCount;
+    if (!newStatus) return;
+    
+    if (window.confirm(`¿Cambiar el estado de ${count} ${count === 1 ? 'cita' : 'citas'} a "${newStatus}"?`)) {
+      try {
+        // Capturar los IDs antes de cualquier operación
+        const idsToUpdate = Array.from(multiSelect.selectedIds);
+        console.log('🔄 Cambiando estado en masa a:', newStatus, idsToUpdate);
+        
+        // Limpiar selección ANTES de actualizar
+        multiSelect.clearSelection();
+        
+        // Actualizar usando los IDs capturados
+        const updatePromises = idsToUpdate.map(id => 
+          updateAppointmentStatus(String(id), newStatus)
+        );
+        
+        await Promise.all(updatePromises);
+        
+        // Refrescar la lista
+        await loadAppointments();
+        
+        alert(`✅ Estado actualizado para ${count} ${count === 1 ? 'cita' : 'citas'}`);
+      } catch (error: any) {
+        console.error('❌ Error actualizando estado:', error);
+        alert(`❌ ${error.message || 'Error al actualizar el estado'}`);
+      }
+    }
+  };
+
+  const handleBulkAssignAdvisor = async () => {
+    if (advisors.length === 0) {
+      alert('No se pudieron cargar los asesores. Inténtalo de nuevo.');
+      return;
+    }
+
+    // Mostrar lista de asesores para selección
+    const advisorList = advisors.map((a, i) => `${i + 1}. ${a.name} (${a.email})`).join('\n');
+    const selection = prompt(`Selecciona el número del asesor:\n\n${advisorList}`);
+    
+    if (!selection) return;
+    
+    const index = parseInt(selection) - 1;
+    if (index < 0 || index >= advisors.length) {
+      alert('Selección inválida');
+      return;
+    }
+
+    const selectedAdvisor = advisors[index];
+    const count = multiSelect.selectedCount;
+    
+    if (window.confirm(`¿Asignar ${count} ${count === 1 ? 'cita' : 'citas'} a ${selectedAdvisor.name}?`)) {
+      try {
+        // Capturar los IDs antes de cualquier operación
+        const idsToUpdate = Array.from(multiSelect.selectedIds);
+        console.log('👤 Asignando asesor en masa:', selectedAdvisor.name, idsToUpdate);
+        
+        // Limpiar selección ANTES de actualizar
+        multiSelect.clearSelection();
+        
+        // Actualizar usando los IDs capturados
+        const updatePromises = idsToUpdate.map(id =>
+          updateAppointment(String(id), { advisor_id: selectedAdvisor.id })
+        );
+        
+        await Promise.all(updatePromises);
+        
+        // Refrescar la lista
+        await loadAppointments();
+        
+        alert(`✅ ${selectedAdvisor.name} asignado a ${count} ${count === 1 ? 'cita' : 'citas'}`);
+      } catch (error: any) {
+        console.error('❌ Error asignando asesor:', error);
+        alert(`❌ ${error.message || 'Error al asignar el asesor'}`);
+      }
+    }
+  };
+
+  const handleBulkExport = () => {
+    try {
+      // Capturar los items seleccionados ANTES de cualquier operación
+      const itemsToExport = [...multiSelect.selectedItems];
+      const count = itemsToExport.length;
+      
+      // Crear CSV con las citas seleccionadas
+      const headers = ['ID', 'Cliente', 'Email', 'Teléfono', 'Fecha', 'Tipo', 'Estado', 'Propiedad', 'Asesor'];
+      const rows = itemsToExport.map(apt => {
+        const property = properties.find(p => p.id === apt.property_id);
+        const advisor = advisors.find(a => a.id === apt.advisor_id);
+        
+        return [
+          apt.id || '',
+          apt.client_name || '',
+          apt.client_email || '',
+          apt.client_phone || '',
+          apt.appointment_date || '',
+          apt.appointment_type || '',
+          apt.status || '',
+          property?.title || '',
+          advisor?.name || ''
+        ];
+      });
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Crear y descargar archivo
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `citas_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      alert(`✅ ${count} citas exportadas a CSV`);
+    } catch (error) {
+      console.error('❌ Error exportando citas:', error);
+      alert('❌ Error al exportar las citas');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'confirmed': return <CheckCircle className="w-5 h-5 text-green-500" />;
@@ -664,6 +826,23 @@ function AdminAppointments() {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
+                <th className="px-6 py-4 text-left">
+                  <button
+                    onClick={multiSelect.toggleSelectAll}
+                    className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    {multiSelect.isAllSelected ? (
+                      <CheckSquare className="w-5 h-5" />
+                    ) : multiSelect.isSomeSelected ? (
+                      <Minus className="w-5 h-5" />
+                    ) : (
+                      <CheckboxIcon className="w-5 h-5" />
+                    )}
+                    <span className="text-xs font-medium uppercase tracking-wider">
+                      {multiSelect.selectedCount > 0 && `(${multiSelect.selectedCount})`}
+                    </span>
+                  </button>
+                </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Cliente
                 </th>
@@ -690,6 +869,22 @@ function AdminAppointments() {
                   transition={{ delay: index * 0.1 }}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => appointment.id && multiSelect.toggleSelect(appointment.id)}
+                      className={`p-2 rounded-lg transition-all ${
+                        multiSelect.isSelected(appointment.id || '')
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                      }`}
+                    >
+                      {multiSelect.isSelected(appointment.id || '') ? (
+                        <CheckSquare className="w-5 h-5" />
+                      ) : (
+                        <CheckboxIcon className="w-5 h-5" />
+                      )}
+                    </button>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
@@ -953,6 +1148,50 @@ function AdminAppointments() {
           </div>
         </div>
       )}
+
+      {/* Barra de Acciones Masivas */}
+      <BulkActionBar
+        selectedCount={multiSelect.selectedCount}
+        onClearSelection={multiSelect.clearSelection}
+        entityName="citas"
+        actions={[
+          {
+            id: 'delete',
+            label: 'Eliminar',
+            icon: BulkActionIcons.Delete,
+            variant: 'danger',
+            onClick: handleBulkDelete
+          },
+          {
+            id: 'confirm',
+            label: 'Confirmar',
+            icon: BulkActionIcons.Check,
+            variant: 'success',
+            onClick: () => handleBulkChangeStatus('confirmed')
+          },
+          {
+            id: 'complete',
+            label: 'Completar',
+            icon: BulkActionIcons.Check,
+            variant: 'primary',
+            onClick: () => handleBulkChangeStatus('completed')
+          },
+          {
+            id: 'assign',
+            label: 'Asignar Asesor',
+            icon: BulkActionIcons.AssignUser,
+            variant: 'default',
+            onClick: handleBulkAssignAdvisor
+          },
+          {
+            id: 'export',
+            label: 'Exportar',
+            icon: BulkActionIcons.Download,
+            variant: 'default',
+            onClick: handleBulkExport
+          }
+        ]}
+      />
     </div>
   );
 }

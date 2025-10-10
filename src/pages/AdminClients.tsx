@@ -21,7 +21,12 @@ import {
   MapPin,
   Briefcase,
   Clock,
-  ChevronDown
+  ChevronDown,
+  CheckSquare,
+  Square as CheckboxIcon,
+  Minus,
+  Download,
+  Tag
 } from 'lucide-react';
 import {
   getClients, 
@@ -45,6 +50,8 @@ import { getProperties, updatePropertyStatus } from '../lib/supabase';
 import Modal from '../components/UI/Modal';
 import { ChevronLeft, ChevronRight, MapPin as MapPinIcon } from 'lucide-react';
 import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary, ClientFormData, ContractFormData } from '../types/clients';
+import { useMultiSelect } from '../hooks/useMultiSelect';
+import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
 
 // Componente PropertySelector personalizado
 interface PropertySelectorProps {
@@ -408,6 +415,12 @@ function AdminClients() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
+  // Hook de selección múltiple
+  const multiSelect = useMultiSelect({
+    items: filteredClients,
+    getItemId: (client) => client.id
+  });
+
   // Estadísticas
   const stats = {
     total: clients.length,
@@ -715,6 +728,133 @@ function AdminClients() {
       } catch (error) {
         console.error('Error eliminando cliente:', error);
         alert('Error al eliminar el cliente');
+      }
+    }
+  };
+
+  // ========================================
+  // FUNCIONES DE ACCIONES MASIVAS
+  // ========================================
+
+  const handleBulkDelete = async () => {
+    const count = multiSelect.selectedCount;
+    if (window.confirm(`¿Estás seguro de que quieres eliminar ${count} ${count === 1 ? 'cliente' : 'clientes'}?`)) {
+      try {
+        // Capturar los IDs antes de cualquier operación
+        const idsToDelete = Array.from(multiSelect.selectedIds);
+        console.log('🗑️ Eliminando clientes en masa:', idsToDelete);
+        
+        // Limpiar selección ANTES de eliminar
+        multiSelect.clearSelection();
+        
+        // Eliminar usando los IDs capturados
+        const deletePromises = idsToDelete.map(id => 
+          deleteClient(String(id))
+        );
+        
+        await Promise.all(deletePromises);
+        
+        // Refrescar la lista
+        await loadClients();
+        
+        alert(`✅ ${count} ${count === 1 ? 'cliente eliminado' : 'clientes eliminados'} exitosamente`);
+      } catch (error: any) {
+        console.error('❌ Error eliminando clientes:', error);
+        alert(`❌ ${error.message || 'Error al eliminar los clientes'}`);
+      }
+    }
+  };
+
+  const handleBulkChangeStatus = async (newStatus: Client['status']) => {
+    const count = multiSelect.selectedCount;
+    if (window.confirm(`¿Cambiar el estado de ${count} ${count === 1 ? 'cliente' : 'clientes'} a "${newStatus}"?`)) {
+      try {
+        // Capturar los IDs antes de cualquier operación
+        const idsToUpdate = Array.from(multiSelect.selectedIds);
+        console.log('🔄 Cambiando estado en masa a:', newStatus, idsToUpdate);
+        
+        // Limpiar selección ANTES de actualizar
+        multiSelect.clearSelection();
+        
+        // Actualizar usando los IDs capturados
+        const updatePromises = idsToUpdate.map(id => 
+          updateClient(String(id), { status: newStatus })
+        );
+        
+        await Promise.all(updatePromises);
+        
+        // Refrescar la lista
+        await loadClients();
+        
+        alert(`✅ Estado actualizado para ${count} ${count === 1 ? 'cliente' : 'clientes'}`);
+      } catch (error: any) {
+        console.error('❌ Error actualizando estado:', error);
+        alert(`❌ ${error.message || 'Error al actualizar el estado'}`);
+      }
+    }
+  };
+
+  const handleBulkExport = () => {
+    try {
+      // Capturar los items seleccionados ANTES de cualquier operación
+      const itemsToExport = [...multiSelect.selectedItems];
+      const count = itemsToExport.length;
+      
+      // Crear CSV con los clientes seleccionados
+      const headers = ['ID', 'Nombre', 'Email', 'Teléfono', 'Tipo', 'Estado', 'Documento', 'Dirección'];
+      const rows = itemsToExport.map(client => [
+        client.id || '',
+        client.full_name || '',
+        client.email || '',
+        client.phone || '',
+        client.client_type || '',
+        client.status || '',
+        client.document_number || '',
+        client.address || ''
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Crear y descargar archivo
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      alert(`✅ ${count} clientes exportados a CSV`);
+    } catch (error) {
+      console.error('❌ Error exportando clientes:', error);
+      alert('❌ Error al exportar los clientes');
+    }
+  };
+
+  const handleBulkTag = async () => {
+    const tag = prompt('Ingresa la etiqueta para asignar a los clientes seleccionados:');
+    if (!tag) return;
+    
+    const count = multiSelect.selectedCount;
+    if (window.confirm(`¿Asignar la etiqueta "${tag}" a ${count} ${count === 1 ? 'cliente' : 'clientes'}?`)) {
+      try {
+        console.log('🏷️ Asignando etiqueta en masa:', tag);
+        
+        // Por ahora solo mostramos una alerta ya que no está implementado el sistema de etiquetas
+        // TODO: Implementar sistema de etiquetas en la base de datos
+        alert(`⚠️ Funcionalidad de etiquetas pendiente de implementación.\nEtiqueta "${tag}" para ${count} ${count === 1 ? 'cliente' : 'clientes'}`);
+        
+        multiSelect.clearSelection();
+      } catch (error: any) {
+        console.error('❌ Error asignando etiqueta:', error);
+        alert(`❌ ${error.message || 'Error al asignar la etiqueta'}`);
       }
     }
   };
@@ -1102,6 +1242,36 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
             <option value="suspended">Suspendidos</option>
             <option value="blocked">Bloqueados</option>
           </select>
+
+          {/* Checkbox Seleccionar Todo */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={multiSelect.toggleSelectAll}
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              {multiSelect.isAllSelected ? (
+                <CheckSquare className="w-5 h-5 text-blue-600" />
+              ) : multiSelect.isSomeSelected ? (
+                <Minus className="w-5 h-5 text-blue-600" />
+              ) : (
+                <CheckboxIcon className="w-5 h-5 text-gray-400" />
+              )}
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {multiSelect.selectedCount > 0 
+                  ? `${multiSelect.selectedCount} seleccionado${multiSelect.selectedCount > 1 ? 's' : ''}`
+                  : 'Seleccionar todo'
+                }
+              </span>
+            </button>
+            {multiSelect.selectedCount > 0 && (
+              <button
+                onClick={multiSelect.clearSelection}
+                className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1113,8 +1283,31 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 hover:shadow-xl transition-all duration-300 overflow-hidden group"
+            className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 hover:shadow-xl transition-all duration-300 overflow-hidden group relative"
           >
+            {/* Checkbox de selección */}
+            <div className="absolute top-3 right-3 z-10">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  multiSelect.toggleSelect(client.id);
+                }}
+                className={`
+                  p-2 rounded-lg shadow-lg transition-all transform hover:scale-110
+                  ${multiSelect.isSelected(client.id)
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                  }
+                `}
+              >
+                {multiSelect.isSelected(client.id) ? (
+                  <CheckSquare className="w-5 h-5" />
+                ) : (
+                  <CheckboxIcon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
             {/* Header con avatar y acciones */}
             <div className="p-4 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-start justify-between">
@@ -3013,6 +3206,50 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
           </div>
         )}
       </Modal>
+
+      {/* Barra de Acciones Masivas */}
+      <BulkActionBar
+        selectedCount={multiSelect.selectedCount}
+        onClearSelection={multiSelect.clearSelection}
+        entityName="clientes"
+        actions={[
+          {
+            id: 'delete',
+            label: 'Eliminar',
+            icon: BulkActionIcons.Delete,
+            variant: 'danger',
+            onClick: handleBulkDelete
+          },
+          {
+            id: 'activate',
+            label: 'Activar',
+            icon: BulkActionIcons.Check,
+            variant: 'success',
+            onClick: () => handleBulkChangeStatus('active')
+          },
+          {
+            id: 'deactivate',
+            label: 'Desactivar',
+            icon: BulkActionIcons.Check,
+            variant: 'default',
+            onClick: () => handleBulkChangeStatus('inactive')
+          },
+          {
+            id: 'tag',
+            label: 'Etiquetar',
+            icon: BulkActionIcons.Tag,
+            variant: 'primary',
+            onClick: handleBulkTag
+          },
+          {
+            id: 'export',
+            label: 'Exportar',
+            icon: BulkActionIcons.Download,
+            variant: 'default',
+            onClick: handleBulkExport
+          }
+        ]}
+      />
     </div>
   );
 }

@@ -1180,16 +1180,22 @@ function AdminProperties() {
     const count = multiSelect.selectedCount;
     if (window.confirm(`¿Estás seguro de que quieres eliminar ${count} ${count === 1 ? 'propiedad' : 'propiedades'}?`)) {
       try {
-        console.log('🗑️ Eliminando propiedades en masa:', multiSelect.selectedItems.length);
+        // Capturar los IDs antes de cualquier operación
+        const idsToDelete = Array.from(multiSelect.selectedIds);
+        console.log('🗑️ Eliminando propiedades en masa:', idsToDelete);
         
-        const deletePromises = multiSelect.selectedItems.map(property => 
-          property.id ? deleteProperty(property.id) : Promise.resolve()
+        // Limpiar selección ANTES de eliminar
+        multiSelect.clearSelection();
+        
+        // Eliminar usando los IDs capturados
+        const deletePromises = idsToDelete.map(id => 
+          deleteProperty(Number(id))
         );
         
         await Promise.all(deletePromises);
         
+        // Refrescar la lista
         await refreshProperties();
-        multiSelect.clearSelection();
         
         showNotification(`${count} ${count === 1 ? 'propiedad eliminada' : 'propiedades eliminadas'} exitosamente`, 'success');
       } catch (error: any) {
@@ -1203,16 +1209,22 @@ function AdminProperties() {
     const count = multiSelect.selectedCount;
     if (window.confirm(`¿Cambiar el estado de ${count} ${count === 1 ? 'propiedad' : 'propiedades'}?`)) {
       try {
-        console.log('🔄 Cambiando estado en masa a:', newStatus);
+        // Capturar los IDs antes de cualquier operación
+        const idsToUpdate = Array.from(multiSelect.selectedIds);
+        console.log('🔄 Cambiando estado en masa a:', newStatus, idsToUpdate);
         
-        const updatePromises = multiSelect.selectedItems.map(property => 
-          property.id ? updatePropertyStatus(property.id, newStatus) : Promise.resolve()
+        // Limpiar selección ANTES de actualizar
+        multiSelect.clearSelection();
+        
+        // Actualizar usando los IDs capturados
+        const updatePromises = idsToUpdate.map(id => 
+          updatePropertyStatus(Number(id), newStatus)
         );
         
         await Promise.all(updatePromises);
         
+        // Refrescar la lista
         await refreshProperties();
-        multiSelect.clearSelection();
         
         showNotification(`Estado actualizado para ${count} ${count === 1 ? 'propiedad' : 'propiedades'}`, 'success');
       } catch (error: any) {
@@ -1225,17 +1237,23 @@ function AdminProperties() {
   const handleBulkToggleFeatured = async () => {
     const count = multiSelect.selectedCount;
     try {
+      // Capturar los items ANTES para saber el estado actual de featured
+      const itemsToUpdate = [...multiSelect.selectedItems];
       console.log('⭐ Alternando destacadas en masa');
       
-      const updatePromises = multiSelect.selectedItems.map(property => {
+      // Limpiar selección ANTES de actualizar
+      multiSelect.clearSelection();
+      
+      // Alternar usando los items capturados
+      const updatePromises = itemsToUpdate.map(property => {
         if (!property.id) return Promise.resolve();
         return updateProperty(property.id, { featured: !property.featured });
       });
       
       await Promise.all(updatePromises);
       
+      // Refrescar la lista
       await refreshProperties();
-      multiSelect.clearSelection();
       
       showNotification(`${count} ${count === 1 ? 'propiedad actualizada' : 'propiedades actualizadas'}`, 'success');
     } catch (error: any) {
@@ -1250,17 +1268,22 @@ function AdminProperties() {
     
     const count = multiSelect.selectedCount;
     try {
-      console.log('👤 Asignando asesor en masa:', advisorId);
+      // Capturar los IDs antes de cualquier operación
+      const idsToUpdate = Array.from(multiSelect.selectedIds);
+      console.log('👤 Asignando asesor en masa:', advisorId, idsToUpdate);
       
-      const updatePromises = multiSelect.selectedItems.map(property => {
-        if (!property.id) return Promise.resolve();
-        return updateProperty(property.id, { advisor_id: advisorId });
+      // Limpiar selección ANTES de actualizar
+      multiSelect.clearSelection();
+      
+      // Actualizar usando los IDs capturados
+      const updatePromises = idsToUpdate.map(id => {
+        return updateProperty(Number(id), { advisor_id: advisorId });
       });
       
       await Promise.all(updatePromises);
       
+      // Refrescar la lista
       await refreshProperties();
-      multiSelect.clearSelection();
       
       showNotification(`Asesor asignado a ${count} ${count === 1 ? 'propiedad' : 'propiedades'}`, 'success');
     } catch (error: any) {
