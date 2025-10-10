@@ -203,21 +203,28 @@ export const trackPropertyView = async (
   try {
     const sessionId = getSessionId();
     
-    const { error } = await supabase.from('property_views').insert({
+    console.log('📊 Registrando vista de propiedad:', {
+      propertyId,
+      sessionId,
+      viewDuration,
+      deviceType: getDeviceType()
+    });
+    
+    const { data, error } = await supabase.from('property_views').insert({
       property_id: parseInt(propertyId), // Convertir a número
       session_id: sessionId,
       view_duration: viewDuration,
       referrer: getReferrer(),
       device_type: getDeviceType(),
       created_at: new Date().toISOString()
-    });
+    }).select();
 
     if (error) {
       console.error('❌ Error al registrar vista:', error);
       throw error;
     }
 
-    console.log('✅ Vista de propiedad registrada:', propertyId);
+    console.log('✅ Vista de propiedad registrada exitosamente:', data);
   } catch (error) {
     console.error('❌ Error al registrar vista:', error);
   }
@@ -243,20 +250,27 @@ export const trackPropertyContact = async (
   try {
     const sessionId = getSessionId();
     
-    const { error } = await supabase.from('property_contacts').insert({
+    console.log('📞 Registrando contacto:', {
+      propertyId,
+      contactType,
+      sessionId,
+      contactData
+    });
+    
+    const { data, error } = await supabase.from('property_contacts').insert({
       property_id: parseInt(propertyId), // Convertir a número
       contact_type: contactType,
       session_id: sessionId,
       ...contactData,
       created_at: new Date().toISOString()
-    });
+    }).select();
 
     if (error) {
       console.error('❌ Error al registrar contacto:', error);
       throw error;
     }
 
-    console.log('✅ Contacto registrado exitosamente:', propertyId, contactType);
+    console.log('✅ Contacto registrado exitosamente:', data);
   } catch (error) {
     console.error('❌ Error al registrar contacto:', error);
   }
@@ -320,12 +334,31 @@ export const getDashboardAnalytics = async (
       ? Math.ceil((Date.now() - new Date(filters.startDate).getTime()) / (1000 * 60 * 60 * 24))
       : 30;
 
+    console.log('📊 Obteniendo analytics del dashboard...');
+
     // Obtener totales
-    const [likesCount, viewsCount, contactsCount] = await Promise.all([
+    const [likesCount, viewsCount, contactsCount, uniqueVisitorsResult] = await Promise.all([
       supabase.from('property_likes').select('*', { count: 'exact', head: true }),
       supabase.from('property_views').select('*', { count: 'exact', head: true }),
-      supabase.from('property_contacts').select('*', { count: 'exact', head: true })
+      supabase.from('property_contacts').select('*', { count: 'exact', head: true }),
+      // Obtener visitantes únicos (sesiones únicas)
+      supabase.from('property_views').select('session_id')
     ]);
+
+    // Contar sesiones únicas manualmente
+    const uniqueSessions = new Set(
+      (uniqueVisitorsResult.data || []).map(v => v.session_id)
+    ).size;
+
+    // Logs de debug
+    console.log('📈 Total Likes:', likesCount.count);
+    console.log('👁️ Total Vistas:', viewsCount.count);
+    console.log('📞 Total Contactos:', contactsCount.count);
+    console.log('👥 Visitantes Únicos:', uniqueSessions);
+
+    if (likesCount.error) console.error('❌ Error en likes:', likesCount.error);
+    if (viewsCount.error) console.error('❌ Error en vistas:', viewsCount.error);
+    if (contactsCount.error) console.error('❌ Error en contactos:', contactsCount.error);
 
     // Obtener propiedades top
     const topProperties = await getTopProperties(10, daysBack);
@@ -338,7 +371,7 @@ export const getDashboardAnalytics = async (
         created_at,
         properties:property_id (
           title,
-          reference
+          code
         )
       `)
       .order('created_at', { ascending: false })
@@ -347,16 +380,20 @@ export const getDashboardAnalytics = async (
     // Obtener datos para gráficas (últimos 7 días)
     const chartData = await getChartData(7);
 
-    return {
+    const analytics = {
       totalProperties: 0, // Se puede obtener de otra consulta
       totalLikes: likesCount.count || 0,
       totalViews: viewsCount.count || 0,
       totalContacts: contactsCount.count || 0,
-      uniqueVisitors: 0, // Calcular con COUNT DISTINCT session_id
+      uniqueVisitors: uniqueSessions,
       topProperties,
       recentActivity: formatRecentActivity(recentLikes || []),
       chartData
     };
+
+    console.log('✅ Analytics obtenidos:', analytics);
+    
+    return analytics;
   } catch (error) {
     console.error('❌ Error al obtener analytics de dashboard:', error);
     return null;
