@@ -68,6 +68,7 @@ function AdminInquiries() {
       const { data, error } = await supabase
         .from('service_inquiries')
         .select('*')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -136,20 +137,34 @@ function AdminInquiries() {
     try {
       // Capturar los IDs antes de cualquier operación
       const idsToDelete = Array.from(multiSelect.selectedIds);
-      console.log('🗑️ Eliminando consultas en masa:', idsToDelete);
+      console.log('🗑️ Eliminando consultas en masa. Total:', count);
+      console.log('🗑️ IDs a eliminar:', idsToDelete);
       
       // Limpiar selección ANTES de eliminar para evitar problemas de renderizado
       multiSelect.clearSelection();
       
       // Eliminar usando los IDs capturados
-      const deletePromises = idsToDelete.map(id => 
-        deleteServiceInquiry(String(id))
-      );
+      const deletePromises = idsToDelete.map(async (id) => {
+        console.log('🗑️ Eliminando consulta con ID:', id);
+        const result = await deleteServiceInquiry(String(id));
+        console.log(`${result ? '✅' : '❌'} Resultado para ID ${id}:`, result);
+        return result;
+      });
       
-      await Promise.all(deletePromises);
+      const results = await Promise.all(deletePromises);
+      console.log('🗑️ Resultados de eliminación:', results);
+      
+      // Verificar si todas las eliminaciones fueron exitosas
+      const allSuccessful = results.every(r => r === true);
+      if (!allSuccessful) {
+        const failedCount = results.filter(r => r === false).length;
+        console.warn(`⚠️ ${failedCount} eliminaciones fallaron`);
+      }
       
       // Refrescar la lista
+      console.log('🔄 Refrescando lista de consultas...');
       await fetchInquiries();
+      console.log('✅ Lista refrescada');
       
       alert(`✅ ${count} ${count === 1 ? 'consulta eliminada' : 'consultas eliminadas'} exitosamente`);
     } catch (error: any) {
