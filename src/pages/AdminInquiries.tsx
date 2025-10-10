@@ -623,10 +623,23 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
         </div>
       </div>
 
-      {/* Statistics Bar */}
+      {/* Statistics Bar - Clickeable */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Total */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('all');
+            setUrgencyFilter('all');
+            setSearchTerm('');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'all' && urgencyFilter === 'all' && searchTerm === ''
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+          }`}
+        >
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
@@ -638,10 +651,22 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
         {/* Pendientes */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('pending');
+            setUrgencyFilter('all');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'pending'
+              ? 'border-yellow-500 ring-2 ring-yellow-200 dark:ring-yellow-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-700'
+          }`}
+        >
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
@@ -653,10 +678,22 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
         {/* Contactadas */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('contacted');
+            setUrgencyFilter('all');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'contacted'
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+          }`}
+        >
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
@@ -668,10 +705,22 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.contacted}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
         {/* En Progreso */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('in_progress');
+            setUrgencyFilter('all');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'in_progress'
+              ? 'border-purple-500 ring-2 ring-purple-200 dark:ring-purple-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+          }`}
+        >
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
@@ -683,10 +732,22 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.inProgress}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
         {/* Completadas */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('completed');
+            setUrgencyFilter('all');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'completed'
+              ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700'
+          }`}
+        >
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
@@ -698,10 +759,22 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completed}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
         {/* Urgentes */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('all');
+            setUrgencyFilter('urgent');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            urgencyFilter === 'urgent'
+              ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
+          }`}
+        >
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
@@ -713,7 +786,7 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.urgent}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
       </div>
 
       {/* Filters */}
