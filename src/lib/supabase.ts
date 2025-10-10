@@ -1521,6 +1521,7 @@ export async function getServiceInquiries(filters?: {
     let query = supabase
       .from('service_inquiries')
       .select('*')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
     
     if (filters?.service_type) {
@@ -1659,7 +1660,8 @@ export async function getServiceInquiriesStats(): Promise<{
     
     const { data, error } = await supabase
       .from('service_inquiries')
-      .select('service_type, status, created_at');
+      .select('service_type, status, created_at')
+      .is('deleted_at', null);
     
     if (error) {
       console.error('❌ Error al obtener estadísticas:', error);
@@ -1914,6 +1916,7 @@ export async function getSmartAlerts(): Promise<{
     const { data: unfollowedLeads } = await supabase
       .from('service_inquiries')
       .select('id, client_name, service_type, created_at')
+      .is('deleted_at', null)
       .eq('status', 'pending')
       .lt('created_at', twoDaysAgo.toISOString());
 
@@ -2128,11 +2131,13 @@ export async function getFinancialStats(): Promise<{
     const { data: totalInquiries } = await supabase
       .from('service_inquiries')
       .select('id')
+      .is('deleted_at', null)
       .gte('created_at', new Date(currentYear, 0, 1).toISOString());
 
     const { data: convertedInquiries } = await supabase
       .from('service_inquiries')
       .select('id')
+      .is('deleted_at', null)
       .eq('status', 'completed')
       .gte('created_at', new Date(currentYear, 0, 1).toISOString());
 
