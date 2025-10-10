@@ -55,15 +55,20 @@ const ReportsModal: React.FC<ReportsModalProps> = ({ isOpen, onClose }) => {
   const loadAnalytics = async () => {
     setIsLoading(true);
     try {
+      console.log('🔄 ReportsModal: Cargando analytics...');
+      
       const [analyticsData, topPropsData] = await Promise.all([
         getDashboardAnalytics(),
         getTopProperties(10, dateRange)
       ]);
       
+      console.log('📊 ReportsModal: Analytics recibidos:', analyticsData);
+      console.log('🏆 ReportsModal: Top properties:', topPropsData);
+      
       setAnalytics(analyticsData);
       setTopProperties(topPropsData);
     } catch (error) {
-      console.error('Error cargando analytics:', error);
+      console.error('❌ Error cargando analytics:', error);
     } finally {
       setIsLoading(false);
     }
