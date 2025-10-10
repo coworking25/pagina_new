@@ -594,6 +594,16 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
     return labels[serviceType] || serviceType;
   };
 
+  // Cálculo de estadísticas
+  const stats = {
+    total: inquiries.length,
+    pending: inquiries.filter(inq => inq.status === 'pending').length,
+    contacted: inquiries.filter(inq => inq.status === 'contacted').length,
+    inProgress: inquiries.filter(inq => inq.status === 'in_progress').length,
+    completed: inquiries.filter(inq => inq.status === 'completed').length,
+    urgent: inquiries.filter(inq => inq.urgency === 'urgent').length,
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -610,6 +620,99 @@ ${isWhatsApp ? '📱 WhatsApp: +57 XXX XXX XXXX' : ''}
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
             {filteredInquiries.length} consultas
           </span>
+        </div>
+      </div>
+
+      {/* Statistics Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* Total */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Pendientes */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+                <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pendientes</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Contactadas */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                <Phone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Contactadas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.contacted}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* En Progreso */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                <Send className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">En Progreso</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.inProgress}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Completadas */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completadas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completed}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Urgentes */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Urgentes</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.urgent}</p>
+            </div>
+          </div>
         </div>
       </div>
 
