@@ -828,6 +828,7 @@ export async function getAllPropertyAppointments() {
     const { data, error } = await supabase
       .from('property_appointments')
       .select('*')
+      .is('deleted_at', null)  // Excluir citas eliminadas
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -849,6 +850,7 @@ export async function getAppointmentsByPropertyId(propertyId: number) {
       .from('property_appointments')
       .select('*')
       .eq('property_id', propertyId)
+      .is('deleted_at', null)  // Excluir citas eliminadas
       .order('appointment_date', { ascending: true });
     
     if (error) {
@@ -870,6 +872,7 @@ export async function getAppointmentsByAdvisorId(advisorId: string) {
       .from('property_appointments')
       .select('*, properties(*)')
       .eq('advisor_id', advisorId)
+      .is('deleted_at', null)  // Excluir citas eliminadas
       .order('appointment_date', { ascending: true });
     
     if (error) {
@@ -2514,6 +2517,7 @@ export async function getPropertyActivity(propertyId: number, limit: number = 10
       .from('property_appointments')
       .select('*')
       .eq('property_id', propertyId)
+      .is('deleted_at', null)  // Excluir citas eliminadas
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -2783,12 +2787,13 @@ export async function deleteProperty(propertyId: number) {
       throw new Error('Propiedad no encontrada');
     }
 
-    // Verificar si la propiedad tiene citas pendientes
+    // Verificar si la propiedad tiene citas pendientes (excluir las soft-deleted)
     const { data: appointments, error: appointmentsError } = await supabase
       .from('property_appointments')
       .select('id, status')
       .eq('property_id', propertyId)
-      .in('status', ['pending', 'confirmed']);
+      .in('status', ['pending', 'confirmed'])
+      .is('deleted_at', null);  // Solo contar citas que NO han sido eliminadas
 
     if (appointmentsError) {
       console.warn('⚠️ Error al verificar citas:', appointmentsError);
