@@ -737,6 +737,20 @@ function AdminAppointments() {
     );
   }
 
+  // Cálculo de estadísticas
+  const stats = {
+    total: appointments.length,
+    pending: appointments.filter(apt => apt.status === 'pending').length,
+    confirmed: appointments.filter(apt => apt.status === 'confirmed').length,
+    completed: appointments.filter(apt => apt.status === 'completed').length,
+    cancelled: appointments.filter(apt => apt.status === 'cancelled').length,
+    today: appointments.filter(apt => {
+      const aptDate = new Date(apt.appointment_date);
+      const today = new Date();
+      return aptDate.toDateString() === today.toDateString();
+    }).length,
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -759,6 +773,177 @@ function AdminAppointments() {
         >
           <Plus className="w-5 h-5 mr-2" />
           Nueva Cita
+        </motion.button>
+      </motion.div>
+
+      {/* Statistics Bar - Clickeable */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
+      >
+        {/* Total */}
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('all');
+            setDateFilter('all');
+            setSearch('');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'all' && dateFilter === 'all' && search === ''
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+            </div>
+          </div>
+        </motion.button>
+
+        {/* Hoy */}
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('all');
+            setDateFilter('today');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            dateFilter === 'today'
+              ? 'border-purple-500 ring-2 ring-purple-200 dark:ring-purple-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Hoy</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.today}</p>
+            </div>
+          </div>
+        </motion.button>
+
+        {/* Pendientes */}
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('pending');
+            setDateFilter('all');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'pending'
+              ? 'border-yellow-500 ring-2 ring-yellow-200 dark:ring-yellow-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-700'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pendientes</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
+            </div>
+          </div>
+        </motion.button>
+
+        {/* Confirmadas */}
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('confirmed');
+            setDateFilter('all');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'confirmed'
+              ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Confirmadas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.confirmed}</p>
+            </div>
+          </div>
+        </motion.button>
+
+        {/* Completadas */}
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('completed');
+            setDateFilter('all');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'completed'
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completadas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completed}</p>
+            </div>
+          </div>
+        </motion.button>
+
+        {/* Canceladas */}
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            setStatusFilter('cancelled');
+            setDateFilter('all');
+          }}
+          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+            statusFilter === 'cancelled'
+              ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-800'
+              : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
+                <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Canceladas</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.cancelled}</p>
+            </div>
+          </div>
         </motion.button>
       </motion.div>
 
