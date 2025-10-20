@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fix Juan Diego Data</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>Corrigiendo Datos de Juan Diego</h1>
+  <div id="output" style="font-family: monospace; white-space: pre-wrap;"></div>
+
+  <script>
+    const output = document.getElementById('output');
+    const log = (msg) => output.textContent += msg + '\n';
+
+    const supabaseUrl = 'https://bsssqdcohebdcwpgobqv.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzc3NxZGNvaGViZGN3cGdvYnF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3MzM2ODEsImV4cCI6MjA0ODMwOTY4MX0.qXcSZedAgC3bLeV-CfHpYEAOCf8Ez6bVPbuqP_oSOJE';
+
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    async function fixData() {
+      log('🔧 Iniciando corrección de datos...\n');
+
+      // 1. Buscar Juan Diego
+      const { data: juanDiego, error: clientError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('email', 'diegorpo9608@gmail.com')
+        .single();
+
+      if (clientError) {
+        log('❌ Error buscando Juan Diego: ' + clientError.message);
+        return;
+      }
+
+      log(`✅ Juan Diego encontrado:`);
+      log(`   ID: ${juanDiego.id}`);
+      log(`   Nombre: ${juanDiego.full_name}`);
+      log('');
+
+      // 2. Verificar contratos actuales
+      const { data: currentContracts } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('landlord_id', juanDiego.id);
+
+      log(`📄 Contratos actuales con landlord_id correcto: ${currentContracts?.length || 0}`);
+
+      // 3. Buscar contratos de prueba
+      const { data: testContracts } = await supabase
+        .from('contracts')
+        .select('*')
+        .in('contract_number', ['CONT-2024-001', 'CONT-2023-045', 'CONT-2024-015']);
+
+      log(`\n🔍 Contratos de prueba encontrados: ${testContracts?.length || 0}`);
+      
+      if (testContracts && testContracts.length > 0) {
+        log('\nContratos encontrados:');
+        testContracts.forEach(c => {
+          log(`   - ${c.contract_number}: landlord_id = ${c.landlord_id}`);
+        });
+
+        // 4. Actualizar si tienen landlord_id diferente
+        log('\n🔧 Actualizando landlord_id...');
+        for (const contract of testContracts) {
+          if (contract.landlord_id !== juanDiego.id) {
+            const { error: updateError } = await supabase
+              .from('contracts')
+              .update({ landlord_id: juanDiego.id })
+              .eq('id', contract.id);
+
+            if (updateError) {
+              log(`❌ Error actualizando ${contract.contract_number}: ${updateError.message}`);
+            } else {
+              log(`✅ ${contract.contract_number} actualizado`);
+            }
+          } else {
+            log(`⏭️  ${contract.contract_number} ya tiene el landlord_id correcto`);
+          }
+        }
+      }
+
+      // 5. Verificar resultado final
+      const { data: finalContracts } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('landlord_id', juanDiego.id);
+
+      log(`\n✅ Contratos finales asignados a Juan Diego: ${finalContracts?.length || 0}`);
+      
+      // 6. Contar pagos
+      if (finalContracts && finalContracts.length > 0) {
+        const contractIds = finalContracts.map(c => c.id);
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('*')
+          .in('contract_id', contractIds);
+
+        log(`💰 Pagos asociados: ${payments?.length || 0}`);
+      }
+
+      log('\n🎉 Proceso completado! Recarga el dashboard.');
+    }
+
+    fixData().catch(err => log('❌ Error: ' + err.message));
+  </script>
+</body>
+</html>

@@ -38,26 +38,34 @@ const AdminAdvisors = lazy(() => import('./pages/AdminAdvisors'));
 const AdminInquiries = lazy(() => import('./pages/AdminInquiries'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 
+// Code Splitting: Lazy loading de páginas de cliente
+const ClientLayout = lazy(() => import('./components/client-portal/ClientLayout'));
+const ClientDashboard = lazy(() => import('./pages/client-portal/ClientDashboard'));
+const ClientChangePassword = lazy(() => import('./pages/client-portal/ClientChangePassword'));
+const ClientPayments = lazy(() => import('./pages/client-portal/ClientPayments'));
+
 // Componente para manejar el layout según la ruta
 const AppLayout = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isClientRoute = location.pathname.startsWith('/cliente');
   const isLoginPage = location.pathname === '/login';
 
   useEffect(() => {
     console.log('🧭 Navegación a:', location.pathname);
     console.log('📍 Tipo de ruta:', {
       isAdminRoute,
+      isClientRoute,
       isLoginPage,
-      isPublicRoute: !isAdminRoute && !isLoginPage
+      isPublicRoute: !isAdminRoute && !isClientRoute && !isLoginPage
     });
-  }, [location.pathname, isAdminRoute, isLoginPage]);
+  }, [location.pathname, isAdminRoute, isClientRoute, isLoginPage]);
 
   try {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
-        {/* Solo mostrar Header y Footer en rutas públicas (no admin ni login) */}
-        {!isAdminRoute && !isLoginPage && <Header />}
+        {/* Solo mostrar Header y Footer en rutas públicas (no admin, ni cliente, ni login) */}
+        {!isAdminRoute && !isClientRoute && !isLoginPage && <Header />}
         
         <Suspense fallback={<PageLoader />}>
           <AnimatePresence mode="wait">
@@ -96,6 +104,17 @@ const AppLayout = () => {
                 <Route path="reports" element={<div>Reportes - En desarrollo</div>} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
+
+              {/* Rutas de Cliente - Portal */}
+              <Route path="/cliente/*" element={<ClientLayout />}>
+                <Route path="dashboard" element={<ClientDashboard />} />
+                <Route path="cambiar-password" element={<ClientChangePassword />} />
+                <Route path="contratos" element={<div className="p-6">Contratos - En desarrollo</div>} />
+                <Route path="pagos" element={<ClientPayments />} />
+                <Route path="extractos" element={<div className="p-6">Extractos - En desarrollo</div>} />
+                <Route path="documentos" element={<div className="p-6">Documentos - En desarrollo</div>} />
+                <Route path="perfil" element={<div className="p-6">Perfil - En desarrollo</div>} />
+              </Route>
             
             {/* Ruta de fallback para 404 */}
             <Route 
@@ -123,14 +142,14 @@ const AppLayout = () => {
         </AnimatePresence>
       </Suspense>
 
-        {/* Solo mostrar Footer en rutas públicas (no admin ni login) */}
-        {!isAdminRoute && !isLoginPage && <Footer />}
+        {/* Solo mostrar Footer en rutas públicas (no admin, ni cliente, ni login) */}
+        {!isAdminRoute && !isClientRoute && !isLoginPage && <Footer />}
         
         {/* Chatbot flotante de WhatsApp - solo en rutas públicas */}
-        {!isAdminRoute && !isLoginPage && <WhatsAppChatbot />}
+        {!isAdminRoute && !isClientRoute && !isLoginPage && <WhatsAppChatbot />}
         
         {/* Botón flotante para volver arriba - solo en rutas públicas */}
-        {!isAdminRoute && !isLoginPage && <ScrollToTop />}
+        {!isAdminRoute && !isClientRoute && !isLoginPage && <ScrollToTop />}
       </div>
     );
   } catch (error) {

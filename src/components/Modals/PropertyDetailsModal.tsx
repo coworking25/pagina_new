@@ -41,26 +41,6 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
   // Tracking: Registrar tiempo de inicio de visualización
   const viewStartTime = useRef<number>(Date.now());
 
-  // 🎯 ACCESIBILIDAD: Cerrar modal con tecla ESC
-  useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscKey);
-      // Prevenir scroll del body cuando el modal está abierto
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
-
   // Cargar asesor cuando se abre el modal o cambia la propiedad
   useEffect(() => {
     if (property && property.advisor_id && isOpen) {
@@ -152,13 +132,7 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
     <>
       <AnimatePresence>
         {isOpen && (
-          <div 
-            className="fixed inset-0 z-50 overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="property-modal-title"
-            aria-describedby="property-modal-description"
-          >
+          <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex min-h-screen items-center justify-center p-4">
               {/* Backdrop */}
               <motion.div
@@ -167,7 +141,6 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                 exit={{ opacity: 0 }}
                 onClick={onClose}
                 className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-                aria-hidden="true"
               />
 
               {/* Modal */}
@@ -182,11 +155,11 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                   <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                     {property.featured && (
                       <div className="flex items-center space-x-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold flex-shrink-0">
-                        <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-current" aria-hidden="true" />
+                        <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
                         <span className="hidden sm:inline">Destacado</span>
                       </div>
                     )}
-                    <h3 id="property-modal-title" className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                    <h3 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
                       {property.title}
                     </h3>
                   </div>
@@ -196,33 +169,27 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                         onClick={() => window.open(property.virtual_tour_url, '_blank')}
                         className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                         title="Tour Virtual 360°"
-                        aria-label="Abrir tour virtual 360°"
                       >
-                        <Play className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" aria-hidden="true" />
+                        <Play className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
                       </button>
                     )}
                     <button
                       onClick={() => setIsFavorite(!isFavorite)}
                       className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                      aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                      aria-pressed={isFavorite}
                     >
-                      <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorite ? 'text-red-500 fill-current' : 'text-gray-400'}`} aria-hidden="true" />
+                      <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorite ? 'text-red-500 fill-current' : 'text-gray-400'}`} />
                     </button>
                     <button
                       onClick={handleShare}
                       className="hidden sm:block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                      aria-label="Compartir propiedad"
                     >
-                      <Share2 className="w-5 h-5 text-gray-400" aria-hidden="true" />
+                      <Share2 className="w-5 h-5 text-gray-400" />
                     </button>
                     <button
                       onClick={onClose}
                       className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                      aria-label="Cerrar modal de detalles de propiedad"
-                      title="Cerrar (ESC)"
                     >
-                      <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
                     </button>
                   </div>
                 </div>

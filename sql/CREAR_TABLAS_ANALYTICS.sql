@@ -94,7 +94,7 @@ DROP POLICY IF EXISTS "Permitir lectura pública de contactos" ON property_conta
 CREATE POLICY "Permitir lectura pública de contactos" 
   ON property_contacts FOR SELECT 
   USING (true);
-
+ 
 DROP POLICY IF EXISTS "Permitir inserción pública de contactos" ON property_contacts;
 CREATE POLICY "Permitir inserción pública de contactos" 
   ON property_contacts FOR INSERT 

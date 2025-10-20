@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import ClientWizard from '../components/ClientWizard';
+import { ClientDetailsEnhanced } from '../components/ClientDetailsEnhanced';
+import { ClientEditForm } from '../components/ClientEditForm';
 import {
   Users,
   Search,
@@ -25,8 +28,6 @@ import {
   CheckSquare,
   Square as CheckboxIcon,
   Minus,
-  Download,
-  Tag
 } from 'lucide-react';
 import {
   getClients, 
@@ -44,12 +45,16 @@ import {
   createClientPropertyRelations,
   deleteClientPropertyRelation,
   generateContractPayments,
-  checkClientExists
+  createPortalCredentials,
+  uploadClientDocument,
+  savePaymentConfig,
+  saveClientReferences,
+  saveContractInfo
 } from '../lib/clientsApi';
 import { getProperties, updatePropertyStatus } from '../lib/supabase';
 import Modal from '../components/UI/Modal';
 import { ChevronLeft, ChevronRight, MapPin as MapPinIcon } from 'lucide-react';
-import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary, ClientFormData, ContractFormData } from '../types/clients';
+import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary, ClientFormData } from '../types/clients';
 import { useMultiSelect } from '../hooks/useMultiSelect';
 import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
 
@@ -201,7 +206,7 @@ function AdminClients() {
   // Modal states
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showWizard, setShowWizard] = useState(false); // Wizard de cliente
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editForm, setEditForm] = useState<Partial<Client>>({});
   
@@ -222,7 +227,6 @@ function AdminClients() {
 
   // Estados para selección de propiedades en formularios
   const [allProperties, setAllProperties] = useState<any[]>([]);
-  const [createSelectedPropertyIds, setCreateSelectedPropertyIds] = useState<string[]>([]);
   const [editSelectedPropertyIds, setEditSelectedPropertyIds] = useState<string[]>([]);
   const [loadingFormProperties, setLoadingFormProperties] = useState(false);
 
@@ -241,30 +245,6 @@ function AdminClients() {
       alert(`ℹ️ ${message}`);
     }
   };
-  const [createForm, setCreateForm] = useState({
-    full_name: '',
-    document_type: 'cedula' as const,
-    document_number: '',
-    phone: '',
-    email: '',
-    address: '',
-    city: '',
-    emergency_contact_name: '',
-    emergency_contact_phone: '',
-    client_type: 'tenant' as const, // Changed from 'renter' to 'tenant'
-    status: 'active' as const,
-    monthly_income: '',
-    occupation: '',
-    company_name: '',
-    notes: '',
-    // Contract-related fields
-    start_date: '',
-    contract_type: 'rental',
-    end_date: '',
-    monthly_rent: '',
-    deposit_amount: '',
-    contract_duration_months: '12'
-  });
 
   useEffect(() => {
     loadClients();
@@ -738,26 +718,38 @@ function AdminClients() {
 
   const handleBulkDelete = async () => {
     const count = multiSelect.selectedCount;
-    if (window.confirm(`¿Estás seguro de que quieres eliminar ${count} ${count === 1 ? 'cliente' : 'clientes'}?`)) {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar ${count} ${count === 1 ? 'cliente' : 'clientes'}?\n\n⚠️ Esta acción eliminará PERMANENTEMENTE todos los datos relacionados de ${count === 1 ? 'este cliente' : 'estos clientes'}.\n\nEsta acción NO se puede deshacer.`)) {
       try {
         // Capturar los IDs antes de cualquier operación
         const idsToDelete = Array.from(multiSelect.selectedIds);
         console.log('🗑️ Eliminando clientes en masa:', idsToDelete);
         
-        // Limpiar selección ANTES de eliminar
-        multiSelect.clearSelection();
-        
-        // Eliminar usando los IDs capturados
-        const deletePromises = idsToDelete.map(id => 
-          deleteClient(String(id))
+        // Eliminar uno por uno y registrar errores individuales
+        const results = await Promise.allSettled(
+          idsToDelete.map(async (id) => {
+            console.log('🗑️ Eliminando cliente:', id);
+            await deleteClient(String(id));
+            console.log('✅ Cliente eliminado:', id);
+            return id;
+          })
         );
         
-        await Promise.all(deletePromises);
+        // Verificar resultados
+        const successful = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected').length;
+        
+        // Limpiar selección
+        multiSelect.clearSelection();
         
         // Refrescar la lista
         await loadClients();
         
-        alert(`✅ ${count} ${count === 1 ? 'cliente eliminado' : 'clientes eliminados'} exitosamente`);
+        if (failed === 0) {
+          alert(`✅ ${successful} ${successful === 1 ? 'cliente eliminado' : 'clientes eliminados'} exitosamente`);
+        } else {
+          alert(`⚠️ Eliminación parcial:\n✅ ${successful} exitosos\n❌ ${failed} fallidos\n\nRevisa la consola para más detalles.`);
+          console.error('❌ Errores en eliminación masiva:', results.filter(r => r.status === 'rejected'));
+        }
       } catch (error: any) {
         console.error('❌ Error eliminando clientes:', error);
         alert(`❌ ${error.message || 'Error al eliminar los clientes'}`);
@@ -947,148 +939,190 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
     }
   };
 
-  const resetCreateForm = () => {
-    setCreateForm({
-      full_name: '',
-      document_type: 'cedula' as const,
-      document_number: '',
-      phone: '',
-      email: '',
-      address: '',
-      city: '',
-      emergency_contact_name: '',
-      emergency_contact_phone: '',
-      client_type: 'tenant' as const, // Changed from 'renter' to 'tenant'
-      status: 'active' as const,
-      monthly_income: '',
-      occupation: '',
-      company_name: '',
-      notes: ''
-    });
-    setCreateSelectedPropertyIds([]);
+  // Helper para convertir valores numéricos del wizard
+  const sanitizeNumericValue = (value: any): number | undefined => {
+    if (value === null || value === undefined || value === '') {
+      return undefined;
+    }
+    const num = Number(value);
+    return isNaN(num) ? undefined : num;
   };
 
-  const handleCreateClient = async () => {
+  // Helper para sanitizar payment_concepts
+  const sanitizePaymentConcepts = (concepts: any) => {
+    if (!concepts) return undefined;
+    
+    const sanitized: any = {};
+    
+    if (concepts.arriendo) {
+      sanitized.arriendo = {
+        enabled: concepts.arriendo.enabled,
+        amount: sanitizeNumericValue(concepts.arriendo.amount) || 0
+      };
+    }
+    
+    if (concepts.administracion) {
+      sanitized.administracion = {
+        enabled: concepts.administracion.enabled,
+        amount: sanitizeNumericValue(concepts.administracion.amount) || 0
+      };
+    }
+    
+    if (concepts.servicios_publicos) {
+      sanitized.servicios_publicos = {
+        enabled: concepts.servicios_publicos.enabled,
+        amount: sanitizeNumericValue(concepts.servicios_publicos.amount) || 0,
+        services: concepts.servicios_publicos.services || []
+      };
+    }
+    
+    if (concepts.otros) {
+      sanitized.otros = {
+        enabled: concepts.otros.enabled,
+        amount: sanitizeNumericValue(concepts.otros.amount) || 0,
+        description: concepts.otros.description || ''
+      };
+    }
+    
+    return Object.keys(sanitized).length > 0 ? sanitized : undefined;
+  };
+
+  // Handler para el wizard de cliente
+  const handleWizardSubmit = async (wizardData: any) => {
     try {
-      // Validaciones básicas
-      if (!createForm.full_name.trim()) {
-        alert('El nombre completo es requerido');
-        return;
-      }
-      if (!createForm.document_number.trim()) {
-        alert('El número de documento es requerido');
-        return;
-      }
-      if (!createForm.phone.trim()) {
-        alert('El teléfono es requerido');
-        return;
-      }
+      console.log('🧙‍♂️ Creando cliente desde Wizard:', wizardData);
 
-      console.log('👤 Creando nuevo cliente:', createForm);
-
-      // Verificar si ya existe un cliente con el mismo tipo y número de documento
-      try {
-        const clientExists = await checkClientExists(createForm.document_type, createForm.document_number.trim());
-        if (clientExists) {
-          alert(`Ya existe un cliente con ${createForm.document_type} número ${createForm.document_number}. Por favor, verifica los datos o busca el cliente existente.`);
-          return;
-        }
-      } catch (checkError) {
-        console.error('⚠️ Error verificando existencia del cliente:', checkError);
-        // Continuar con la creación si no se puede verificar (por si acaso)
-      }
-      
-      // Preparar datos del cliente (solo campos que existen en la BD)
+      // 1. Crear cliente base
       const clientData: ClientFormData = {
-        full_name: createForm.full_name.trim(),
-        document_type: createForm.document_type,
-        document_number: createForm.document_number.trim(),
-        phone: createForm.phone.trim(),
-        email: createForm.email.trim() || undefined,
-        address: createForm.address.trim() || undefined,
-        city: createForm.city.trim() || undefined,
-        emergency_contact_name: createForm.emergency_contact_name.trim() || undefined,
-        emergency_contact_phone: createForm.emergency_contact_phone.trim() || undefined,
-        client_type: createForm.client_type,
-        status: createForm.status,
-        monthly_income: createForm.monthly_income ? Number(createForm.monthly_income) : undefined,
-        occupation: createForm.occupation.trim() || undefined,
-        company_name: createForm.company_name.trim() || undefined,
-        notes: createForm.notes.trim() || undefined
+        full_name: wizardData.full_name,
+        document_type: wizardData.document_type,
+        document_number: wizardData.document_number,
+        phone: wizardData.phone,
+        email: wizardData.email || undefined,
+        address: wizardData.address || undefined,
+        city: wizardData.city || undefined,
+        emergency_contact_name: wizardData.emergency_contact_name || undefined,
+        emergency_contact_phone: wizardData.emergency_contact_phone || undefined,
+        client_type: wizardData.client_type,
+        status: wizardData.client_status || 'active',
+        monthly_income: sanitizeNumericValue(wizardData.monthly_income),
+        occupation: wizardData.occupation || undefined,
+        company_name: wizardData.company_name || undefined,
+        notes: wizardData.notes || undefined
       };
 
-      // Crear cliente
       const newClient = await createClient(clientData);
-      console.log('✅ Cliente creado:', newClient);
+      console.log('✅ Cliente creado desde Wizard:', newClient);
 
-      // Si se seleccionaron propiedades, crear las relaciones
-      if (createSelectedPropertyIds.length > 0) {
+      // 2. Crear credenciales del portal si se proporcionó contraseña
+      if (wizardData.password) {
         try {
-          console.log('🏠 Creando relaciones cliente-propiedad...');
-          
-          const relationsToCreate = createSelectedPropertyIds.map(pid => ({
-            client_id: newClient.id,
-            property_id: pid,
-            relation_type: 'interested',
-            status: 'pending'
-          }));
-
-          await createClientPropertyRelations(relationsToCreate as any[]);
-          console.log('✅ Relaciones cliente-propiedad creadas');
-        } catch (relationError) {
-          console.error('⚠️ Error creando relaciones cliente-propiedad (cliente creado exitosamente):', relationError);
-          alert('Cliente creado exitosamente, pero hubo un error al asignar las propiedades. Puedes asignarlas manualmente después.');
+          await createPortalCredentials(
+            newClient.id,
+            wizardData.email || wizardData.portal_email,
+            wizardData.password,
+            wizardData.send_welcome_email || false,
+            wizardData.portal_access_enabled !== false
+          );
+          console.log('✅ Credenciales del portal creadas');
+        } catch (credError) {
+          console.error('⚠️ Error creando credenciales:', credError);
         }
       }
-      if (createForm.start_date && (createForm.client_type === 'renter' || createForm.client_type === 'tenant')) {
-        try {
-          console.log('📄 Creando contrato para el cliente...');
-          
-          const contractData: ContractFormData = {
-            client_id: newClient.id,
-            contract_type: createForm.contract_type,
-            status: 'active' as const,
-            start_date: createForm.start_date,
-            end_date: createForm.end_date || undefined,
-            monthly_rent: createForm.monthly_rent ? Number(createForm.monthly_rent) : undefined,
-            deposit_amount: createForm.deposit_amount ? Number(createForm.deposit_amount) : undefined,
-            contract_duration_months: Number(createForm.contract_duration_months),
-            renewal_type: 'manual' as const,
-            payment_day: 1,
-            late_fee_percentage: 5
-          };
 
-          const newContract = await createContract(contractData);
-          console.log('✅ Contrato creado:', newContract);
+      // 3. Subir documentos si existen
+      if (wizardData.documents && wizardData.documents.length > 0) {
+        for (const doc of wizardData.documents) {
+          try {
+            await uploadClientDocument(
+              newClient.id,
+              doc.type,
+              doc.file
+            );
+            console.log(`✅ Documento ${doc.type} subido`);
+          } catch (docError) {
+            console.error(`⚠️ Error subiendo documento ${doc.type}:`, docError);
+          }
+        }
+      }
+
+      // 4. Guardar configuración de pagos
+      if (wizardData.payment_concepts || wizardData.preferred_payment_method) {
+        try {
+          await savePaymentConfig(newClient.id, {
+            preferred_payment_method: wizardData.preferred_payment_method,
+            billing_day: sanitizeNumericValue(wizardData.billing_day) || 1,
+            payment_concepts: sanitizePaymentConcepts(wizardData.payment_concepts)
+          });
+          console.log('✅ Configuración de pagos guardada');
+        } catch (paymentError) {
+          console.error('⚠️ Error guardando configuración de pagos:', paymentError);
+        }
+      }
+
+      // 5. Guardar referencias (personales y comerciales)
+      if (wizardData.personal_references || wizardData.commercial_references) {
+        try {
+          await saveClientReferences(newClient.id, {
+            personal: wizardData.personal_references || [],
+            commercial: wizardData.commercial_references || []
+          });
+          const totalRefs = (wizardData.personal_references?.length || 0) + (wizardData.commercial_references?.length || 0);
+          console.log(`✅ Referencias guardadas (${totalRefs} referencias)`);
+        } catch (refError) {
+          console.error('⚠️ Error guardando referencias:', refError);
+        }
+      }
+
+      // 6. Guardar información del contrato
+      if (wizardData.contract_start_date || wizardData.deposit_amount) {
+        try {
+          await saveContractInfo(newClient.id, {
+            contract_type: wizardData.contract_type,
+            start_date: wizardData.contract_start_date,
+            end_date: wizardData.contract_end_date,
+            duration_months: sanitizeNumericValue(wizardData.contract_duration_months),
+            deposit_amount: sanitizeNumericValue(wizardData.deposit_amount),
+            deposit_paid: wizardData.deposit_paid || false,
+            guarantor_required: wizardData.has_guarantor || false,
+            guarantor_name: wizardData.guarantor_name || undefined,
+            guarantor_document: wizardData.guarantor_document || undefined,
+            guarantor_phone: wizardData.guarantor_phone || undefined
+          });
+          console.log('✅ Información del contrato guardada');
         } catch (contractError) {
-          console.error('⚠️ Error creando contrato (cliente creado exitosamente):', contractError);
-          alert('Cliente creado exitosamente, pero hubo un error al crear el contrato. Puedes agregarlo manualmente después.');
+          console.error('⚠️ Error guardando información del contrato:', contractError);
         }
       }
 
-      // Actualizar lista de clientes
-      await loadClients();
-      
-      // Cerrar modal y resetear formulario
-      setShowCreateModal(false);
-      resetCreateForm();
-      
-      alert('Cliente creado exitosamente');
-      
-    } catch (error: any) {
-      console.error('❌ Error creando cliente:', error);
-
-      // Manejar errores específicos
-      if (error?.code === '23505') {
-        // Error de clave duplicada
-        alert(`Ya existe un cliente con ${createForm.document_type} número ${createForm.document_number}. Por favor, verifica los datos o busca el cliente existente.`);
-      } else if (error?.message?.includes('duplicate key')) {
-        // Otro tipo de error de duplicado
-        alert('Ya existe un cliente con estos datos. Por favor, verifica la información.');
-      } else {
-        // Error genérico
-        alert('Error al crear el cliente. Por favor, inténtalo de nuevo.');
+      // 7. Asignar propiedades si se seleccionaron
+      if (wizardData.assigned_property_ids && wizardData.assigned_property_ids.length > 0) {
+        try {
+          const relations = wizardData.assigned_property_ids.map((propertyId: string) => ({
+            client_id: newClient.id,
+            property_id: propertyId,
+            relation_type: 'tenant' as const,
+            status: 'active' as const
+          }));
+          
+          await createClientPropertyRelations(relations);
+          console.log(`✅ ${wizardData.assigned_property_ids.length} propiedades asignadas`);
+        } catch (propError) {
+          console.error('⚠️ Error asignando propiedades:', propError);
+        }
       }
+
+      // Recargar lista de clientes
+      await loadClients();
+
+      // Cerrar wizard
+      setShowWizard(false);
+
+      alert('✅ Cliente creado exitosamente con todos sus datos!');
+
+    } catch (error) {
+      console.error('❌ Error en handleWizardSubmit:', error);
+      alert('Error al crear el cliente. Por favor, revisa la consola para más detalles.');
     }
   };
 
@@ -1121,7 +1155,7 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
           </p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setShowWizard(true)}
           className="mt-4 md:mt-0 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -1285,8 +1319,8 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
             transition={{ delay: index * 0.1 }}
             className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 hover:shadow-xl transition-all duration-300 overflow-hidden group relative"
           >
-            {/* Checkbox de selección */}
-            <div className="absolute top-3 right-3 z-10">
+            {/* Checkbox de selección - MOVIDO A LA IZQUIERDA */}
+            <div className="absolute top-3 left-3 z-10">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1309,7 +1343,7 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
             </div>
 
             {/* Header con avatar y acciones */}
-            <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="p-4 pl-16 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
@@ -1486,7 +1520,7 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
           </p>
           {clients.length === 0 && (
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => setShowWizard(true)}
               className="mt-4 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors mx-auto"
             >
               <Plus className="w-4 h-4" />
@@ -2687,345 +2721,6 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
         </div>
       )}
 
-      {/* Modal Crear Cliente */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-          >
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-                    <User className="w-6 h-6 mr-3 text-blue-600" />
-                    Crear Nuevo Cliente
-                  </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Complete la información del cliente para registrarlo en el sistema
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    resetCreateForm();
-                  }}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-
-              <form onSubmit={(e) => { e.preventDefault(); handleCreateClient(); }} className="space-y-8">
-                {/* Información Personal */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <User className="w-5 h-5 mr-2 text-blue-600" />
-                    Información Personal
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nombre Completo <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.full_name}
-                        onChange={(e) => setCreateForm({...createForm, full_name: e.target.value})}
-                        placeholder="Ej: Juan Pérez García"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Tipo de Documento <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={createForm.document_type}
-                        onChange={(e) => setCreateForm({...createForm, document_type: e.target.value as any})}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        required
-                      >
-                        <option value="cedula">Cédula de Ciudadanía</option>
-                        <option value="pasaporte">Pasaporte</option>
-                        <option value="nit">NIT</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Número de Documento <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.document_number}
-                        onChange={(e) => setCreateForm({...createForm, document_number: e.target.value})}
-                        placeholder="1234567890"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Tipo de Cliente <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={createForm.client_type}
-                        onChange={(e) => setCreateForm({...createForm, client_type: e.target.value as any})}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        required
-                      >
-                        <option value="tenant">Arrendatario</option>
-                        <option value="landlord">Arrendador</option>
-                        <option value="buyer">Comprador</option>
-                        <option value="seller">Vendedor</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Estado
-                      </label>
-                      <select
-                        value={createForm.status}
-                        onChange={(e) => setCreateForm({...createForm, status: e.target.value as any})}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      >
-                        <option value="active">Activo</option>
-                        <option value="inactive">Inactivo</option>
-                        <option value="pending">Pendiente</option>
-                        <option value="blocked">Bloqueado</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Información de Contacto */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Phone className="w-5 h-5 mr-2 text-green-600" />
-                    Información de Contacto
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Teléfono <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={createForm.phone}
-                        onChange={(e) => setCreateForm({...createForm, phone: e.target.value})}
-                        placeholder="+57 300 123 4567"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Correo Electrónico
-                      </label>
-                      <input
-                        type="email"
-                        value={createForm.email}
-                        onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
-                        placeholder="correo@ejemplo.com"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Dirección
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.address}
-                        onChange={(e) => setCreateForm({...createForm, address: e.target.value})}
-                        placeholder="Calle 123 #45-67, Barrio Centro"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Ciudad
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.city}
-                        onChange={(e) => setCreateForm({...createForm, city: e.target.value})}
-                        placeholder="Bogotá"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Información Profesional */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Briefcase className="w-5 h-5 mr-2 text-purple-600" />
-                    Información Profesional
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Ocupación
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.occupation}
-                        onChange={(e) => setCreateForm({...createForm, occupation: e.target.value})}
-                        placeholder="Ingeniero, Médico, Empresario..."
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Empresa
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.company_name}
-                        onChange={(e) => setCreateForm({...createForm, company_name: e.target.value})}
-                        placeholder="ABC Ltda., Universidad Nacional..."
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Ingresos Mensuales (COP)
-                      </label>
-                      <input
-                        type="number"
-                        value={createForm.monthly_income}
-                        onChange={(e) => setCreateForm({...createForm, monthly_income: e.target.value})}
-                        placeholder="2500000"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contacto de Emergencia */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <AlertCircle className="w-5 h-5 mr-2 text-orange-600" />
-                    Contacto de Emergencia
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nombre del Contacto
-                      </label>
-                      <input
-                        type="text"
-                        value={createForm.emergency_contact_name}
-                        onChange={(e) => setCreateForm({...createForm, emergency_contact_name: e.target.value})}
-                        placeholder="María García Pérez"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Teléfono del Contacto
-                      </label>
-                      <input
-                        type="tel"
-                        value={createForm.emergency_contact_phone}
-                        onChange={(e) => setCreateForm({...createForm, emergency_contact_phone: e.target.value})}
-                        placeholder="+57 301 234 5678"
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notas Adicionales */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <FileText className="w-5 h-5 mr-2 text-gray-600" />
-                    Notas Adicionales
-                  </h3>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Observaciones
-                    </label>
-                    <textarea
-                      value={createForm.notes}
-                      onChange={(e) => setCreateForm({...createForm, notes: e.target.value})}
-                      placeholder="Información adicional relevante sobre el cliente..."
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Propiedades de Interés (Opcional) */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Home className="w-5 h-5 mr-2 text-blue-600" />
-                    Propiedades de Interés (Opcional)
-                  </h3>
-
-                  <PropertySelector
-                    properties={allProperties}
-                    selectedIds={createSelectedPropertyIds}
-                    onSelectionChange={setCreateSelectedPropertyIds}
-                    loading={loadingProperties}
-                    placeholder="Buscar propiedades..."
-                  />
-
-                  {createSelectedPropertyIds.length > 0 && (
-                    <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        Se crearán {createSelectedPropertyIds.length} relación(es) de interés con el cliente.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Botones de Acción */}
-                <div className="flex justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateModal(false);
-                      resetCreateForm();
-                    }}
-                    className="px-6 py-3 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium flex items-center"
-                  >
-                    <User className="w-4 h-4 mr-2" />
-                    Crear Cliente
-                  </button>
-                </div>
-              </form>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
       {/* Modal de Detalles de Propiedad */}
       <Modal
         isOpen={showPropertyDetailsModal}
@@ -3206,6 +2901,56 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
           </div>
         )}
       </Modal>
+
+      {/* Modal de Detalles del Cliente - NUEVO */}
+      <ClientDetailsEnhanced
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedClient(null);
+        }}
+        client={selectedClient}
+        onEdit={() => {
+          setShowViewModal(false);
+          setShowEditModal(true);
+        }}
+        onDelete={async (clientId) => {
+          try {
+            await deleteClient(clientId);
+            setClients(clients.filter(c => c.id !== clientId));
+            setShowViewModal(false);
+            setSelectedClient(null);
+            alert('✅ Cliente eliminado correctamente');
+          } catch (error) {
+            console.error('❌ Error eliminando cliente:', error);
+            alert('❌ Error al eliminar el cliente');
+          }
+        }}
+      />
+
+      {/* Modal de Edición del Cliente - NUEVO */}
+      <ClientEditForm
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedClient(null);
+        }}
+        client={selectedClient}
+        onSave={() => {
+          loadClients(); // Recargar lista de clientes
+          setShowEditModal(false);
+          setSelectedClient(null);
+        }}
+      />
+
+      {/* Wizard de Nuevo Cliente */}
+      <ClientWizard
+        isOpen={showWizard}
+        onClose={() => setShowWizard(false)}
+        onSubmit={handleWizardSubmit}
+        properties={allProperties}
+        loadingProperties={loadingFormProperties}
+      />
 
       {/* Barra de Acciones Masivas */}
       <BulkActionBar

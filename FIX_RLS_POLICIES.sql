@@ -1,77 +1,52 @@
 -- =====================================================
--- CORREGIR POLÍTICAS RLS CON RECURSIÓN INFINITA
+-- ARREGLAR RLS PARA PERMITIR ACCESO ANÓNIMO A CONTRACTS Y PAYMENTS
+-- =====================================================
+-- Ejecutar en Supabase SQL Editor
+-- Este script permite que el dashboard admin acceda a contracts y payments
+-- usando la clave anónima (ANON_KEY)
+
+-- OPCIÓN 1: Agregar políticas para acceso anónimo (MÁS SEGURO)
 -- =====================================================
 
--- Verificar políticas existentes antes de eliminar
-SELECT
-  schemaname,
-  tablename,
-  policyname,
-  permissive,
-  roles,
-  cmd
-FROM pg_policies
-WHERE schemaname = 'public'
-AND tablename = 'user_profiles'
-ORDER BY policyname;
-
--- Eliminar TODAS las políticas existentes (una por una)
-DROP POLICY IF EXISTS "Users can view own profile" ON public.user_profiles;
-DROP POLICY IF EXISTS "Users can update own profile" ON public.user_profiles;
-DROP POLICY IF EXISTS "Admins can view all profiles" ON public.user_profiles;
-DROP POLICY IF EXISTS "Admins can update all profiles" ON public.user_profiles;
-DROP POLICY IF EXISTS "Admins can insert profiles" ON public.user_profiles;
-
--- Crear función auxiliar que no cause recursión
-CREATE OR REPLACE FUNCTION public.is_user_admin()
-RETURNS BOOLEAN AS $$
-BEGIN
-  -- Verificar directamente en auth.users usando metadata
-  RETURN (
-    SELECT (raw_user_meta_data->>'role') = 'admin'
-    FROM auth.users
-    WHERE id = auth.uid()
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Recrear todas las políticas
-CREATE POLICY "Users can view own profile"
-  ON public.user_profiles
+-- Política para que CUALQUIER usuario autenticado o anónimo pueda ver contracts
+DROP POLICY IF EXISTS "Allow anon access to contracts" ON contracts;
+CREATE POLICY "Allow anon access to contracts" ON contracts
   FOR SELECT
-  USING (auth.uid() = id);
+  USING (true);
 
-CREATE POLICY "Users can update own profile"
-  ON public.user_profiles
-  FOR UPDATE
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
+-- Política para que CUALQUIER usuario pueda insertar/actualizar contracts
+DROP POLICY IF EXISTS "Allow anon write to contracts" ON contracts;
+CREATE POLICY "Allow anon write to contracts" ON contracts
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
 
-CREATE POLICY "Admins can view all profiles"
-  ON public.user_profiles
+-- Política para que CUALQUIER usuario autenticado o anónimo pueda ver payments
+DROP POLICY IF EXISTS "Allow anon access to payments" ON payments;
+CREATE POLICY "Allow anon access to payments" ON payments
   FOR SELECT
-  USING (public.is_user_admin());
+  USING (true);
 
-CREATE POLICY "Admins can update all profiles"
-  ON public.user_profiles
-  FOR UPDATE
-  USING (public.is_user_admin())
-  WITH CHECK (public.is_user_admin());
+-- Política para que CUALQUIER usuario pueda insertar/actualizar payments
+DROP POLICY IF EXISTS "Allow anon write to payments" ON payments;
+CREATE POLICY "Allow anon write to payments" ON payments
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
 
-CREATE POLICY "Admins can insert profiles"
-  ON public.user_profiles
-  FOR INSERT
-  WITH CHECK (public.is_user_admin());
+-- OPCIÓN 2 (ALTERNATIVA): Deshabilitar RLS completamente (MENOS SEGURO)
+-- =====================================================
+-- Solo descomentar si la opción 1 no funciona
 
--- Verificar que las políticas se crearon correctamente
-SELECT
-  schemaname,
-  tablename,
-  policyname,
-  permissive,
-  roles,
-  cmd
+-- ALTER TABLE contracts DISABLE ROW LEVEL SECURITY;
+-- ALTER TABLE payments DISABLE ROW LEVEL SECURITY;
+
+-- =====================================================
+-- VERIFICAR POLÍTICAS ACTUALES
+-- =====================================================
+
+-- Ver todas las políticas en contracts
+SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
 FROM pg_policies
-WHERE schemaname = 'public'
-AND tablename = 'user_profiles'
-ORDER BY policyname;
+WHERE tablename IN ('contracts', 'payments')
+ORDER BY tablename, policyname;

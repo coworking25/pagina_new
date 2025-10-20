@@ -149,21 +149,30 @@ export async function updateClient(id: string, clientData: Partial<ClientFormDat
 // Eliminar cliente
 export async function deleteClient(id: string): Promise<boolean> {
   try {
-    const { error } = await supabase
+    console.log('🗑️ Intentando eliminar cliente:', id);
+    
+    const { error, data } = await supabase
       .from('clients')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
     if (error) {
       console.error('❌ Error eliminando cliente:', error);
-      throw error;
+      console.error('❌ Detalles del error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      throw new Error(`Error eliminando cliente: ${error.message}`);
     }
 
-    console.log('✅ Cliente eliminado exitosamente');
+    console.log('✅ Cliente eliminado exitosamente:', data);
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error en deleteClient:', error);
-    throw error;
+    throw new Error(error.message || 'Error desconocido al eliminar cliente');
   }
 }
 
@@ -651,4 +660,511 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     generateContractPayments,
     checkClientExists
   };
+}
+
+// =====================================================
+// FUNCIONES ENRIQUECIDAS PARA ADMIN (con joins)
+// =====================================================
+
+/**
+ * Obtener contratos con información completa para vista admin
+ * Incluye: inquilino, landlord, propiedad
+ */
+export async function getContractsEnriched(clientId?: string): Promise<any[]> {
+  try {
+    console.log('🔍 getContractsEnriched llamada con clientId:', clientId);
+    
+    let query = supabase
+      .from('contracts')
+      .select('*');
+
+    if (clientId) {
+      // Traer contratos donde el cliente es inquilino O propietario
+      const orFilter = `client_id.eq.${clientId},landlord_id.eq.${clientId}`;
+      console.log('🔍 Filtro OR:', orFilter);
+      query = query.or(orFilter);
+    }
+
+    const { data: contracts, error } = await query.order('created_at', { ascending: false });
+
+    console.log('📊 Contratos encontrados:', contracts?.length || 0);
+    
+    if (error) {
+      console.error('❌ Error obteniendo contratos:', error);
+      throw error;
+    }
+
+    if (!contracts || contracts.length === 0) {
+      console.log('⚠️ No se encontraron contratos para clientId:', clientId);
+      return [];
+    }
+
+    // Enriquecer con información de inquilino, landlord y propiedad
+    const enrichedContracts = await Promise.all(
+      contracts.map(async (contract) => {
+        // Obtener info del inquilino (tenant)
+        let tenant = null;
+        if (contract.client_id) {
+          const { data: tenantData } = await supabase
+            .from('clients')
+            .select('full_name, email, phone, document_number')
+            .eq('id', contract.client_id)
+            .single();
+          tenant = tenantData;
+        }
+
+        // Obtener info del propietario (landlord)
+        let landlord = null;
+        if (contract.landlord_id) {
+          const { data: landlordData } = await supabase
+            .from('clients')
+            .select('full_name, email, phone')
+            .eq('id', contract.landlord_id)
+            .single();
+          landlord = landlordData;
+        }
+
+        // Obtener info de la propiedad (si existe property_id)
+        let property = null;
+        if (contract.property_id) {
+          const { data: propData } = await supabase
+            .from('properties')
+            .select('title, code, location, bedrooms, bathrooms, area')
+            .eq('id', contract.property_id)
+            .single();
+          property = propData;
+        }
+
+        // Contar pagos asociados
+        const { count: paymentCount } = await supabase
+          .from('payments')
+          .select('*', { count: 'exact', head: true })
+          .eq('contract_id', contract.id);
+
+        return {
+          ...contract,
+          tenant,
+          landlord,
+          property,
+          payment_count: paymentCount || 0
+        };
+      })
+    );
+
+    return enrichedContracts;
+  } catch (error) {
+    console.error('❌ Error en getContractsEnriched:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener pagos con información completa para vista admin
+ * Incluye: inquilino, contrato, propiedad
+ */
+export async function getPaymentsEnriched(clientId?: string, contractId?: string): Promise<any[]> {
+  try {
+    console.log('💰 getPaymentsEnriched llamada con clientId:', clientId, 'contractId:', contractId);
+    
+    let payments = [];
+    
+    if (clientId && !contractId) {
+      console.log('💰 Buscando contratos del cliente...');
+      // Si se pasa un clientId, buscar pagos de contratos donde el cliente es inquilino O landlord
+      // Primero obtener contratos del cliente
+      const { data: clientContracts } = await supabase
+        .from('contracts')
+        .select('id')
+        .or(`client_id.eq.${clientId},landlord_id.eq.${clientId}`);
+      
+      console.log('💰 Contratos encontrados:', clientContracts?.length || 0);
+      
+      if (clientContracts && clientContracts.length > 0) {
+        const contractIds = clientContracts.map(c => c.id);
+        console.log('💰 IDs de contratos:', contractIds);
+        
+        const { data: paymentsData, error } = await supabase
+          .from('payments')
+          .select('*')
+          .in('contract_id', contractIds)
+          .order('due_date', { ascending: false });
+        
+        console.log('💰 Pagos encontrados:', paymentsData?.length || 0);
+        
+        if (error) {
+          console.error('❌ Error obteniendo pagos:', error);
+          throw error;
+        }
+        payments = paymentsData || [];
+      }
+    } else {
+      // Consulta normal
+      let query = supabase
+        .from('payments')
+        .select('*');
+
+      if (clientId) {
+        query = query.eq('client_id', clientId);
+      }
+      if (contractId) {
+        query = query.eq('contract_id', contractId);
+      }
+
+      const { data: paymentsData, error } = await query.order('due_date', { ascending: false });
+      
+      if (error) {
+        console.error('❌ Error obteniendo pagos:', error);
+        throw error;
+      }
+      payments = paymentsData || [];
+    }
+
+    if (!payments || payments.length === 0) {
+      return [];
+    }
+
+    // Enriquecer con información de inquilino y contrato
+    const enrichedPayments = await Promise.all(
+      payments.map(async (payment) => {
+        // Obtener info del cliente/inquilino
+        let client = null;
+        if (payment.client_id) {
+          const { data: clientData } = await supabase
+            .from('clients')
+            .select('full_name, email, phone')
+            .eq('id', payment.client_id)
+            .single();
+          client = clientData;
+        }
+
+        // Obtener info del contrato
+        let contract = null;
+        let property = null;
+        if (payment.contract_id) {
+          const { data: contractData } = await supabase
+            .from('contracts')
+            .select('contract_number, property_id, monthly_rent')
+            .eq('id', payment.contract_id)
+            .single();
+          
+          contract = contractData;
+
+          // Si el contrato tiene propiedad, obtenerla
+          if (contractData && contractData.property_id) {
+            const { data: propData } = await supabase
+              .from('properties')
+              .select('title, code, location')
+              .eq('id', contractData.property_id)
+              .single();
+            property = propData;
+          }
+        }
+
+        return {
+          ...payment,
+          client_name: client?.full_name || 'N/A',
+          client_email: client?.email,
+          client_phone: client?.phone,
+          contract_number: contract?.contract_number,
+          property_title: property?.title,
+          property_code: property?.code,
+          property_location: property?.location
+        };
+      })
+    );
+
+    return enrichedPayments;
+  } catch (error) {
+    console.error('❌ Error en getPaymentsEnriched:', error);
+    throw error;
+  }
+}
+
+// =====================================================
+// FUNCIONES PARA WIZARD DE CLIENTES
+// =====================================================
+
+// Crear credenciales del portal del cliente
+export async function createPortalCredentials(
+  clientId: string,
+  email: string,
+  password: string,
+  sendWelcomeEmail: boolean = false,
+  portalAccessEnabled: boolean = true
+): Promise<any> {
+  try {
+    // Hash de la contraseña (en producción usar bcrypt u otro hash seguro)
+    // Por ahora guardamos una versión simple
+    const passwordHash = btoa(password); // Base64 como ejemplo
+
+    const credentialData = {
+      client_id: clientId,
+      email: email,
+      password_hash: passwordHash,
+      must_change_password: true, // Forzar cambio en primer login
+      portal_access_enabled: portalAccessEnabled,
+      welcome_email_sent: sendWelcomeEmail,
+      last_login: null
+    };
+
+    const { data, error } = await supabase
+      .from('client_portal_credentials')
+      .insert([credentialData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error creando credenciales del portal:', error);
+      throw error;
+    }
+
+    console.log('✅ Credenciales del portal creadas exitosamente');
+
+    // TODO: Si sendWelcomeEmail es true, enviar email con credenciales
+    if (sendWelcomeEmail) {
+      console.log('📧 Email de bienvenida pendiente de envío a:', email);
+      // Aquí integrar servicio de email (SendGrid, Resend, etc.)
+    }
+
+    return data;
+  } catch (error) {
+    console.error('❌ Error en createPortalCredentials:', error);
+    throw error;
+  }
+}
+
+// Subir documento del cliente a Supabase Storage
+export async function uploadClientDocument(
+  clientId: string,
+  documentType: 'cedula_frente' | 'cedula_reverso' | 'certificado_laboral' | 'contrato_firmado',
+  file: File
+): Promise<any> {
+  try {
+    // Validar archivo
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      throw new Error('Tipo de archivo no válido. Solo se permiten JPG, PNG y PDF');
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('El archivo excede el tamaño máximo de 5MB');
+    }
+
+    // Generar nombre único para el archivo
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${clientId}/${documentType}_${Date.now()}.${fileExtension}`;
+    const bucketName = 'client-documents';
+
+    // Subir archivo a Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('❌ Error subiendo archivo:', uploadError);
+      throw uploadError;
+    }
+
+    // Obtener URL pública del archivo
+    const { data: urlData } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(fileName);
+
+    // Guardar registro en la tabla client_documents
+    const documentData = {
+      client_id: clientId,
+      document_type: documentType,
+      file_name: file.name,
+      file_url: urlData.publicUrl,
+      file_size: file.size,
+      mime_type: file.type,
+      uploaded_by: null, // TODO: Agregar ID del usuario que sube
+      verified: false
+    };
+
+    const { data: docData, error: docError } = await supabase
+      .from('client_documents')
+      .insert([documentData])
+      .select()
+      .single();
+
+    if (docError) {
+      console.error('❌ Error guardando documento en BD:', docError);
+      throw docError;
+    }
+
+    console.log('✅ Documento subido exitosamente:', documentType);
+    return docData;
+  } catch (error) {
+    console.error('❌ Error en uploadClientDocument:', error);
+    throw error;
+  }
+}
+
+// Guardar configuración de pagos del cliente
+export async function savePaymentConfig(
+  clientId: string,
+  paymentConfig: {
+    preferred_payment_method?: string;
+    billing_day?: number;
+    payment_due_days?: number;
+    payment_concepts?: {
+      arriendo?: { enabled: boolean; amount: number };
+      administracion?: { enabled: boolean; amount: number };
+      servicios_publicos?: { enabled: boolean; amount: number; services: string[] };
+      otros?: { enabled: boolean; amount: number; description: string };
+    };
+  }
+): Promise<any> {
+  try {
+    const configData = {
+      client_id: clientId,
+      preferred_payment_method: paymentConfig.preferred_payment_method,
+      billing_day: paymentConfig.billing_day,
+      payment_due_days: paymentConfig.payment_due_days,
+      payment_concepts: paymentConfig.payment_concepts || {},
+      auto_generate_invoices: false,
+      send_payment_reminders: true
+    };
+
+    const { data, error } = await supabase
+      .from('client_payment_config')
+      .insert([configData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error guardando configuración de pagos:', error);
+      throw error;
+    }
+
+    console.log('✅ Configuración de pagos guardada exitosamente');
+    return data;
+  } catch (error) {
+    console.error('❌ Error en savePaymentConfig:', error);
+    throw error;
+  }
+}
+
+// Guardar referencias del cliente (personales y comerciales)
+export async function saveClientReferences(
+  clientId: string,
+  references: {
+    personal?: Array<{ name: string; phone: string; relationship: string }>;
+    commercial?: Array<{ company_name: string; contact_person: string; phone: string }>;
+  }
+): Promise<any> {
+  try {
+    const referencesToInsert: any[] = [];
+
+    // Referencias personales
+    if (references.personal && references.personal.length > 0) {
+      references.personal.forEach(ref => {
+        referencesToInsert.push({
+          client_id: clientId,
+          reference_type: 'personal',
+          name: ref.name,
+          phone: ref.phone,
+          relationship: ref.relationship,
+          company_name: null,
+          contact_person: null,
+          verified: false
+        });
+      });
+    }
+
+    // Referencias comerciales
+    if (references.commercial && references.commercial.length > 0) {
+      references.commercial.forEach(ref => {
+        referencesToInsert.push({
+          client_id: clientId,
+          reference_type: 'commercial',
+          name: ref.contact_person,
+          phone: ref.phone,
+          company_name: ref.company_name,
+          contact_person: ref.contact_person,
+          relationship: 'comercial',
+          verified: false
+        });
+      });
+    }
+
+    if (referencesToInsert.length === 0) {
+      console.log('⚠️ No hay referencias para guardar');
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('client_references')
+      .insert(referencesToInsert)
+      .select();
+
+    if (error) {
+      console.error('❌ Error guardando referencias:', error);
+      throw error;
+    }
+
+    console.log(`✅ ${data.length} referencias guardadas exitosamente`);
+    return data;
+  } catch (error) {
+    console.error('❌ Error en saveClientReferences:', error);
+    throw error;
+  }
+}
+
+// Guardar información del contrato (usando tabla client_contract_info)
+export async function saveContractInfo(
+  clientId: string,
+  contractInfo: {
+    contract_type?: string;
+    start_date?: string;
+    end_date?: string;
+    duration_months?: number;
+    deposit_amount?: number;
+    deposit_paid?: boolean;
+    guarantor_required?: boolean;
+    guarantor_name?: string;
+    guarantor_document?: string;
+    guarantor_phone?: string;
+  }
+): Promise<any> {
+  try {
+    const contractData = {
+      client_id: clientId,
+      deposit_amount: contractInfo.deposit_amount || 0,
+      deposit_paid: contractInfo.deposit_paid || false,
+      deposit_paid_date: contractInfo.deposit_paid ? new Date().toISOString() : null,
+      guarantor_required: contractInfo.guarantor_required || false,
+      guarantor_name: contractInfo.guarantor_name || null,
+      guarantor_document: contractInfo.guarantor_document || null,
+      guarantor_phone: contractInfo.guarantor_phone || null,
+      guarantor_email: null,
+      keys_delivered: false,
+      keys_quantity: 0,
+      contract_signed: false,
+      contract_signed_date: null,
+      inventory_completed: false
+    };
+
+    const { data, error } = await supabase
+      .from('client_contract_info')
+      .insert([contractData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error guardando información del contrato:', error);
+      throw error;
+    }
+
+    console.log('✅ Información del contrato guardada exitosamente');
+    return data;
+  } catch (error) {
+    console.error('❌ Error en saveContractInfo:', error);
+    throw error;
+  }
 }
