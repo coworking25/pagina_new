@@ -116,9 +116,9 @@ export function AdminBadgeProvider({ children }: AdminBadgeProviderProps) {
     refreshBadges();
   }, []);
 
-  // Actualizar badges cada 30 segundos
+  // Actualizar badges cada 2 minutos (reducido de 30s para evitar rate limiting)
   useEffect(() => {
-    const interval = setInterval(refreshBadges, 30000);
+    const interval = setInterval(refreshBadges, 120000); // 2 minutos
     return () => clearInterval(interval);
   }, []);
 

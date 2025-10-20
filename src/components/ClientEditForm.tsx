@@ -137,7 +137,7 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
       .from('client_portal_credentials')
       .select('*')
       .eq('client_id', client.id)
-      .single();
+      .maybeSingle();
 
     if (credData) {
       setCredentialsData({
@@ -152,7 +152,7 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
       .from('client_payment_config')
       .select('*')
       .eq('client_id', client.id)
-      .single();
+      .maybeSingle();
 
     if (paymentConfigData) {
       const concepts = paymentConfigData.payment_concepts || {};
@@ -177,7 +177,7 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
       .from('client_contract_info')
       .select('*')
       .eq('client_id', client.id)
-      .single();
+      .maybeSingle();
 
     if (contractInfoData) {
       setContractData({

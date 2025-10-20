@@ -181,7 +181,7 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
         .from('client_portal_credentials')
         .select('*')
         .eq('client_id', client.id)
-        .single();
+        .maybeSingle();
       
       if (credData) {
         setCredentials(credData);
@@ -203,7 +203,7 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
         .from('client_payment_config')
         .select('*')
         .eq('client_id', client.id)
-        .single();
+        .maybeSingle();
       
       if (paymentData) {
         setPaymentConfig(paymentData);
@@ -224,7 +224,7 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
         .from('client_contract_info')
         .select('*')
         .eq('client_id', client.id)
-        .single();
+        .maybeSingle();
       
       if (contractData) {
         setContractInfo(contractData);
