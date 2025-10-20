@@ -92,7 +92,7 @@ export async function clientLogin(
       .from('client_credentials')
       .select('*')
       .eq('email', email.toLowerCase().trim())
-      .single();
+      .maybeSingle();
 
     if (credError || !credential) {
       return {

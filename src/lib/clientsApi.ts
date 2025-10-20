@@ -893,22 +893,30 @@ export async function createPortalCredentials(
   portalAccessEnabled: boolean = true
 ): Promise<any> {
   try {
-    // Hash de la contraseña (en producción usar bcrypt u otro hash seguro)
-    // Por ahora guardamos una versión simple
-    const passwordHash = btoa(password); // Base64 como ejemplo
+    // Hash de la contraseña usando bcrypt
+    const bcrypt = await import('bcryptjs');
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const credentialData = {
       client_id: clientId,
-      email: email,
+      email: email.toLowerCase().trim(),
       password_hash: passwordHash,
+      is_active: portalAccessEnabled,
       must_change_password: true, // Forzar cambio en primer login
-      portal_access_enabled: portalAccessEnabled,
-      welcome_email_sent: sendWelcomeEmail,
-      last_login: null
+      failed_login_attempts: 0,
+      last_login: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
+    console.log('📝 Creando credenciales en client_credentials:', {
+      client_id: clientId,
+      email: email,
+      is_active: portalAccessEnabled
+    });
+
     const { data, error } = await supabase
-      .from('client_portal_credentials')
+      .from('client_credentials')
       .insert([credentialData])
       .select()
       .single();
@@ -918,7 +926,7 @@ export async function createPortalCredentials(
       throw error;
     }
 
-    console.log('✅ Credenciales del portal creadas exitosamente');
+    console.log('✅ Credenciales del portal creadas exitosamente en client_credentials');
 
     // TODO: Si sendWelcomeEmail es true, enviar email con credenciales
     if (sendWelcomeEmail) {
@@ -933,58 +941,90 @@ export async function createPortalCredentials(
   }
 }
 
-// Subir documento del cliente a Supabase Storage
+/**
+ * Subir documento del cliente a Supabase Storage
+ * Soporta: JPG, PNG, PDF, DOCX, ZIP, RAR
+ */
 export async function uploadClientDocument(
   clientId: string,
-  documentType: 'cedula_frente' | 'cedula_reverso' | 'certificado_laboral' | 'contrato_firmado',
-  file: File
+  documentType: 'cedula_frente' | 'cedula_reverso' | 'certificado_laboral' | 'contrato_firmado' | 'recibo_pago' | 'garantia' | 'otro',
+  file: File,
+  category: 'documents' | 'contracts' | 'payments' | 'guarantor' = 'documents'
 ): Promise<any> {
   try {
-    // Validar archivo
-    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    console.log(`📤 Subiendo ${documentType} para cliente ${clientId}...`);
+    
+    // Validar archivo - Tipos permitidos ampliados
+    const validTypes = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/webp',
+      'application/pdf',
+      'application/msword', // .doc
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/zip',
+      'application/x-rar-compressed',
+      'application/x-zip-compressed'
+    ];
+    
     if (!validTypes.includes(file.type)) {
-      throw new Error('Tipo de archivo no válido. Solo se permiten JPG, PNG y PDF');
+      throw new Error(`Tipo de archivo no válido: ${file.type}. Solo se permiten: JPG, PNG, PDF, DOCX, ZIP, RAR`);
     }
 
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      throw new Error('El archivo excede el tamaño máximo de 5MB');
+      throw new Error('El archivo excede el tamaño máximo de 10MB');
     }
 
     // Generar nombre único para el archivo
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${clientId}/${documentType}_${Date.now()}.${fileExtension}`;
-    const bucketName = 'client-documents';
+    const fileExtension = file.name.split('.').pop() || 'bin';
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(7);
+    const sanitizedType = documentType.replace(/[^a-z0-9_-]/gi, '_');
+    const fileName = `${clientId}/${category}/${sanitizedType}_${timestamp}_${randomStr}.${fileExtension}`;
+    
+    console.log(`📁 Ruta del archivo: clients/${fileName}`);
 
     // Subir archivo a Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from(bucketName)
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('clients')
       .upload(fileName, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        contentType: file.type
       });
 
     if (uploadError) {
-      console.error('❌ Error subiendo archivo:', uploadError);
-      throw uploadError;
+      console.error('❌ Error subiendo archivo a Storage:', uploadError);
+      throw new Error(`Error al subir archivo: ${uploadError.message}`);
     }
 
-    // Obtener URL pública del archivo
+    console.log('✅ Archivo subido a Storage:', uploadData.path);
+
+    // Obtener URL del archivo (privado, requiere autenticación)
     const { data: urlData } = supabase.storage
-      .from(bucketName)
+      .from('clients')
       .getPublicUrl(fileName);
 
     // Guardar registro en la tabla client_documents
     const documentData = {
       client_id: clientId,
       document_type: documentType,
-      file_name: file.name,
-      file_url: urlData.publicUrl,
+      document_name: file.name,
+      file_path: urlData.publicUrl,
       file_size: file.size,
       mime_type: file.type,
-      uploaded_by: null, // TODO: Agregar ID del usuario que sube
-      verified: false
+      storage_path: fileName,
+      status: 'pending', // pending, verified, rejected
+      is_required: ['cedula_frente', 'cedula_reverso'].includes(documentType),
+      uploaded_by: null, // TODO: Agregar user_id del admin actual
+      notes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
+
+    console.log('📝 Guardando registro en client_documents:', documentData);
 
     const { data: docData, error: docError } = await supabase
       .from('client_documents')
@@ -1005,13 +1045,80 @@ export async function uploadClientDocument(
   }
 }
 
+/**
+ * Subir recibo de pago
+ */
+export async function uploadPaymentReceipt(
+  clientId: string,
+  file: File
+): Promise<any> {
+  return uploadClientDocument(clientId, 'recibo_pago', file, 'payments');
+}
+
+/**
+ * Subir contrato firmado
+ */
+export async function uploadSignedContract(
+  clientId: string,
+  file: File
+): Promise<any> {
+  return uploadClientDocument(clientId, 'contrato_firmado', file, 'contracts');
+}
+
+/**
+ * Obtener URL firmada para descargar archivo privado
+ */
+export async function getSignedFileUrl(filePath: string, expiresIn: number = 3600): Promise<string> {
+  try {
+    const { data, error } = await supabase.storage
+      .from('clients')
+      .createSignedUrl(filePath, expiresIn);
+
+    if (error) throw error;
+    return data.signedUrl;
+  } catch (error) {
+    console.error('❌ Error obteniendo URL firmada:', error);
+    throw error;
+  }
+}
+
+/**
+ * Eliminar archivo de Storage
+ */
+export async function deleteClientFile(filePath: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.storage
+      .from('clients')
+      .remove([filePath]);
+
+    if (error) throw error;
+    
+    // También eliminar el registro de la BD
+    await supabase
+      .from('client_documents')
+      .delete()
+      .eq('storage_path', filePath);
+
+    console.log('✅ Archivo eliminado:', filePath);
+    return true;
+  } catch (error) {
+    console.error('❌ Error eliminando archivo:', error);
+    throw error;
+  }
+}
+
 // Guardar configuración de pagos del cliente
 export async function savePaymentConfig(
   clientId: string,
   paymentConfig: {
     preferred_payment_method?: string;
+    bank_name?: string;
+    account_type?: string;
+    account_number?: string;
     billing_day?: number;
     payment_due_days?: number;
+    send_reminders?: boolean;
+    reminder_days_before?: number;
     payment_concepts?: {
       arriendo?: { enabled: boolean; amount: number };
       administracion?: { enabled: boolean; amount: number };
@@ -1024,12 +1131,24 @@ export async function savePaymentConfig(
     const configData = {
       client_id: clientId,
       preferred_payment_method: paymentConfig.preferred_payment_method,
-      billing_day: paymentConfig.billing_day,
-      payment_due_days: paymentConfig.payment_due_days,
+      bank_name: paymentConfig.bank_name || null,
+      account_type: paymentConfig.account_type || null,
+      account_number: paymentConfig.account_number || null,
+      billing_day: paymentConfig.billing_day || 1,
+      payment_due_days: paymentConfig.payment_due_days || 5,
       payment_concepts: paymentConfig.payment_concepts || {},
-      auto_generate_invoices: false,
-      send_payment_reminders: true
+      send_payment_reminders: paymentConfig.send_reminders ?? true,
+      reminder_days_before: paymentConfig.reminder_days_before || 3,
+      send_overdue_alerts: true,
+      has_discount: false,
+      discount_percentage: null,
+      discount_reason: null,
+      late_fee_percentage: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
+
+    console.log('📝 Insertando payment config:', configData);
 
     const { data, error } = await supabase
       .from('client_payment_config')
@@ -1137,20 +1256,51 @@ export async function saveContractInfo(
       client_id: clientId,
       deposit_amount: contractInfo.deposit_amount || 0,
       deposit_paid: contractInfo.deposit_paid || false,
-      deposit_paid_date: contractInfo.deposit_paid ? new Date().toISOString() : null,
+      deposit_payment_date: contractInfo.deposit_paid ? new Date().toISOString().split('T')[0] : null,
+      deposit_receipt_url: null,
+      deposit_refund_date: null,
+      deposit_refund_amount: null,
       guarantor_required: contractInfo.guarantor_required || false,
       guarantor_name: contractInfo.guarantor_name || null,
-      guarantor_document: contractInfo.guarantor_document || null,
+      guarantor_document_type: null,
+      guarantor_document_number: contractInfo.guarantor_document || null,
       guarantor_phone: contractInfo.guarantor_phone || null,
       guarantor_email: null,
+      guarantor_address: null,
+      guarantor_documents_url: null,
+      inventory_checklist_completed: false,
+      inventory_checklist_url: null,
+      inventory_completion_date: null,
       keys_delivered: false,
       keys_quantity: 0,
-      contract_signed: false,
-      contract_signed_date: null,
-      inventory_completed: false
+      keys_delivery_date: null,
+      access_cards_delivered: false,
+      access_card_numbers: null,
+      contract_signed_by_client: false,
+      contract_signed_date_client: null,
+      contract_signature_url_client: null,
+      contract_signed_by_landlord: false,
+      contract_signed_date_landlord: null,
+      contract_signature_url_landlord: null,
+      witness_name: null,
+      witness_document: null,
+      witness_signature_url: null,
+      rules_and_regulations_accepted: false,
+      rules_acceptance_date: null,
+      rules_signature_url: null,
+      welcome_package_sent: false,
+      welcome_package_date: null,
+      orientation_scheduled: false,
+      orientation_date: null,
+      orientation_completed: false,
+      notes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
+    console.log('📝 Insertando contract info:', contractData);
+
+    const { data, error} = await supabase
       .from('client_contract_info')
       .insert([contractData])
       .select()

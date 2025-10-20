@@ -1037,13 +1037,14 @@ const handleWizardSubmit = async (wizardData: any) => {
 
     // 2. Crear credenciales del portal
     console.log('\n🔑 PASO 2: Verificando credenciales del portal...');
-    const email = wizardData.email || wizardData.portal_email;
-    const password = wizardData.password;
+    const email = wizardData.email || wizardData.portal_email || wizardData.portal_credentials?.email;
+    const password = wizardData.password || wizardData.portal_credentials?.password;
     
+    console.log('   → wizardData completo:', JSON.stringify(wizardData, null, 2));
     console.log('   → Email:', email);
     console.log('   → Password:', password ? '****** (existe)' : '❌ NO PROPORCIONADA');
-    console.log('   → Send welcome email:', wizardData.send_welcome_email);
-    console.log('   → Portal access enabled:', wizardData.portal_access_enabled);
+    console.log('   → Send welcome email:', wizardData.send_welcome_email || wizardData.portal_credentials?.send_welcome_email);
+    console.log('   → Portal access enabled:', wizardData.portal_access_enabled ?? wizardData.portal_credentials?.portal_access_enabled);
 
     if (password && email) {
       try {
@@ -1051,8 +1052,8 @@ const handleWizardSubmit = async (wizardData: any) => {
           newClient.id,
           email,
           password,
-          wizardData.send_welcome_email || false,
-          wizardData.portal_access_enabled !== false
+          wizardData.send_welcome_email || wizardData.portal_credentials?.send_welcome_email || false,
+          wizardData.portal_access_enabled ?? wizardData.portal_credentials?.portal_access_enabled ?? true
         );
         saveResults.credentials.saved = true;
         saveResults.credentials.email = email;
@@ -1065,11 +1066,34 @@ const handleWizardSubmit = async (wizardData: any) => {
       console.warn('   ⚠️ CREDENCIALES NO CREADAS - Falta email o password');
       if (!email) console.warn('      → Email faltante');
       if (!password) console.warn('      → Password faltante');
+      console.warn('      → wizardData.portal_credentials:', wizardData.portal_credentials);
     }
 
     // 3. Subir documentos
     console.log('\n📄 PASO 3: Verificando documentos...');
-    const documents = wizardData.documents || [];
+    // Los documentos vienen en wizardData.documents como objeto, no array
+    const documentsObj = wizardData.documents || {};
+    const documents = [];
+    
+    // Convertir el objeto de documentos a array
+    if (documentsObj.cedula_frente && documentsObj.cedula_frente.file) {
+      documents.push({ type: 'cedula_frente', file: documentsObj.cedula_frente.file });
+    }
+    if (documentsObj.cedula_reverso && documentsObj.cedula_reverso.file) {
+      documents.push({ type: 'cedula_reverso', file: documentsObj.cedula_reverso.file });
+    }
+    if (documentsObj.certificado_laboral) {
+      documents.push({ type: 'certificado_laboral', file: documentsObj.certificado_laboral });
+    }
+    if (documentsObj.contrato_firmado) {
+      documents.push({ type: 'contrato_firmado', file: documentsObj.contrato_firmado });
+    }
+    if (documentsObj.otros && Array.isArray(documentsObj.otros)) {
+      documentsObj.otros.forEach((doc: any) => {
+        if (doc.file) documents.push({ type: 'otros', file: doc.file });
+      });
+    }
+    
     saveResults.documents.total = documents.length;
     console.log('   → Total documentos a subir:', documents.length);
 
@@ -1096,16 +1120,24 @@ const handleWizardSubmit = async (wizardData: any) => {
 
     // 4. Guardar configuración de pagos
     console.log('\n💰 PASO 4: Verificando configuración de pagos...');
-    console.log('   → Payment concepts:', wizardData.payment_concepts);
-    console.log('   → Preferred payment method:', wizardData.preferred_payment_method);
-    console.log('   → Billing day:', wizardData.billing_day);
+    const paymentConfig = wizardData.payment_config || {};
+    console.log('   → Payment config completo:', paymentConfig);
+    console.log('   → Preferred payment method:', paymentConfig.preferred_payment_method);
+    console.log('   → Billing day:', paymentConfig.billing_day);
+    console.log('   → Concepts:', paymentConfig.concepts);
 
-    if (wizardData.payment_concepts || wizardData.preferred_payment_method) {
+    if (paymentConfig.preferred_payment_method || paymentConfig.concepts) {
       try {
         await savePaymentConfig(newClient.id, {
-          preferred_payment_method: wizardData.preferred_payment_method,
-          billing_day: sanitizeNumericValue(wizardData.billing_day) || 1,
-          payment_concepts: sanitizePaymentConcepts(wizardData.payment_concepts)
+          preferred_payment_method: paymentConfig.preferred_payment_method,
+          billing_day: sanitizeNumericValue(paymentConfig.billing_day) || 1,
+          payment_due_days: sanitizeNumericValue(paymentConfig.payment_due_days) || 5,
+          send_reminders: paymentConfig.send_reminders ?? true,
+          reminder_days_before: sanitizeNumericValue(paymentConfig.reminder_days_before) || 3,
+          bank_name: paymentConfig.bank_name || null,
+          account_type: paymentConfig.account_type || null,
+          account_number: paymentConfig.account_number || null,
+          payment_concepts: sanitizePaymentConcepts(paymentConfig.concepts)
         });
         saveResults.payment.saved = true;
         console.log('   ✅ Configuración de pagos guardada');
@@ -1119,8 +1151,10 @@ const handleWizardSubmit = async (wizardData: any) => {
 
     // 5. Guardar referencias
     console.log('\n👥 PASO 5: Verificando referencias...');
-    const personalRefs = wizardData.personal_references || [];
-    const commercialRefs = wizardData.commercial_references || [];
+    const references = wizardData.references || {};
+    const personalRefs = references.personal || [];
+    const commercialRefs = references.commercial || [];
+    console.log('   → Referencias objeto completo:', references);
     console.log('   → Referencias personales:', personalRefs.length);
     console.log('   → Referencias comerciales:', commercialRefs.length);
 
@@ -1145,25 +1179,27 @@ const handleWizardSubmit = async (wizardData: any) => {
 
     // 6. Guardar información del contrato
     console.log('\n📑 PASO 6: Verificando información del contrato...');
-    console.log('   → Contract type:', wizardData.contract_type);
-    console.log('   → Start date:', wizardData.contract_start_date);
-    console.log('   → End date:', wizardData.contract_end_date);
-    console.log('   → Deposit amount:', wizardData.deposit_amount);
-    console.log('   → Guarantor:', wizardData.has_guarantor ? 'Sí' : 'No');
+    const contractInfo = wizardData.contract_info || {};
+    console.log('   → Contract info completo:', contractInfo);
+    console.log('   → Contract type:', contractInfo.contract_type);
+    console.log('   → Start date:', contractInfo.start_date);
+    console.log('   → End date:', contractInfo.end_date);
+    console.log('   → Deposit amount:', contractInfo.deposit_amount);
+    console.log('   → Guarantor:', contractInfo.guarantor_required ? 'Sí' : 'No');
 
-    if (wizardData.contract_start_date || wizardData.deposit_amount) {
+    if (contractInfo.start_date || contractInfo.deposit_amount || contractInfo.contract_type) {
       try {
         await saveContractInfo(newClient.id, {
-          contract_type: wizardData.contract_type,
-          start_date: wizardData.contract_start_date,
-          end_date: wizardData.contract_end_date,
-          duration_months: sanitizeNumericValue(wizardData.contract_duration_months),
-          deposit_amount: sanitizeNumericValue(wizardData.deposit_amount),
-          deposit_paid: wizardData.deposit_paid || false,
-          guarantor_required: wizardData.has_guarantor || false,
-          guarantor_name: wizardData.guarantor_name || undefined,
-          guarantor_document: wizardData.guarantor_document || undefined,
-          guarantor_phone: wizardData.guarantor_phone || undefined
+          contract_type: contractInfo.contract_type,
+          start_date: contractInfo.start_date,
+          end_date: contractInfo.end_date,
+          duration_months: sanitizeNumericValue(contractInfo.contract_duration_months),
+          deposit_amount: sanitizeNumericValue(contractInfo.deposit_amount),
+          deposit_paid: contractInfo.deposit_paid || false,
+          guarantor_required: contractInfo.guarantor_required || false,
+          guarantor_name: contractInfo.guarantor_name || undefined,
+          guarantor_document: contractInfo.guarantor_document || undefined,
+          guarantor_phone: contractInfo.guarantor_phone || undefined
         });
         saveResults.contract.saved = true;
         console.log('   ✅ Información del contrato guardada');
