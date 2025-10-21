@@ -133,6 +133,10 @@ interface ClientReference {
 interface ContractInfo {
   contract_start_date: string | null;
   contract_end_date: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  contract_type?: string | null;
+  contract_duration_months?: number | null;
   deposit_amount: number | null;
   deposit_paid: boolean;
   has_guarantor: boolean;
@@ -420,26 +424,26 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         {/* Overlay */}
         <div 
-          className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75"
+          className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75 dark:bg-gray-950 dark:bg-opacity-85"
           onClick={onClose}
         />
         
         {/* Modal */}
-        <div className="inline-block w-full max-w-6xl my-8 overflow-hidden text-left align-top transition-all transform bg-white shadow-2xl rounded-xl">
+        <div className="inline-block w-full max-w-6xl my-8 overflow-hidden text-left align-top transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-xl">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-full">
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{client.full_name}</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{client.full_name}</h2>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-sm text-gray-600">{client.document_number}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{client.document_number}</span>
                   <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(client.status)}`}>
                     {client.status}
                   </span>
-                  <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                  <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
                     {getClientTypeLabel(client.client_type)}
                   </span>
                 </div>
@@ -449,7 +453,7 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
               {onEdit && (
                 <button
                   onClick={onEdit}
-                  className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 dark:hover:bg-blue-900/50 transition-colors"
                 >
                   Editar Cliente
                 </button>
@@ -457,14 +461,14 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
               {onDelete && (
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                 >
                   Eliminar Cliente
                 </button>
               )}
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -472,7 +476,7 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
           </div>
 
           {/* Tabs */}
-          <div className="border-b border-gray-200 bg-gray-50">
+          <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
             <div className="flex overflow-x-auto">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -482,14 +486,14 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                       activeTab === tab.id
-                        ? 'border-blue-600 text-blue-600 bg-white'
-                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800'
+                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
                     {tab.label}
                     {tab.count !== undefined && tab.count > 0 && (
-                      <span className="px-2 py-0.5 text-xs font-bold bg-blue-600 text-white rounded-full">
+                      <span className="px-2 py-0.5 text-xs font-bold bg-blue-600 dark:bg-blue-500 text-white rounded-full">
                         {tab.count}
                       </span>
                     )}
@@ -500,7 +504,7 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
           </div>
 
           {/* Content */}
-          <div className="px-6 py-6 max-h-[600px] overflow-y-auto">
+          <div className="px-6 py-6 max-h-[600px] overflow-y-auto bg-gray-50 dark:bg-gray-900">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -714,8 +718,8 @@ const DocumentsTab: React.FC<{
   if (documents.length === 0) {
     return (
       <div className="text-center py-12">
-        <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600">No hay documentos subidos</p>
+        <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">No hay documentos subidos</p>
       </div>
     );
   }
@@ -725,14 +729,14 @@ const DocumentsTab: React.FC<{
       {documents.map((doc) => (
         <div 
           key={doc.id} 
-          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
           <div className="flex items-center gap-4 flex-1">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600" />
+            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400 dark:text-blue-400" />
             </div>
             <div className="flex-1">
-              <h4 className="font-medium text-gray-900">{getDocumentTypeLabel(doc.document_type)}</h4>
+              <h4 className="font-medium text-gray-900"> dark:text-white{getDocumentTypeLabel(doc.document_type)}</h4>
               <div className="flex items-center gap-3 mt-1">
                 <span className="text-sm text-gray-600">{doc.document_name}</span>
                 <span className="text-sm text-gray-400">•</span>
@@ -744,7 +748,7 @@ const DocumentsTab: React.FC<{
                 {doc.status === 'verified' && (
                   <>
                     <span className="text-sm text-gray-400">•</span>
-                    <span className="flex items-center gap-1 text-sm text-green-600">
+                    <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
                       <CheckCircle className="w-4 h-4" />
                       Verificado
                     </span>
@@ -765,14 +769,14 @@ const DocumentsTab: React.FC<{
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleView(doc)}
-              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/30 rounded-lg transition-colors"
               title="Ver documento"
             >
               <Eye className="w-5 h-5" />
             </button>
             <button
               onClick={() => handleDownload(doc)}
-              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 rounded-lg transition-colors"
               title="Descargar documento"
             >
               <Download className="w-5 h-5" />
@@ -788,8 +792,8 @@ const CredentialsTab: React.FC<{ credentials: PortalCredentials | null }> = ({ c
   if (!credentials) {
     return (
       <div className="text-center py-12">
-        <Key className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600">No se han configurado credenciales para el portal</p>
+        <Key className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">No se han configurado credenciales para el portal</p>
       </div>
     );
   }
@@ -837,8 +841,8 @@ const PaymentsTab: React.FC<{
   if (!paymentConfig) {
     return (
       <div className="text-center py-12">
-        <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600">No se ha configurado información de pagos</p>
+        <CreditCard className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">No se ha configurado información de pagos</p>
       </div>
     );
   }
@@ -863,7 +867,7 @@ const PaymentsTab: React.FC<{
       <InfoCard title="Conceptos de Pago" icon={DollarSign}>
         <div className="space-y-4">
           {concepts.arriendo?.enabled && (
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
               <span className="font-medium text-blue-900">Arriendo</span>
               <span className="font-bold text-blue-600">${concepts.arriendo.amount.toLocaleString('es-CO')}</span>
             </div>
@@ -880,7 +884,7 @@ const PaymentsTab: React.FC<{
             <div className="p-3 bg-green-50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium text-green-900">Servicios Públicos</span>
-                <span className="font-bold text-green-600">${concepts.servicios_publicos.amount.toLocaleString('es-CO')}</span>
+                <span className="font-bold text-green-600 dark:text-green-400">${concepts.servicios_publicos.amount.toLocaleString('es-CO')}</span>
               </div>
               {concepts.servicios_publicos.types && concepts.servicios_publicos.types.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -895,7 +899,7 @@ const PaymentsTab: React.FC<{
           )}
           
           {concepts.otros?.enabled && (
-            <div className="p-3 bg-gray-50 rounded-lg">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium text-gray-900">Otros</span>
                 <span className="font-bold text-gray-600">${concepts.otros.amount.toLocaleString('es-CO')}</span>
@@ -920,8 +924,8 @@ const ReferencesTab: React.FC<{ references: ClientReference[] }> = ({ references
   if (references.length === 0) {
     return (
       <div className="text-center py-12">
-        <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600">No hay referencias registradas</p>
+        <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">No hay referencias registradas</p>
       </div>
     );
   }
@@ -935,7 +939,7 @@ const ReferencesTab: React.FC<{ references: ClientReference[] }> = ({ references
         <InfoCard title={`Referencias Personales (${personalRefs.length})`} icon={User}>
           <div className="space-y-4">
             {personalRefs.map((ref) => (
-              <div key={ref.id} className="p-4 bg-blue-50 rounded-lg">
+              <div key={ref.id} className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                 <h4 className="font-medium text-blue-900">{ref.name}</h4>
                 <div className="mt-2 space-y-1">
                   <InfoRow icon={Phone} label="Teléfono" value={ref.phone} />
@@ -974,8 +978,8 @@ const ContractTab: React.FC<{ contractInfo: ContractInfo | null }> = ({ contract
   if (!contractInfo) {
     return (
       <div className="text-center py-12">
-        <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600">No hay información del contrato</p>
+        <Shield className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">No hay información del contrato</p>
       </div>
     );
   }
@@ -986,18 +990,30 @@ const ContractTab: React.FC<{ contractInfo: ContractInfo | null }> = ({ contract
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <InfoRow 
             label="Fecha de Inicio" 
-            value={contractInfo.contract_start_date 
-              ? new Date(contractInfo.contract_start_date).toLocaleDateString('es-ES')
+            value={contractInfo.start_date 
+              ? new Date(contractInfo.start_date).toLocaleDateString('es-ES')
               : 'No especificada'
             }
           />
           <InfoRow 
             label="Fecha de Fin" 
-            value={contractInfo.contract_end_date 
-              ? new Date(contractInfo.contract_end_date).toLocaleDateString('es-ES')
+            value={contractInfo.end_date 
+              ? new Date(contractInfo.end_date).toLocaleDateString('es-ES')
               : 'No especificada'
             }
           />
+          {contractInfo.contract_type && (
+            <InfoRow 
+              label="Tipo de Contrato" 
+              value={contractInfo.contract_type}
+            />
+          )}
+          {contractInfo.contract_duration_months && (
+            <InfoRow 
+              label="Duración del Contrato" 
+              value={`${contractInfo.contract_duration_months} meses`}
+            />
+          )}
         </div>
       </InfoCard>
 
@@ -1049,8 +1065,8 @@ const PropertiesTab: React.FC<{ properties: ClientProperty[] }> = ({ properties 
   if (properties.length === 0) {
     return (
       <div className="text-center py-12">
-        <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600">No hay propiedades asignadas</p>
+        <Home className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">No hay propiedades asignadas</p>
         <p className="text-sm text-gray-500 mt-2">
           Las propiedades asignadas al cliente aparecerán aquí
         </p>
@@ -1093,7 +1109,7 @@ const PropertiesTab: React.FC<{ properties: ClientProperty[] }> = ({ properties 
       {properties.map((prop) => (
         <div 
           key={prop.id} 
-          className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex items-start gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
           {/* Imagen de la propiedad */}
           <div className="flex-shrink-0 w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
@@ -1187,8 +1203,8 @@ const PaymentsHistoryTab: React.FC<{
   if (payments.length === 0) {
     return (
       <div className="text-center py-12">
-        <CreditCard className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-600">No hay pagos registrados</p>
+        <CreditCard className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">No hay pagos registrados</p>
         <p className="text-sm text-gray-500 mt-2">
           El historial de pagos del cliente aparecerá aquí
         </p>
@@ -1198,9 +1214,9 @@ const PaymentsHistoryTab: React.FC<{
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'paid': return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'overdue': return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'pending': return <Clock className="w-5 h-5 text-yellow-600" />;
+      case 'paid': return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />;
+      case 'overdue': return <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />;
+      case 'pending': return <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
       default: return <Clock className="w-5 h-5 text-gray-600" />;
     }
   };
@@ -1264,7 +1280,7 @@ const PaymentsHistoryTab: React.FC<{
       {payments.map((payment) => (
         <div 
           key={payment.id} 
-          className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+          className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -1305,7 +1321,7 @@ const PaymentsHistoryTab: React.FC<{
           </div>
 
           {payment.notes && (
-            <div className="mb-3 p-2 bg-gray-50 rounded text-sm text-gray-600">
+            <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-600 dark:text-gray-400">
               📝 {payment.notes}
             </div>
           )}
@@ -1316,7 +1332,7 @@ const PaymentsHistoryTab: React.FC<{
               <>
                 <button
                   onClick={() => onViewReceipt(payment.receipt_url!)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                 >
                   <Eye className="w-4 h-4" />
                   Ver Comprobante
@@ -1324,7 +1340,7 @@ const PaymentsHistoryTab: React.FC<{
                 <a
                   href={payment.receipt_url}
                   download={payment.receipt_file_name || 'comprobante.pdf'}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   Descargar
@@ -1374,9 +1390,9 @@ const InfoCard: React.FC<{
   icon: React.ElementType;
   children: React.ReactNode;
 }> = ({ title, icon: Icon, children }) => (
-  <div className="bg-white border border-gray-200 rounded-lg p-6">
-    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-      <Icon className="w-5 h-5 text-blue-600" />
+  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+      <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400 dark:text-blue-400" />
       {title}
     </h3>
     <div className="space-y-3">
@@ -1390,10 +1406,10 @@ const InfoRow: React.FC<{
   label: string; 
   value: string | number;
   valueClassName?: string;
-}> = ({ icon: Icon, label, value, valueClassName = 'text-gray-900' }) => (
+}> = ({ icon: Icon, label, value, valueClassName = 'text-gray-900 dark:text-white' }) => (
   <div className="flex items-center gap-3">
-    {Icon && <Icon className="w-4 h-4 text-gray-400" />}
-    <span className="text-gray-600 min-w-[150px]">{label}:</span>
+    {Icon && <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
+    <span className="text-gray-600 dark:text-gray-400 min-w-[150px]">{label}:</span>
     <span className={`font-medium ${valueClassName}`}>{value}</span>
   </div>
 );

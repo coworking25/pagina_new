@@ -43,9 +43,9 @@ export default function Step3Documents({ formData, onChange }: Step3Props) {
       return;
     }
 
-    // Validar tamaño (máx 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('El archivo no debe superar los 5MB');
+    // Validar tamaño (máx 20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      alert('El archivo no debe superar los 20MB');
       return;
     }
 
@@ -345,7 +345,7 @@ export default function Step3Documents({ formData, onChange }: Step3Props) {
                         Arrastra o haz clic
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        JPG, PNG o PDF (máx. 5MB)
+                        JPG, PNG o PDF (máx. 20MB)
                       </p>
                     </div>
                   </div>

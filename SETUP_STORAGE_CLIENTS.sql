@@ -8,7 +8,7 @@ VALUES (
   'clients',
   'clients',
   false, -- Privado (solo usuarios autenticados)
-  10485760, -- 10MB máximo por archivo
+  20971520, -- 20MB máximo por archivo (20 * 1024 * 1024)
   ARRAY[
     'image/jpeg',
     'image/jpg', 
@@ -17,6 +17,8 @@ VALUES (
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/zip',
     'application/x-rar-compressed'
   ]

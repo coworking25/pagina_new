@@ -39,7 +39,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   onUploadRemove,
   existingUploads = [],
   accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx',
-  maxSize = 10,
+  maxSize = 20,
   multiple = false
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);

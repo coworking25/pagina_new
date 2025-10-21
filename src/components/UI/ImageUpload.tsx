@@ -21,14 +21,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   // Validar archivos
   const validateFile = (file: File): string | null => {
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!validTypes.includes(file.type)) {
       return 'Formato no válido. Solo se permiten JPG, PNG y WebP';
     }
 
     if (file.size > maxSize) {
-      return 'Archivo muy grande. Máximo 5MB por imagen';
+      return 'Archivo muy grande. Máximo 10MB por imagen';
     }
 
     return null;
