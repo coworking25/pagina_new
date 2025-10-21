@@ -100,9 +100,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger para actualizar updated_at en system_users
-CREATE TRIGGER update_system_users_updated_at 
-    BEFORE UPDATE ON system_users 
+-- Eliminar trigger si ya existe para evitar error de duplicado
+DROP TRIGGER IF EXISTS update_system_users_updated_at ON system_users;
+
+-- Crear trigger para actualizar updated_at
+CREATE TRIGGER update_system_users_updated_at
+    BEFORE UPDATE ON system_users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insertar usuario administrador por defecto

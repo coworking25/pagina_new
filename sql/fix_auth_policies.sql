@@ -9,9 +9,12 @@ ALTER TABLE IF EXISTS access_logs DISABLE ROW LEVEL SECURITY;
 -- 2. Eliminar políticas existentes que pueden estar causando problemas
 DROP POLICY IF EXISTS "Users can only read own data" ON system_users;
 DROP POLICY IF EXISTS "Allow public login verification" ON system_users;
+DROP POLICY IF EXISTS "Allow public read for login" ON system_users;
 DROP POLICY IF EXISTS "Users can only access own sessions" ON user_sessions;
 DROP POLICY IF EXISTS "Users can only read own logs" ON access_logs;
 DROP POLICY IF EXISTS "Allow insert access logs" ON access_logs;
+DROP POLICY IF EXISTS "Allow read access logs" ON access_logs;
+DROP POLICY IF EXISTS "Allow session management" ON user_sessions;
 
 -- 3. Crear tablas si no existen
 CREATE TABLE IF NOT EXISTS system_users (
@@ -50,8 +53,27 @@ CREATE TABLE IF NOT EXISTS access_logs (
     ip_address INET,
     user_agent TEXT,
     details JSONB DEFAULT '{}',
+
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+
+-- Crear o reemplazar función para updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Eliminar trigger si ya existe para evitar error de duplicado
+DROP TRIGGER IF EXISTS update_system_users_updated_at ON system_users;
+
+-- Crear trigger de forma segura
+CREATE TRIGGER update_system_users_updated_at 
+    BEFORE UPDATE ON system_users 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 4. Insertar/actualizar usuario admin
 INSERT INTO system_users (email, password_hash, full_name, role, status) 

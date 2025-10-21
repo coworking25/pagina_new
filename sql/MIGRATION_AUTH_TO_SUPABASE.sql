@@ -39,6 +39,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Eliminar trigger si ya existe para evitar error de duplicado
+DROP TRIGGER IF EXISTS update_user_profiles_updated_at ON public.user_profiles;
+
 CREATE TRIGGER update_user_profiles_updated_at
   BEFORE UPDATE ON public.user_profiles
   FOR EACH ROW
@@ -146,6 +149,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Habilitar RLS en user_profiles
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- Eliminar políticas existentes si ya existen
+DROP POLICY IF EXISTS "Users can view own profile" ON public.user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.user_profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.user_profiles;
+DROP POLICY IF EXISTS "Admins can update all profiles" ON public.user_profiles;
+DROP POLICY IF EXISTS "Admins can insert profiles" ON public.user_profiles;
 
 -- Política: Los usuarios pueden ver su propio perfil
 CREATE POLICY "Users can view own profile"

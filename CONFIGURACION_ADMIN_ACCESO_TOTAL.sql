@@ -30,7 +30,7 @@ INSERT INTO advisors (
   auth.uid(),
   'Administrador Principal',     -- ← Cambiar por tu nombre
   auth.jwt() ->> 'email',
-  '+593999999999',               -- ← Cambiar por tu teléfono
+  '+57 302 824 04 88',               -- ← Cambiar por tu teléfono
   true,
   'admin',                       -- ROL: admin (máximo privilegio)
   NOW(),

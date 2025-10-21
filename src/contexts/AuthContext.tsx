@@ -3,7 +3,6 @@ import {
   loginUser, 
   logoutUser, 
   getCurrentUser, 
-  isAuthenticated,
   isAdmin,
   isAdvisor,
   onAuthStateChange,
@@ -12,6 +11,7 @@ import {
   requestPasswordReset,
   UserProfile
 } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 // =====================================================
 // INTERFACES
@@ -83,7 +83,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       console.log('🔄 Cargando usuario...');
 
-      const authenticated = await isAuthenticated();
+      // Verificar sesión primero
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('❌ Error obteniendo sesión:', sessionError);
+        setUser(null);
+        setIsAuthenticatedState(false);
+        setIsAdminState(false);
+        setIsAdvisorState(false);
+        return;
+      }
+
+      const authenticated = sessionData.session !== null;
       setIsAuthenticatedState(authenticated);
 
       if (authenticated) {
@@ -91,6 +102,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(currentUser);
 
         if (currentUser) {
+          // Pequeño delay para asegurar sincronización
+          await new Promise(resolve => setTimeout(resolve, 50));
+
           // Verificar roles
           const adminStatus = await isAdmin();
           const advisorStatus = await isAdvisor();
@@ -132,14 +146,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
       setIsAuthenticatedState(true);
 
+      // Esperar un momento para que la sesión se sincronice completamente
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verificar sesión está lista
+      const { data: sessionCheck } = await supabase.auth.getSession();
+      if (!sessionCheck.session) {
+        throw new Error('Sesión no establecida correctamente');
+      }
+
       // Verificar roles
       const adminStatus = await isAdmin();
       const advisorStatus = await isAdvisor();
-      
+
       setIsAdminState(adminStatus);
       setIsAdvisorState(advisorStatus);
 
-      console.log('✅ Login exitoso');
+      console.log('✅ Login exitoso:', {
+        email: response.user.email,
+        isAdmin: adminStatus,
+        isAdvisor: advisorStatus
+      });
 
     } catch (error) {
       console.error('❌ Error en login:', error);
