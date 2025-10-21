@@ -26,7 +26,7 @@ export const advisors: Advisor[] = [
     email: 'andres.metrio@inmobiliaria.com',
     phone: '+57 302 810 80 90',
     whatsapp: '573028108090',
-    photo: 'https://gfczfjpyyyyvteyrvhgt.supabase.co/storage/v1/object/public/property-images/Asesores/2.jpg', // Andrés Metrio - Imagen desde Supabase Storage
+    photo: 'https://gfczfjpyyyyvteyrvhgt.supabase.co/storage/v1/object/public/property-images/Asesores/2%20(2).jpg', // Andrés Metrio - Imagen desde Supabase Storage
     specialty: 'Propiedades Comerciales y Oficinas',
     rating: 4.6,
     reviews: 94,

@@ -1382,7 +1382,7 @@ export async function getAdvisors(): Promise<Advisor[]> {
         email: 'andres.metrio@inmobiliaria.com',
         phone: '+57 302 810 80 90',
         whatsapp: '573028108090',
-        photo: getAdvisorImageUrl('2.jpg'),
+        photo: getAdvisorImageUrl('2 (2).jpg'),
         specialty: 'Propiedades Comerciales y Oficinas',
         rating: 4.6,
         reviews: 94,
