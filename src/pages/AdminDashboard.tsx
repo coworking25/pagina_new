@@ -25,7 +25,8 @@ import {
   DollarSign,
   ExternalLink,
   Check,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 import { useNotificationContext } from '../contexts/NotificationContext';
 import { 
@@ -37,6 +38,8 @@ import {
 } from '../lib/supabase';
 import FloatingCard from '../components/UI/FloatingCard';
 import ReportsModal from '../components/Modals/ReportsModal';
+import UserManagementModal from '../components/Modals/UserManagementModal';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DashboardStats {
   properties: {
@@ -118,7 +121,9 @@ function AdminDashboard() {
   const [revenueTrends, setRevenueTrends] = useState<RevenueTrend[]>([]);
   const [smartAlerts, setSmartAlerts] = useState<SmartAlertsData | null>(null);
   const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
+  const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   // Usar el contexto de notificaciones
   const {
@@ -385,6 +390,17 @@ function AdminDashboard() {
             <p className="text-blue-100 mt-2">Bienvenido al centro de control</p>
           </div>
           <div className="flex items-center space-x-4">
+            {isAdmin && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsUserManagementModalOpen(true)}
+                className="p-3 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                title="Gestionar Usuarios"
+              >
+                <Users className="w-6 h-6" />
+              </motion.button>
+            )}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -730,6 +746,18 @@ function AdminDashboard() {
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/admin/clients')}
+                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-indigo-200/50 dark:border-indigo-700/50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/10 to-indigo-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mr-3 relative z-10" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10">Gestionar Clientes</span>
+                <ArrowUpRight className="w-4 h-4 ml-auto text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/admin/properties')}
                 className="group relative w-full flex items-center p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-green-200/50 dark:border-green-700/50 overflow-hidden"
               >
@@ -750,6 +778,20 @@ function AdminDashboard() {
                 <span className="text-gray-900 dark:text-white font-medium relative z-10">Consultas de Servicio</span>
                 <ArrowUpRight className="w-4 h-4 ml-auto text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
               </motion.button>
+
+              {isAdmin && (
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsUserManagementModalOpen(true)}
+                  className="group relative w-full flex items-center p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-red-200/50 dark:border-red-700/50 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-400/10 to-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <Shield className="w-5 h-5 text-red-600 dark:text-red-400 mr-3 relative z-10" />
+                  <span className="text-gray-900 dark:text-white font-medium relative z-10">Gestionar Usuarios</span>
+                  <ArrowUpRight className="w-4 h-4 ml-auto text-red-600 dark:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                </motion.button>
+              )}
 
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -783,6 +825,12 @@ function AdminDashboard() {
       <ReportsModal 
         isOpen={isReportsModalOpen}
         onClose={() => setIsReportsModalOpen(false)}
+      />
+
+      {/* User Management Modal */}
+      <UserManagementModal 
+        isOpen={isUserManagementModalOpen}
+        onClose={() => setIsUserManagementModalOpen(false)}
       />
     </div>
   );

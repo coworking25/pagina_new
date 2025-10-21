@@ -763,6 +763,303 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   }
 }
 
+// ==========================================
+// GESTIÓN DE USUARIOS - ADMIN
+// ==========================================
+
+export interface CreateUserData {
+  email: string;
+  password: string;
+  full_name?: string;
+  role: 'admin' | 'advisor' | 'user';
+  phone?: string;
+  department?: string;
+  position?: string;
+}
+
+/**
+ * Obtener lista de usuarios (solo administradores)
+ */
+export async function getUsers(options?: {
+  role?: 'admin' | 'advisor' | 'user';
+  is_active?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<{ data: UserProfile[]; total: number }> {
+  try {
+    console.log('👥 Obteniendo usuarios con opciones:', options);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden ver la lista de usuarios');
+    }
+
+    let query = supabase
+      .from('user_profiles')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false });
+
+    // Aplicar filtros
+    if (options?.role) {
+      query = query.eq('role', options.role);
+    }
+
+    if (options?.is_active !== undefined) {
+      query = query.eq('is_active', options.is_active);
+    }
+
+    if (options?.search) {
+      query = query.or(`email.ilike.%${options.search}%,full_name.ilike.%${options.search}%`);
+    }
+
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      query = query.range(options.offset, (options.offset + (options.limit || 10)) - 1);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('❌ Error obteniendo usuarios:', error);
+      throw error;
+    }
+
+    console.log(`✅ Obtenidos ${data?.length || 0} usuarios de ${count || 0} total`);
+    return {
+      data: data || [],
+      total: count || 0
+    };
+
+  } catch (error: any) {
+    console.error('❌ Error en getUsers:', error);
+    throw error;
+  }
+}
+
+/**
+ * Crear un nuevo usuario (solo administradores)
+ */
+export async function createUser(userData: CreateUserData): Promise<UserProfile> {
+  try {
+    console.log('👤 Creando usuario:', userData.email);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden crear usuarios');
+    }
+
+    // Crear usuario en Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: userData.password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: userData.full_name || userData.email.split('@')[0]
+      }
+    });
+
+    if (authError) {
+      console.error('❌ Error creando usuario en auth:', authError);
+      throw new Error(authError.message);
+    }
+
+    if (!authData.user) {
+      throw new Error('No se pudo crear el usuario');
+    }
+
+    // Crear perfil en user_profiles
+    const profileData = {
+      id: authData.user.id,
+      email: userData.email,
+      full_name: userData.full_name || userData.email.split('@')[0],
+      role: userData.role,
+      phone: userData.phone || null,
+      department: userData.department || null,
+      position: userData.position || null,
+      is_active: true
+    };
+
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .insert(profileData)
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error('❌ Error creando perfil:', profileError);
+      // Intentar limpiar el usuario de auth si falló el perfil
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id);
+      } catch (cleanupError) {
+        console.error('⚠️ Error limpiando usuario de auth:', cleanupError);
+      }
+      throw new Error(profileError.message);
+    }
+
+    console.log('✅ Usuario creado exitosamente:', profile.email);
+    return profile as UserProfile;
+
+  } catch (error: any) {
+    console.error('❌ Error en createUser:', error);
+    throw error;
+  }
+}
+
+/**
+ * Actualizar un usuario (solo administradores)
+ */
+export async function updateUser(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+  try {
+    console.log('📝 Actualizando usuario:', userId);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden actualizar usuarios');
+    }
+
+    // Preparar datos de actualización
+    const updateData: any = { ...updates };
+    delete updateData.id;
+    delete updateData.email; // El email no se puede cambiar desde aquí
+    delete updateData.created_at;
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error actualizando usuario:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('✅ Usuario actualizado exitosamente');
+    return data as UserProfile;
+
+  } catch (error: any) {
+    console.error('❌ Error en updateUser:', error);
+    throw error;
+  }
+}
+
+/**
+ * Eliminar un usuario (solo administradores)
+ */
+export async function deleteUser(userId: string): Promise<void> {
+  try {
+    console.log('🗑️ Eliminando usuario:', userId);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden eliminar usuarios');
+    }
+
+    // No permitir eliminar al propio usuario
+    const currentUser = await getCurrentUser();
+    if (currentUser?.id === userId) {
+      throw new Error('No puedes eliminar tu propio usuario');
+    }
+
+    // Eliminar perfil (esto debería activar el trigger de eliminación en cascada)
+    const { error } = await supabase
+      .from('user_profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (error) {
+      console.error('❌ Error eliminando usuario:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('✅ Usuario eliminado exitosamente');
+
+  } catch (error: any) {
+    console.error('❌ Error en deleteUser:', error);
+    throw error;
+  }
+}
+
+/**
+ * Resetear contraseña de un usuario (solo administradores)
+ */
+export async function resetUserPassword(userId: string, newPassword: string): Promise<void> {
+  try {
+    console.log('🔑 Reseteando contraseña para usuario:', userId);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden resetear contraseñas');
+    }
+
+    // Resetear contraseña usando Supabase Admin API
+    const { error } = await supabase.auth.admin.updateUserById(userId, {
+      password: newPassword
+    });
+
+    if (error) {
+      console.error('❌ Error reseteando contraseña:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('✅ Contraseña reseteada exitosamente');
+
+  } catch (error: any) {
+    console.error('❌ Error en resetUserPassword:', error);
+    throw error;
+  }
+}
+
+/**
+ * Activar/desactivar un usuario (solo administradores)
+ */
+export async function toggleUserStatus(userId: string, isActive: boolean): Promise<UserProfile> {
+  try {
+    console.log(`${isActive ? '✅ Activando' : '🚫 Desactivando'} usuario:`, userId);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden cambiar el estado de usuarios');
+    }
+
+    // No permitir desactivar al propio usuario
+    const currentUser = await getCurrentUser();
+    if (currentUser?.id === userId && !isActive) {
+      throw new Error('No puedes desactivar tu propio usuario');
+    }
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update({ is_active: isActive })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error cambiando estado del usuario:', error);
+      throw new Error(error.message);
+    }
+
+    console.log(`✅ Usuario ${isActive ? 'activado' : 'desactivado'} exitosamente`);
+    return data as UserProfile;
+
+  } catch (error: any) {
+    console.error('❌ Error en toggleUserStatus:', error);
+    throw error;
+  }
+}
+
 // Función auxiliar para logging de eventos de autenticación
 async function logAuthEvent(
   action: 'login' | 'logout' | 'failed_login' | 'password_reset' | 'email_change',
@@ -1145,6 +1442,193 @@ export async function getAdvisorById(id: string): Promise<Advisor | null> {
   } catch (error) {
     console.error('❌ Error en getAdvisorById:', error);
     return null;
+  }
+}
+
+/**
+ * Crear un nuevo asesor (solo administradores)
+ */
+export async function createAdvisor(advisorData: Omit<Advisor, 'id'>): Promise<Advisor> {
+  try {
+    console.log('👤 Creando asesor:', advisorData.name);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden crear asesores');
+    }
+
+    // Validar datos requeridos
+    if (!advisorData.name || !advisorData.email || !advisorData.phone) {
+      throw new Error('Nombre, email y teléfono son campos obligatorios');
+    }
+
+    // Preparar datos para la base de datos
+    const dbData = {
+      name: advisorData.name,
+      email: advisorData.email,
+      phone: advisorData.phone,
+      whatsapp: advisorData.whatsapp || advisorData.phone,
+      specialty: advisorData.specialty || 'General',
+      bio: advisorData.bio || null,
+      experience_years: advisorData.experience_years || 0,
+      rating: advisorData.rating || 0,
+      reviews_count: advisorData.reviews || 0,
+      photo_url: advisorData.photo ? advisorData.photo.replace(getAdvisorImageUrl(''), '') : null,
+      availability_weekdays: advisorData.availability?.weekdays || '9:00 AM - 5:00 PM',
+      availability_weekends: advisorData.availability?.weekends || 'No disponible',
+      calendar_link: advisorData.calendar_link || null,
+      commission_rate: 3.00, // Valor por defecto
+      license_number: null,
+      languages: ['Español'],
+      areas_of_expertise: [advisorData.specialty || 'General'],
+      education: null,
+      certifications: [],
+      social_media: {},
+      is_active: true,
+      joined_date: new Date().toISOString().split('T')[0]
+    };
+
+    const { data, error } = await supabase
+      .from('advisors')
+      .insert(dbData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error creando asesor:', error);
+      if (error.code === '23505') {
+        throw new Error('Ya existe un asesor con ese email');
+      }
+      throw new Error(error.message);
+    }
+
+    console.log('✅ Asesor creado exitosamente:', data.name);
+    return getAdvisorById(data.id) as Promise<Advisor>;
+
+  } catch (error: any) {
+    console.error('❌ Error en createAdvisor:', error);
+    throw error;
+  }
+}
+
+/**
+ * Actualizar un asesor (solo administradores)
+ */
+export async function updateAdvisor(advisorId: string, updates: Partial<Advisor>): Promise<Advisor> {
+  try {
+    console.log('📝 Actualizando asesor:', advisorId);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden actualizar asesores');
+    }
+
+    // Preparar datos de actualización
+    const updateData: any = {};
+
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.email !== undefined) updateData.email = updates.email;
+    if (updates.phone !== undefined) updateData.phone = updates.phone;
+    if (updates.whatsapp !== undefined) updateData.whatsapp = updates.whatsapp;
+    if (updates.specialty !== undefined) updateData.specialty = updates.specialty;
+    if (updates.bio !== undefined) updateData.bio = updates.bio;
+    if (updates.experience_years !== undefined) updateData.experience_years = updates.experience_years;
+    if (updates.rating !== undefined) updateData.rating = updates.rating;
+    if (updates.reviews !== undefined) updateData.reviews_count = updates.reviews;
+    if (updates.calendar_link !== undefined) updateData.calendar_link = updates.calendar_link;
+
+    // Manejar imagen
+    if (updates.photo !== undefined) {
+      if (updates.photo && updates.photo.startsWith('http')) {
+        // Extraer el path relativo de la URL
+        updateData.photo_url = updates.photo.replace(getAdvisorImageUrl(''), '');
+      } else {
+        updateData.photo_url = updates.photo;
+      }
+    }
+
+    // Manejar disponibilidad
+    if (updates.availability?.weekdays !== undefined) {
+      updateData.availability_weekdays = updates.availability.weekdays;
+    }
+    if (updates.availability?.weekends !== undefined) {
+      updateData.availability_weekends = updates.availability.weekends;
+    }
+
+    const { data, error } = await supabase
+      .from('advisors')
+      .update(updateData)
+      .eq('id', advisorId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error actualizando asesor:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('✅ Asesor actualizado exitosamente');
+    return getAdvisorById(advisorId) as Promise<Advisor>;
+
+  } catch (error: any) {
+    console.error('❌ Error en updateAdvisor:', error);
+    throw error;
+  }
+}
+
+/**
+ * Eliminar un asesor (solo administradores)
+ */
+export async function deleteAdvisor(advisorId: string): Promise<void> {
+  try {
+    console.log('🗑️ Eliminando asesor:', advisorId);
+
+    // Verificar permisos de admin
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      throw new Error('Solo los administradores pueden eliminar asesores');
+    }
+
+    // Verificar que el asesor existe
+    const advisor = await getAdvisorById(advisorId);
+    if (!advisor) {
+      throw new Error('Asesor no encontrado');
+    }
+
+    // Verificar si tiene citas pendientes
+    const { data: appointments, error: appointmentsError } = await supabase
+      .from('property_appointments')
+      .select('id')
+      .eq('advisor_id', advisorId)
+      .in('status', ['pending', 'confirmed'])
+      .is('deleted_at', null);
+
+    if (appointmentsError) {
+      console.warn('⚠️ Error verificando citas:', appointmentsError);
+    }
+
+    if (appointments && appointments.length > 0) {
+      throw new Error(`No se puede eliminar el asesor. Tiene ${appointments.length} citas pendientes o confirmadas.`);
+    }
+
+    // Soft delete - marcar como inactivo
+    const { error } = await supabase
+      .from('advisors')
+      .update({ is_active: false })
+      .eq('id', advisorId);
+
+    if (error) {
+      console.error('❌ Error eliminando asesor:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('✅ Asesor eliminado exitosamente (soft delete)');
+
+  } catch (error: any) {
+    console.error('❌ Error en deleteAdvisor:', error);
+    throw error;
   }
 }
 
@@ -2064,7 +2548,7 @@ export async function getFinancialStats(): Promise<{
       .eq('contract_type', 'sale')
       .eq('status', 'active')
       .gte('signature_date', new Date(currentYear, currentMonth, 1).toISOString())
-      .lt('signature_date', new Date(currentYear, currentMonth + 1, 1).toISOString());
+      .lt('signature_date', new Date(currentYear, currentMonth + 1).toISOString());
 
     // Asumiendo comisión del 3% para ventas
     const commissionRate = 0.03;
@@ -2264,6 +2748,7 @@ export async function getDashboardStats(): Promise<{
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     let clientsThisMonth = 0;
+
 
     appointments.forEach((apt: any) => {
       if (apt.client_email) {
@@ -2801,7 +3286,7 @@ export async function deleteProperty(propertyId: number) {
       .select('id, status')
       .eq('property_id', propertyId)
       .in('status', ['pending', 'confirmed'])
-      .is('deleted_at', null);  // Solo contar citas que NO han sido eliminadas
+      .is('deleted_at', null)  // Solo contar citas que NO han sido eliminadas
 
     if (appointmentsError) {
       console.warn('⚠️ Error al verificar citas:', appointmentsError);
@@ -3159,512 +3644,6 @@ export async function debugUsers() {
 }
 
 // ==========================================
-// FUNCIONES CRUD PARA ASESORES
-// ==========================================
-
-// Crear nuevo asesor
-export async function createAdvisor(advisorData: Omit<Advisor, 'id'>): Promise<Advisor> {
-  try {
-    console.log('🔨 Creando nuevo asesor:', advisorData);
-    
-    const { data, error } = await supabase
-      .from('advisors')
-      .insert([{
-        name: advisorData.name,
-        email: advisorData.email,
-        phone: advisorData.phone,
-        whatsapp: advisorData.whatsapp,
-        photo_url: advisorData.photo,
-        specialty: advisorData.specialty,
-        rating: advisorData.rating || 5.0,
-        reviews_count: advisorData.reviews || 0,
-        availability_weekdays: advisorData.availability?.weekdays || '9:00 AM - 5:00 PM',
-        availability_weekends: advisorData.availability?.weekends || 'No disponible',
-        calendar_link: advisorData.calendar_link,
-        bio: advisorData.bio,
-        experience_years: advisorData.experience_years || 0,
-        is_active: true
-      }])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('❌ Error creando asesor:', error);
-      throw error;
-    }
-    
-    console.log('✅ Asesor creado exitosamente:', data);
-    
-    // Convertir respuesta de la BD al formato de la interfaz
-    const advisor: Advisor = {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      whatsapp: data.whatsapp,
-      photo: data.photo_url || '',
-      specialty: data.specialty,
-      rating: data.rating,
-      reviews: data.reviews_count,
-      availability: {
-        weekdays: data.availability_weekdays,
-        weekends: data.availability_weekends
-      },
-      calendar_link: data.calendar_link,
-      availability_hours: `Lun-Vie: ${data.availability_weekdays}, Sáb-Dom: ${data.availability_weekends}`,
-      bio: data.bio,
-      experience_years: data.experience_years
-    };
-    
-    return advisor;
-    
-  } catch (error) {
-    console.error('❌ Error en createAdvisor:', error);
-    throw error;
-  }
-}
-
-// Actualizar asesor existente
-export async function updateAdvisor(id: string, advisorData: Partial<Advisor>): Promise<Advisor> {
-  try {
-    console.log('🔧 Actualizando asesor:', id, advisorData);
-    
-    const updateData: any = {};
-    
-    if (advisorData.name) updateData.name = advisorData.name;
-    if (advisorData.email) updateData.email = advisorData.email;
-    if (advisorData.phone) updateData.phone = advisorData.phone;
-    if (advisorData.whatsapp) updateData.whatsapp = advisorData.whatsapp;
-    if (advisorData.photo) updateData.photo_url = advisorData.photo;
-    if (advisorData.specialty) updateData.specialty = advisorData.specialty;
-    if (advisorData.rating !== undefined) updateData.rating = advisorData.rating;
-    if (advisorData.reviews !== undefined) updateData.reviews_count = advisorData.reviews;
-    if (advisorData.availability?.weekdays) updateData.availability_weekdays = advisorData.availability.weekdays;
-    if (advisorData.availability?.weekends) updateData.availability_weekends = advisorData.availability.weekends;
-    if (advisorData.calendar_link) updateData.calendar_link = advisorData.calendar_link;
-    if (advisorData.bio) updateData.bio = advisorData.bio;
-    if (advisorData.experience_years !== undefined) updateData.experience_years = advisorData.experience_years;
-    
-    const { data, error } = await supabase
-      .from('advisors')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('❌ Error actualizando asesor:', error);
-      throw error;
-    }
-    
-    console.log('✅ Asesor actualizado exitosamente:', data);
-    
-    // Convertir respuesta de la BD al formato de la interfaz
-    const advisor: Advisor = {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      whatsapp: data.whatsapp,
-      photo: data.photo_url || '',
-      specialty: data.specialty,
-      rating: data.rating,
-      reviews: data.reviews_count,
-      availability: {
-        weekdays: data.availability_weekdays,
-        weekends: data.availability_weekends
-      },
-      calendar_link: data.calendar_link,
-      availability_hours: `Lun-Vie: ${data.availability_weekdays}, Sáb-Dom: ${data.availability_weekends}`,
-      bio: data.bio,
-      experience_years: data.experience_years
-    };
-    
-    return advisor;
-    
-  } catch (error) {
-    console.error('❌ Error en updateAdvisor:', error);
-    throw error;
-  }
-}
-
-// Eliminar asesor (soft delete)
-export async function deleteAdvisor(id: string): Promise<boolean> {
-  try {
-    console.log('🗑️ Eliminando asesor:', id);
-    
-    // Soft delete - marcar con deleted_at en lugar de cambiar is_active
-    const { error } = await supabase
-      .from('advisors')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
-    
-    if (error) {
-      console.error('❌ Error eliminando asesor:', error);
-      throw error;
-    }
-    
-    console.log('✅ Asesor eliminado exitosamente (soft delete)');
-    return true;
-    
-  } catch (error) {
-    console.error('❌ Error en deleteAdvisor:', error);
-    throw error;
-  }
-}// =====================================================
-// SISTEMA DE CLIENTES
-// =====================================================
-// Las funciones de clientes han sido movidas a src/lib/clientsApi.ts
-// para evitar conflictos y mantener separación de responsabilidades.
-
-// =====================================================
-// FUNCIONES DE WHATSAPP
-// =====================================================
-
-/**
- * Envía un mensaje de WhatsApp al cliente para confirmar una cita
- * @param phoneNumber Número de teléfono del cliente (con código de país)
- * @param appointmentData Datos de la cita para el mensaje
- * @returns URL de WhatsApp con el mensaje pre-cargado
- */
-export function generateWhatsAppConfirmationMessage(
-  phoneNumber: string,
-  appointmentData: {
-    client_name: string;
-    appointment_date: string;
-    appointment_type: string;
-    property_title?: string;
-    advisor_name?: string;
-  }
-): string {
-  // Limpiar el número de teléfono (remover espacios, guiones, etc.)
-  const cleanPhone = phoneNumber.replace(/\s|-|\(|\)/g, '');
-
-  // Asegurarse de que tenga el código de país (+57 para Colombia)
-  const phoneWithCountryCode = cleanPhone.startsWith('+') ? cleanPhone : `+57${cleanPhone}`;
-
-  // Formatear la fecha para mostrarla de manera legible
-  const appointmentDate = new Date(appointmentData.appointment_date);
-  const formattedDate = appointmentDate.toLocaleDateString('es-CO', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-
-  // Crear el mensaje de confirmación
-  const message = `*Confirmación de Cita - Coworking Inmobiliario*
-
-Hola ${appointmentData.client_name},
-
-Se ha agendado una cita para ti:
-
-📅 *Fecha:* ${formattedDate}
-🏠 *Tipo:* ${appointmentData.appointment_type}
-${appointmentData.property_title ? `🏢 *Propiedad:* ${appointmentData.property_title}` : ''}
-${appointmentData.advisor_name ? `👨‍💼 *Asesor:* ${appointmentData.advisor_name}` : ''}
-
-*¿Podrías confirmar tu asistencia?*
-
-✅ Responde *SÍ* para confirmar
-❌ Responde *NO* para cancelar
-📝 Responde *CAMBIAR* para reprogramar
-
-Gracias por tu interés en nuestras propiedades.
-
-*Coworking Inmobiliario*
-📞 +57 3028240488`;
-
-  // Codificar el mensaje para URL
-  const encodedMessage = encodeURIComponent(message);
-
-  // Generar el enlace de WhatsApp
-  const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
-
-  return whatsappUrl;
-}
-
-/**
- * Envía un mensaje de WhatsApp al asesor informándole sobre una nueva cita para coordinar
- * @param phoneNumber Número de teléfono del asesor
- * @param appointmentData Datos de la cita para el mensaje
- */
-export function sendWhatsAppToAdvisor(
-  phoneNumber: string,
-  appointmentData: {
-    client_name: string;
-    appointment_date: string;
-    appointment_type: string;
-    property_title?: string;
-    advisor_name?: string;
-    client_phone?: string;
-    client_email?: string;
-  }
-): void {
-  const message = `*Nueva Cita Asignada - Coworking Inmobiliario*
-
-Hola ${appointmentData.advisor_name},
-
-Se te ha asignado una nueva cita para coordinar:
-
-👤 *Cliente:* ${appointmentData.client_name}
-📧 *Email:* ${appointmentData.client_email || 'No proporcionado'}
-📱 *Teléfono:* ${appointmentData.client_phone || 'No proporcionado'}
-
-📅 *Fecha solicitada:* ${new Date(appointmentData.appointment_date).toLocaleDateString('es-CO', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-})}
-
-🏠 *Tipo:* ${appointmentData.appointment_type}
-🏢 *Propiedad:* ${appointmentData.property_title || 'Por definir'}
-
-*Por favor coordina directamente con el cliente para confirmar la fecha y hora definitiva.*
-
-*Coworking Inmobiliario*
-📞 +57 3028240488`;
-
-  // Limpiar el número de teléfono
-  const cleanPhone = phoneNumber.replace(/\s|-|\(|\)/g, '');
-  const phoneWithCountryCode = cleanPhone.startsWith('+') ? cleanPhone : `+57${cleanPhone}`;
-
-  // Codificar el mensaje para URL
-  const encodedMessage = encodeURIComponent(message);
-
-  // Generar el enlace de WhatsApp
-  const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
-
-  // Abrir WhatsApp en una nueva ventana
-  window.open(whatsappUrl, '_blank', 'width=400,height=600');
-
-  console.log('📱 WhatsApp message sent to advisor:', phoneNumber);
-}
-
-/**
- * Envía un mensaje de WhatsApp al asesor confirmando que la cita fue aceptada por el cliente
- * @param phoneNumber Número de teléfono del asesor
- * @param appointmentData Datos de la cita confirmada
- */
-export function sendWhatsAppConfirmationToAdvisor(
-  phoneNumber: string,
-  appointmentData: {
-    client_name: string;
-    appointment_date: string;
-    appointment_type: string;
-    property_title?: string;
-    advisor_name?: string;
-    client_phone?: string;
-    client_email?: string;
-  }
-): void {
-  const message = `*✅ Cita Confirmada - Coworking Inmobiliario*
-
-¡Excelente ${appointmentData.advisor_name}!
-
-La cita ha sido CONFIRMADA por el cliente:
-
-👤 *Cliente:* ${appointmentData.client_name}
-📧 *Email:* ${appointmentData.client_email || 'No proporcionado'}
-📱 *Teléfono:* ${appointmentData.client_phone || 'No proporcionado'}
-
-📅 *Fecha confirmada:* ${new Date(appointmentData.appointment_date).toLocaleDateString('es-CO', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-})}
-
-🏠 *Tipo:* ${appointmentData.appointment_type}
-🏢 *Propiedad:* ${appointmentData.property_title || 'Por definir'}
-
-*El cliente ha confirmado su asistencia. Por favor, prepárate para la cita.*
-
-*Coworking Inmobiliario*
-📞 +57 3028240488`;
-
-  // Limpiar el número de teléfono
-  const cleanPhone = phoneNumber.replace(/\s|-|\(|\)/g, '');
-  const phoneWithCountryCode = cleanPhone.startsWith('+') ? cleanPhone : `+57${cleanPhone}`;
-
-  // Codificar el mensaje para URL
-  const encodedMessage = encodeURIComponent(message);
-
-  // Generar el enlace de WhatsApp
-  const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
-
-  // Abrir WhatsApp en una nueva ventana
-  window.open(whatsappUrl, '_blank', 'width=400,height=600');
-
-  console.log('✅ WhatsApp confirmation sent to advisor:', phoneNumber);
-}
-
-/**
- * Envía un mensaje de WhatsApp al cliente para confirmar, cancelar o reprogramar la cita
- * @param phoneNumber Número de teléfono del cliente
- * @param appointmentData Datos de la cita
- */
-export function sendWhatsAppToClient(
-  phoneNumber: string,
-  appointmentData: {
-    client_name: string;
-    appointment_date: string;
-    appointment_type: string;
-    property_title?: string;
-    advisor_name?: string;
-    appointment_id: string;
-  }
-): void {
-  const message = `*Confirmación de Cita - Coworking Inmobiliario*
-
-Hola ${appointmentData.client_name},
-
-¡Gracias por solicitar una cita con nosotros!
-
-📅 *Fecha propuesta:* ${new Date(appointmentData.appointment_date).toLocaleDateString('es-CO', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit'
-})}
-
-🏠 *Tipo:* ${appointmentData.appointment_type}
-🏢 *Propiedad:* ${appointmentData.property_title || 'Por definir'}
-👨‍💼 *Asesor asignado:* ${appointmentData.advisor_name || 'Por asignar'}
-
-*Por favor confirma tu asistencia respondiendo con una de las siguientes opciones:*
-
-✅ *CONFIRMAR* - Si la fecha y hora te parece bien
-❌ *CANCELAR* - Si ya no necesitas la cita
-📅 *REPROGRAMAR* - Si necesitas cambiar la fecha/hora
-
-*Tu asesor se pondrá en contacto contigo pronto para coordinar los detalles finales.*
-
-*Coworking Inmobiliario*
-📞 +57 3028240488
-🏠 www.coworkinginmobiliario.com`;
-
-  // Limpiar el número de teléfono
-  const cleanPhone = phoneNumber.replace(/\s|-|\(|\)/g, '');
-  const phoneWithCountryCode = cleanPhone.startsWith('+') ? cleanPhone : `+57${cleanPhone}`;
-
-  // Codificar el mensaje para URL
-  const encodedMessage = encodeURIComponent(message);
-
-  // Generar el enlace de WhatsApp
-  const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
-
-  // Abrir WhatsApp en una nueva ventana
-  window.open(whatsappUrl, '_blank', 'width=400,height=600');
-
-  console.log('📱 WhatsApp message sent to client:', phoneNumber);
-}
-
-// ==========================================
-// FUNCIONES DE SOFT DELETE ADICIONALES
-// ==========================================
-
-/**
- * Restaurar un registro soft deleted
- */
-export async function restoreRecord(tableName: string, recordId: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from(tableName)
-      .update({ deleted_at: null })
-      .eq('id', recordId);
-
-    if (error) {
-      console.error(`❌ Error restaurando registro de ${tableName}:`, error);
-      throw error;
-    }
-
-    console.log(`✅ Registro restaurado exitosamente en ${tableName}:`, recordId);
-    return true;
-  } catch (error) {
-    console.error(`❌ Error en restoreRecord para ${tableName}:`, error);
-    throw error;
-  }
-}
-
-/**
- * Hard delete permanente (solo administradores)
- */
-export async function hardDeleteRecord(tableName: string, recordId: string): Promise<boolean> {
-  try {
-    // Verificar permisos de administrador
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', (await supabase.auth.getUser()).data.user?.id)
-      .single();
-
-    if (profileError || userProfile?.role !== 'admin') {
-      throw new Error('Solo administradores pueden hacer hard delete');
-    }
-
-    const { error } = await supabase
-      .from(tableName)
-      .delete()
-      .eq('id', recordId);
-
-    if (error) {
-      console.error(`❌ Error en hard delete de ${tableName}:`, error);
-      throw error;
-    }
-
-    console.log(`💀 Hard delete completado en ${tableName}:`, recordId);
-    return true;
-  } catch (error) {
-    console.error(`❌ Error en hardDeleteRecord para ${tableName}:`, error);
-    throw error;
-  }
-}
-
-/**
- * Obtener registros soft deleted (solo administradores)
- */
-export async function getDeletedRecords(tableName: string) {
-  try {
-    // Verificar permisos de administrador
-    const { data: userProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', (await supabase.auth.getUser()).data.user?.id)
-      .single();
-
-    if (profileError || userProfile?.role !== 'admin') {
-      throw new Error('Solo administradores pueden ver registros eliminados');
-    }
-
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .not('deleted_at', 'is', null)
-      .order('deleted_at', { ascending: false });
-
-    if (error) {
-      console.error(`❌ Error obteniendo registros eliminados de ${tableName}:`, error);
-      throw error;
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error(`❌ Error en getDeletedRecords para ${tableName}:`, error);
-    throw error;
-  }
-}
-
-// ==========================================
 // RE-EXPORTAR FUNCIONES DE VIDEOS
 // ==========================================
 
@@ -3676,4 +3655,225 @@ export {
   updatePropertyVideos,
   type PropertyVideo
 } from './supabase-videos';
+
+// ==========================================
+// DEBUG FUNCTIONS (solo desarrollo)
+// ==========================================
+
+/**
+ * DEBUG: Obtener usuarios sin verificar permisos (solo para diagnóstico)
+ */
+export async function getUsersDebug(): Promise<{ data: UserProfile[]; total: number }> {
+  try {
+    console.log('🔍 DEBUG: getUsersDebug called - bypassing permissions');
+
+    // Query directa sin verificar permisos de admin
+    const { data, error, count } = await supabase
+      .from('user_profiles')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false });
+
+    console.log('🔍 DEBUG: Query result:', { data: data?.length || 0, count, error });
+
+    if (error) {
+      console.error('❌ DEBUG: Error obteniendo usuarios:', error);
+      throw error;
+    }
+
+    return {
+      data: data || [],
+      total: count || 0
+    };
+  } catch (error) {
+    console.error('❌ DEBUG: Error en getUsersDebug:', error);
+    throw error;
+  }
+}
+
+/**
+ * DEBUG: Verificar si las políticas RLS están funcionando
+ */
+export async function debugRLSPolicies(): Promise<{
+  currentUserId: string | null;
+  currentUserRole: string | null;
+  isAdminResult: boolean;
+  directQueryResult: any[];
+  policyTest: any[];
+}> {
+  try {
+    console.log('🔍 DEBUG: Testing RLS policies...');
+
+    // Obtener usuario actual
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('No authenticated user');
+    }
+
+    const currentUserId = user.id;
+    console.log('🔍 DEBUG: Current user ID:', currentUserId);
+
+    // Verificar rol del usuario actual
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('role, is_active')
+      .eq('id', currentUserId)
+      .single();
+
+    if (profileError) {
+      console.error('❌ DEBUG: Error getting profile:', profileError);
+      throw profileError;
+    }
+
+    console.log('🔍 DEBUG: Current user profile:', profile);
+
+    // Probar función is_admin()
+    const { data: isAdminResult, error: adminError } = await supabase.rpc('is_admin');
+    console.log('🔍 DEBUG: is_admin() result:', isAdminResult, 'error:', adminError);
+
+    // Intentar query directa (debería funcionar con RLS)
+    const { data: directQueryResult, error: directError } = await supabase
+      .from('user_profiles')
+      .select('id, email, role')
+      .limit(10);
+
+    console.log('🔍 DEBUG: Direct query result:', directQueryResult, 'error:', directError);
+
+    // Query sin RLS (usando service role si está disponible)
+    let policyTest: any[] = [];
+    try {
+      // Esta query podría fallar si no tenemos permisos de service role
+      const { data: allUsers, error: allError } = await supabase
+        .from('user_profiles')
+        .select('id, email, role')
+        .limit(10);
+
+      policyTest = allUsers || [];
+      console.log('🔍 DEBUG: All users query result:', allUsers, 'error:', allError);
+    } catch (e) {
+      console.log('🔍 DEBUG: Could not query all users (expected with RLS):', e);
+    }
+
+    return {
+      currentUserId,
+      currentUserRole: profile?.role || null,
+      isAdminResult: isAdminResult || false,
+      directQueryResult: directQueryResult || [],
+      policyTest
+    };
+
+  } catch (error) {
+    console.error('❌ DEBUG: Error in debugRLSPolicies:', error);
+    throw error;
+  }
+}
+
+/**
+ * DEBUG: Crear usuario manualmente (solo para desarrollo/testing)
+ * Versión mejorada que maneja usuarios existentes en auth
+ */
+export async function createUserManually(userData: {
+  email: string;
+  password: string;
+  full_name?: string;
+  role?: 'admin' | 'advisor' | 'user';
+}): Promise<any> {
+  try {
+    console.log('🛠️ Creando usuario manualmente:', userData.email);
+
+    // PRIMERO: Verificar si el usuario ya existe en auth.users
+    console.log('🔍 Verificando si usuario ya existe en auth...');
+    const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
+
+    if (listError) {
+      console.error('❌ Error listando usuarios:', listError);
+      throw listError;
+    }
+
+    const existingUser = existingUsers.users.find(u => u.email === userData.email);
+    let userId: string;
+
+    if (existingUser) {
+      console.log('✅ Usuario ya existe en auth:', existingUser.email, 'ID:', existingUser.id);
+      userId = existingUser.id;
+
+      // Actualizar contraseña si se proporcionó una nueva
+      if (userData.password) {
+        console.log('🔄 Actualizando contraseña...');
+        const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+          password: userData.password
+        });
+        if (updateError) {
+          console.warn('⚠️ No se pudo actualizar contraseña:', updateError);
+        } else {
+          console.log('✅ Contraseña actualizada');
+        }
+      }
+    } else {
+      console.log('🆕 Usuario no existe, creando en auth...');
+      // Crear usuario en Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: userData.full_name || userData.email.split('@')[0]
+        }
+      });
+
+      if (authError) {
+        console.error('❌ Error creando usuario en auth:', authError);
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error('No se pudo crear el usuario');
+      }
+
+      userId = authData.user.id;
+      console.log('✅ Usuario creado en auth:', authData.user.email);
+    }
+
+    // SEGUNDO: Crear o actualizar perfil usando UPSERT
+    console.log('📝 Creando/actualizando perfil...');
+    const profileData = {
+      id: userId,
+      email: userData.email,
+      full_name: userData.full_name || userData.email.split('@')[0],
+      role: userData.role || 'user',
+      phone: null,
+      department: null,
+      position: null,
+      is_active: true
+    };
+
+    // Usar UPSERT para evitar conflictos si el perfil ya existe
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .upsert(profileData, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error('❌ Error creando/actualizando perfil:', profileError);
+      throw profileError;
+    }
+
+    console.log('✅ Perfil creado/actualizado exitosamente:', profile.email, 'Rol:', profile.role);
+    return profile;
+
+  } catch (error: any) {
+    console.error('❌ Error en createUserManually:', error);
+    throw error;
+  }
+}
+
+// Exponer funciones de debug globalmente solo para desarrollo
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  (window as any).debugRLSPolicies = debugRLSPolicies;
+  (window as any).getUsersDebug = getUsersDebug;
+  (window as any).createUserManually = createUserManually;
+}
 
