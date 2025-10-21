@@ -203,10 +203,14 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
       .maybeSingle();
 
     if (contractInfoData) {
-      // NOTA: client_contract_info NO tiene start_date/end_date (solo campos de depósito, fiador, llaves, firmas)
+      // Ahora sí cargamos start_date y end_date desde la BD
       setContractData({
-        contract_start_date: '', // No existe en BD, dejamos vacío
-        contract_end_date: '', // No existe en BD, dejamos vacío
+        contract_start_date: contractInfoData.start_date 
+          ? new Date(contractInfoData.start_date).toISOString().split('T')[0]
+          : '',
+        contract_end_date: contractInfoData.end_date
+          ? new Date(contractInfoData.end_date).toISOString().split('T')[0]
+          : '',
         deposit_amount: contractInfoData.deposit_amount || 0,
         deposit_paid: contractInfoData.deposit_paid || false,
         has_guarantor: contractInfoData.guarantor_required || false,
@@ -335,8 +339,11 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
         .maybeSingle();
 
       // Mapear campos correctamente según la estructura de la BD
-      // NOTA: start_date y end_date NO están en client_contract_info (tabla tiene 44 columnas sin fechas de contrato)
+      // Ahora sí incluimos start_date y end_date (después de ejecutar ADD_CONTRACT_DATE_COLUMNS.sql)
       const contractDataForDB = {
+        start_date: contractData.contract_start_date || null,
+        end_date: contractData.contract_end_date || null,
+        contract_type: 'arriendo', // Por defecto
         deposit_amount: contractData.deposit_amount || 0,
         deposit_paid: contractData.deposit_paid || false,
         deposit_payment_date: contractData.deposit_paid ? new Date().toISOString().split('T')[0] : null,
@@ -415,20 +422,20 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
         />
         
         {/* Modal */}
-        <div className="inline-block w-full max-w-6xl my-8 overflow-hidden text-left align-top transition-all transform bg-white shadow-2xl rounded-xl">
+        <div className="inline-block w-full max-w-6xl my-8 overflow-hidden text-left align-top transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-xl">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <h2 className="text-2xl font-bold text-gray-900">Editar Cliente: {client.full_name}</h2>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Editar Cliente: {client.full_name}</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
 
           {/* Tabs */}
-          <div className="border-b border-gray-200 bg-gray-50">
+          <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
             <div className="flex overflow-x-auto">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -438,8 +445,8 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                       activeTab === tab.id
-                        ? 'border-blue-600 text-blue-600 bg-white'
-                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'border-blue-600 text-blue-600 bg-white dark:bg-gray-800 dark:text-blue-400'
+                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -506,8 +513,8 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
             </div>
 
             {/* Footer with buttons */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <AlertCircle className="w-4 h-4" />
                 <span>Los campos marcados con * son obligatorios</span>
               </div>
@@ -516,7 +523,7 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
                   type="button"
                   onClick={onClose}
                   disabled={loading}
-                  className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="px-6 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -555,28 +562,28 @@ const BasicInfoForm: React.FC<{
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Nombre Completo *
         </label>
         <input
           type="text"
           value={data.full_name}
           onChange={(e) => setData({ ...data, full_name: e.target.value })}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-            errors.full_name ? 'border-red-300' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${
+            errors.full_name ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
         />
         {errors.full_name && <p className="mt-1 text-sm text-red-600">{errors.full_name}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Tipo de Documento
         </label>
         <select
           value={data.document_type}
           onChange={(e) => setData({ ...data, document_type: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
         >
           <option value="cedula">Cédula</option>
           <option value="pasaporte">Pasaporte</option>
@@ -585,82 +592,82 @@ const BasicInfoForm: React.FC<{
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Número de Documento *
         </label>
         <input
           type="text"
           value={data.document_number}
           onChange={(e) => setData({ ...data, document_number: e.target.value })}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-            errors.document_number ? 'border-red-300' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${
+            errors.document_number ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
         />
         {errors.document_number && <p className="mt-1 text-sm text-red-600">{errors.document_number}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Teléfono *
         </label>
         <input
           type="text"
           value={data.phone}
           onChange={(e) => setData({ ...data, phone: e.target.value })}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-            errors.phone ? 'border-red-300' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${
+            errors.phone ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
         />
         {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Email
         </label>
         <input
           type="email"
           value={data.email}
           onChange={(e) => setData({ ...data, email: e.target.value })}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-            errors.email ? 'border-red-300' : 'border-gray-300'
+          className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 ${
+            errors.email ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
         />
         {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Ciudad
         </label>
         <input
           type="text"
           value={data.city}
           onChange={(e) => setData({ ...data, city: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       <div className="md:col-span-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Dirección
         </label>
         <input
           type="text"
           value={data.address}
           onChange={(e) => setData({ ...data, address: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Tipo de Cliente
         </label>
         <select
           value={data.client_type}
           onChange={(e) => setData({ ...data, client_type: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
         >
           <option value="owner">Propietario</option>
           <option value="renter">Arrendatario</option>
@@ -670,13 +677,13 @@ const BasicInfoForm: React.FC<{
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Estado
         </label>
         <select
           value={data.status}
           onChange={(e) => setData({ ...data, status: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
         >
           <option value="active">Activo</option>
           <option value="inactive">Inactivo</option>
@@ -685,40 +692,40 @@ const BasicInfoForm: React.FC<{
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Contacto de Emergencia
         </label>
         <input
           type="text"
           value={data.emergency_contact_name}
           onChange={(e) => setData({ ...data, emergency_contact_name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           placeholder="Nombre"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Teléfono de Emergencia
         </label>
         <input
           type="text"
           value={data.emergency_contact_phone}
           onChange={(e) => setData({ ...data, emergency_contact_phone: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           placeholder="Teléfono"
         />
       </div>
 
       <div className="md:col-span-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Notas
         </label>
         <textarea
           value={data.notes}
           onChange={(e) => setData({ ...data, notes: e.target.value })}
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           placeholder="Notas adicionales sobre el cliente..."
         />
       </div>
@@ -733,40 +740,40 @@ const FinancialInfoForm: React.FC<{
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Ingresos Mensuales
         </label>
         <input
           type="number"
           value={data.monthly_income}
           onChange={(e) => setData({ ...data, monthly_income: parseFloat(e.target.value) || 0 })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           placeholder="0"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Ocupación
         </label>
         <input
           type="text"
           value={data.occupation}
           onChange={(e) => setData({ ...data, occupation: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           placeholder="Ocupación"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Empresa
         </label>
         <input
           type="text"
           value={data.company_name}
           onChange={(e) => setData({ ...data, company_name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           placeholder="Nombre de la empresa"
         />
       </div>
@@ -781,14 +788,14 @@ const CredentialsForm: React.FC<{
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Email del Portal
         </label>
         <input
           type="email"
           value={data.email}
           onChange={(e) => setData({ ...data, email: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           placeholder="email@ejemplo.com"
         />
       </div>
@@ -835,13 +842,13 @@ const PaymentsForm: React.FC<{
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Método de Pago Preferido
           </label>
           <select
             value={data.preferred_payment_method}
             onChange={(e) => setData({ ...data, preferred_payment_method: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Seleccione...</option>
             <option value="efectivo">Efectivo</option>
@@ -851,7 +858,7 @@ const PaymentsForm: React.FC<{
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Día de Facturación
           </label>
           <input
@@ -860,17 +867,17 @@ const PaymentsForm: React.FC<{
             max="31"
             value={data.billing_day}
             onChange={(e) => setData({ ...data, billing_day: parseInt(e.target.value) || 1 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
 
       {/* Conceptos de Pago */}
       <div className="space-y-4">
-        <h4 className="font-medium text-gray-900">Conceptos de Pago</h4>
+        <h4 className="font-medium text-gray-900 dark:text-white">Conceptos de Pago</h4>
 
         {/* Arriendo */}
-        <div className="p-4 border border-gray-200 rounded-lg">
+        <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
           <label className="flex items-center gap-2 mb-3">
             <input
               type="checkbox"
@@ -878,21 +885,21 @@ const PaymentsForm: React.FC<{
               onChange={(e) => setData({ ...data, arriendo_enabled: e.target.checked })}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="font-medium text-gray-900">Arriendo</span>
+            <span className="font-medium text-gray-900 dark:text-white">Arriendo</span>
           </label>
           {data.arriendo_enabled && (
             <input
               type="number"
               value={data.arriendo_amount}
               onChange={(e) => setData({ ...data, arriendo_amount: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
               placeholder="Monto"
             />
           )}
         </div>
 
         {/* Administración */}
-        <div className="p-4 border border-gray-200 rounded-lg">
+        <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
           <label className="flex items-center gap-2 mb-3">
             <input
               type="checkbox"
@@ -900,21 +907,21 @@ const PaymentsForm: React.FC<{
               onChange={(e) => setData({ ...data, admin_enabled: e.target.checked })}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="font-medium text-gray-900">Administración</span>
+            <span className="font-medium text-gray-900 dark:text-white">Administración</span>
           </label>
           {data.admin_enabled && (
             <input
               type="number"
               value={data.admin_amount}
               onChange={(e) => setData({ ...data, admin_amount: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
               placeholder="Monto"
             />
           )}
         </div>
 
         {/* Servicios Públicos */}
-        <div className="p-4 border border-gray-200 rounded-lg">
+        <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
           <label className="flex items-center gap-2 mb-3">
             <input
               type="checkbox"
@@ -922,21 +929,21 @@ const PaymentsForm: React.FC<{
               onChange={(e) => setData({ ...data, servicios_enabled: e.target.checked })}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="font-medium text-gray-900">Servicios Públicos</span>
+            <span className="font-medium text-gray-900 dark:text-white">Servicios Públicos</span>
           </label>
           {data.servicios_enabled && (
             <input
               type="number"
               value={data.servicios_amount}
               onChange={(e) => setData({ ...data, servicios_amount: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
               placeholder="Monto"
             />
           )}
         </div>
 
         {/* Otros */}
-        <div className="p-4 border border-gray-200 rounded-lg">
+        <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
           <label className="flex items-center gap-2 mb-3">
             <input
               type="checkbox"
@@ -944,7 +951,7 @@ const PaymentsForm: React.FC<{
               onChange={(e) => setData({ ...data, otros_enabled: e.target.checked })}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="font-medium text-gray-900">Otros</span>
+            <span className="font-medium text-gray-900 dark:text-white">Otros</span>
           </label>
           {data.otros_enabled && (
             <div className="space-y-3">
@@ -952,14 +959,14 @@ const PaymentsForm: React.FC<{
                 type="number"
                 value={data.otros_amount}
                 onChange={(e) => setData({ ...data, otros_amount: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                 placeholder="Monto"
               />
               <input
                 type="text"
                 value={data.otros_description}
                 onChange={(e) => setData({ ...data, otros_description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
                 placeholder="Descripción"
               />
             </div>
@@ -1001,38 +1008,38 @@ const ContractForm: React.FC<{
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Fecha de Inicio
           </label>
           <input
             type="date"
             value={formatDateForInput(data.contract_start_date)}
             onChange={(e) => setData({ ...data, contract_start_date: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Fecha de Fin
           </label>
           <input
             type="date"
             value={formatDateForInput(data.contract_end_date)}
             onChange={(e) => setData({ ...data, contract_end_date: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Monto del Depósito
         </label>
         <input
           type="number"
           value={data.deposit_amount}
           onChange={(e) => setData({ ...data, deposit_amount: parseFloat(e.target.value) || 0 })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
           placeholder="0"
         />
       </div>
@@ -1059,44 +1066,44 @@ const ContractForm: React.FC<{
           onChange={(e) => setData({ ...data, has_guarantor: e.target.checked })}
           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         />
-        <span className="font-medium text-gray-900">¿Tiene Fiador?</span>
+        <span className="font-medium text-gray-900 dark:text-white">¿Tiene Fiador?</span>
       </label>
 
       {data.has_guarantor && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nombre del Fiador
             </label>
             <input
               type="text"
               value={data.guarantor_name}
               onChange={(e) => setData({ ...data, guarantor_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Documento del Fiador
             </label>
             <input
               type="text"
               value={data.guarantor_document}
               onChange={(e) => setData({ ...data, guarantor_document: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Teléfono del Fiador
             </label>
             <input
               type="text"
               value={data.guarantor_phone}
               onChange={(e) => setData({ ...data, guarantor_phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -1105,7 +1112,7 @@ const ContractForm: React.FC<{
 
     {/* Estado del Contrato */}
     <div className="space-y-3">
-      <h4 className="font-medium text-gray-900">Estado del Contrato</h4>
+      <h4 className="font-medium text-gray-900 dark:text-white">Estado del Contrato</h4>
       
       <label className="flex items-center gap-2">
         <input
@@ -1210,7 +1217,7 @@ const DocumentsForm: React.FC<{
   return (
     <div className="space-y-6">
       {/* Uploader */}
-      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <h4 className="font-medium text-gray-900 mb-4">Subir Nuevo Documento</h4>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1221,7 +1228,7 @@ const DocumentsForm: React.FC<{
             <select
               value={selectedDocType}
               onChange={(e) => setSelectedDocType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
             >
               {documentTypes.map(type => (
                 <option key={type.value} value={type.value}>
@@ -1252,7 +1259,7 @@ const DocumentsForm: React.FC<{
           </div>
         )}
 
-        <p className="mt-3 text-xs text-gray-500">
+        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
           Formatos permitidos: PDF, JPG, PNG, Word, Excel, ZIP, RAR • Máximo 20MB
         </p>
       </div>
@@ -1262,7 +1269,7 @@ const DocumentsForm: React.FC<{
         <h4 className="font-medium text-gray-900 mb-4">Documentos Subidos ({existingDocuments.length})</h4>
         
         {existingDocuments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             No hay documentos subidos aún
           </div>
         ) : (
@@ -1270,7 +1277,7 @@ const DocumentsForm: React.FC<{
             {existingDocuments.map((doc) => (
               <div
                 key={doc.id}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -1297,7 +1304,7 @@ const DocumentsForm: React.FC<{
                       href={doc.file_path}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                     >
                       Ver
                     </a>
@@ -1305,7 +1312,7 @@ const DocumentsForm: React.FC<{
                   <button
                     type="button"
                     onClick={() => handleDeleteDocument(doc.id, doc.storage_path)}
-                    className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >
                     Eliminar
                   </button>
