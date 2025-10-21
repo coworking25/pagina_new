@@ -963,18 +963,20 @@ export async function uploadClientDocument(
       'application/pdf',
       'application/msword', // .doc
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/vnd.ms-excel', // .xls
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
       'application/zip',
       'application/x-rar-compressed',
       'application/x-zip-compressed'
     ];
     
     if (!validTypes.includes(file.type)) {
-      throw new Error(`Tipo de archivo no válido: ${file.type}. Solo se permiten: JPG, PNG, PDF, DOCX, ZIP, RAR`);
+      throw new Error(`Tipo de archivo no válido: ${file.type}. Solo se permiten: JPG, PNG, PDF, DOCX, XLSX, ZIP, RAR`);
     }
 
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 20 * 1024 * 1024; // 20MB
     if (file.size > maxSize) {
-      throw new Error('El archivo excede el tamaño máximo de 10MB');
+      throw new Error('El archivo excede el tamaño máximo de 20MB');
     }
 
     // Generar nombre único para el archivo
@@ -1007,21 +1009,30 @@ export async function uploadClientDocument(
       .from('clients')
       .getPublicUrl(fileName);
 
+    // Obtener usuario actual (para uploaded_by)
+    let uploadedBy = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData && userData.user && userData.user.id) {
+        uploadedBy = userData.user.id;
+      }
+    } catch (e) {
+      console.warn('⚠️ No se pudo obtener user id para uploaded_by:', (e as any)?.message || String(e));
+    }
+
     // Guardar registro en la tabla client_documents
-    const documentData = {
+    const documentData: any = {
       client_id: clientId,
       document_type: documentType,
       document_name: file.name,
       file_path: urlData.publicUrl,
-      file_size: file.size,
-      mime_type: file.type,
+      file_size: Number(file.size) || null,
+      mime_type: file.type || null,
       storage_path: fileName,
-      status: 'pending', // pending, verified, rejected
+      status: null, // Dejamos NULL hasta verificar los valores permitidos en el CHECK constraint
       is_required: ['cedula_frente', 'cedula_reverso'].includes(documentType),
-      uploaded_by: null, // TODO: Agregar user_id del admin actual
-      notes: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      uploaded_by: uploadedBy,
+      notes: null
     };
 
     console.log('📝 Guardando registro en client_documents:', documentData);
@@ -1029,11 +1040,16 @@ export async function uploadClientDocument(
     const { data: docData, error: docError } = await supabase
       .from('client_documents')
       .insert([documentData])
-      .select()
-      .single();
+      .select();
 
     if (docError) {
-      console.error('❌ Error guardando documento en BD:', docError);
+      // Mejorar logging del error para depuración (status, message, details si existen)
+      console.error('❌ Error guardando documento en BD:', {
+        message: docError.message || docError,
+        details: (docError as any).details || null,
+        hint: (docError as any).hint || null,
+        code: (docError as any).code || null
+      });
       throw docError;
     }
 

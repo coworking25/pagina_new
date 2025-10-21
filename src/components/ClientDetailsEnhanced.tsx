@@ -62,11 +62,14 @@ interface PortalCredentials {
 interface ClientDocument {
   id: string;
   document_type: string;
-  file_name: string;
-  file_url: string;
+  document_name: string;
+  file_path: string;
   file_size: number;
-  uploaded_at: string;
-  verified: boolean;
+  storage_path: string;
+  mime_type: string;
+  status: string;
+  created_at: string;
+  is_required: boolean;
 }
 
 interface ClientProperty {
@@ -192,7 +195,7 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
         .from('client_documents')
         .select('*')
         .eq('client_id', client.id)
-        .order('uploaded_at', { ascending: false });
+        .order('created_at', { ascending: false });
       
       if (docsData) {
         setDocuments(docsData);
@@ -310,8 +313,14 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
     const labels = {
       'cedula_frente': 'Cédula (Frente)',
       'cedula_reverso': 'Cédula (Reverso)',
+      'certificado_laboral': 'Certificado Laboral',
+      'certificado_ingresos': 'Certificado de Ingresos',
+      'referencias_bancarias': 'Referencias Bancarias',
       'contrato_firmado': 'Contrato Firmado',
+      'recibo_pago': 'Recibo de Pago',
+      'garantia': 'Documentos del Fiador',
       'comprobante_pago': 'Comprobante de Pago',
+      'otro': 'Otro Documento',
       'otros': 'Otros Documentos'
     };
     return labels[type as keyof typeof labels] || type;
@@ -649,36 +658,56 @@ const DocumentsTab: React.FC<{
   
   const handleDownload = async (doc: ClientDocument) => {
     try {
+      if (!doc.storage_path) {
+        alert('No se encontró la ruta del archivo');
+        return;
+      }
+
+      // Bucket 'clients' es privado, necesitamos URL firmada temporal
       const { data, error } = await supabase.storage
-        .from('client-documents')
-        .download(doc.file_url);
+        .from('clients')
+        .createSignedUrl(doc.storage_path, 60); // URL válida por 60 segundos
       
-      if (error) throw error;
-      
-      const url = URL.createObjectURL(data);
+      if (error) {
+        console.error('❌ Error creando URL firmada:', error);
+        throw error;
+      }
+
+      // Descargar usando la URL firmada
       const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.file_name;
+      a.href = data.signedUrl;
+      a.download = doc.document_name;
+      a.target = '_blank';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('❌ Error descargando documento:', error);
-      alert('Error al descargar el documento');
+      alert('Error al descargar el documento. Verifica que el archivo existe en Storage.');
     }
   };
 
   const handleView = async (doc: ClientDocument) => {
     try {
-      const { data } = await supabase.storage
-        .from('client-documents')
-        .getPublicUrl(doc.file_url);
+      if (!doc.storage_path) {
+        alert('No se encontró la ruta del archivo');
+        return;
+      }
+
+      // Bucket 'clients' es privado, necesitamos URL firmada temporal
+      const { data, error } = await supabase.storage
+        .from('clients')
+        .createSignedUrl(doc.storage_path, 300); // URL válida por 5 minutos
       
-      window.open(data.publicUrl, '_blank');
+      if (error) {
+        console.error('❌ Error creando URL firmada:', error);
+        throw error;
+      }
+
+      window.open(data.signedUrl, '_blank');
     } catch (error) {
       console.error('❌ Error abriendo documento:', error);
-      alert('Error al abrir el documento');
+      alert('Error al abrir el documento. Verifica que el archivo exists en Storage.');
     }
   };
 
@@ -705,19 +734,28 @@ const DocumentsTab: React.FC<{
             <div className="flex-1">
               <h4 className="font-medium text-gray-900">{getDocumentTypeLabel(doc.document_type)}</h4>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-sm text-gray-600">{doc.file_name}</span>
+                <span className="text-sm text-gray-600">{doc.document_name}</span>
                 <span className="text-sm text-gray-400">•</span>
-                <span className="text-sm text-gray-600">{formatFileSize(doc.file_size)}</span>
+                <span className="text-sm text-gray-600">{formatFileSize(doc.file_size || 0)}</span>
                 <span className="text-sm text-gray-400">•</span>
                 <span className="text-sm text-gray-600">
-                  {new Date(doc.uploaded_at).toLocaleDateString('es-ES')}
+                  {new Date(doc.created_at).toLocaleDateString('es-ES')}
                 </span>
-                {doc.verified && (
+                {doc.status === 'verified' && (
                   <>
                     <span className="text-sm text-gray-400">•</span>
                     <span className="flex items-center gap-1 text-sm text-green-600">
                       <CheckCircle className="w-4 h-4" />
                       Verificado
+                    </span>
+                  </>
+                )}
+                {doc.is_required && (
+                  <>
+                    <span className="text-sm text-gray-400">•</span>
+                    <span className="flex items-center gap-1 text-sm text-orange-600">
+                      <AlertTriangle className="w-4 h-4" />
+                      Requerido
                     </span>
                   </>
                 )}
@@ -1204,9 +1242,9 @@ const PaymentsHistoryTab: React.FC<{
   const handleFileSelect = (paymentId: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validar tamaño (máximo 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('El archivo es demasiado grande. Máximo 10MB.');
+      // Validar tamaño (máximo 20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 20MB.');
         return;
       }
       

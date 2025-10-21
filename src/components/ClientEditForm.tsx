@@ -12,12 +12,14 @@ import {
   CreditCard,
   Shield,
   Save,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
 
 import type { ClientWithDetails } from '../types/clients';
 import { supabase } from '../lib/supabase';
-import { updateClient } from '../lib/clientsApi';
+import { updateClient, uploadClientDocument, deleteClientFile } from '../lib/clientsApi';
+import DocumentUploader from './UI/DocumentUploader';
 
 // =====================================================
 // INTERFACES
@@ -100,12 +102,33 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
     signatures_complete: false
   });
 
+  const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
+
   // Cargar datos cuando se abre el modal
   useEffect(() => {
     if (isOpen && client) {
       loadClientData();
+      loadClientDocuments();
     }
   }, [isOpen, client]);
+
+  const loadClientDocuments = async () => {
+    if (!client) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('client_documents')
+        .select('*')
+        .eq('client_id', client.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setExistingDocuments(data || []);
+    } catch (error) {
+      console.error('Error cargando documentos:', error);
+    }
+  };
 
   const loadClientData = async () => {
     if (!client) return;
@@ -180,17 +203,18 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
       .maybeSingle();
 
     if (contractInfoData) {
+      // NOTA: client_contract_info NO tiene start_date/end_date (solo campos de depósito, fiador, llaves, firmas)
       setContractData({
-        contract_start_date: contractInfoData.contract_start_date || '',
-        contract_end_date: contractInfoData.contract_end_date || '',
+        contract_start_date: '', // No existe en BD, dejamos vacío
+        contract_end_date: '', // No existe en BD, dejamos vacío
         deposit_amount: contractInfoData.deposit_amount || 0,
         deposit_paid: contractInfoData.deposit_paid || false,
-        has_guarantor: contractInfoData.has_guarantor || false,
+        has_guarantor: contractInfoData.guarantor_required || false,
         guarantor_name: contractInfoData.guarantor_name || '',
-        guarantor_document: contractInfoData.guarantor_document || '',
+        guarantor_document: contractInfoData.guarantor_document_number || '',
         guarantor_phone: contractInfoData.guarantor_phone || '',
         keys_delivered: contractInfoData.keys_delivered || false,
-        signatures_complete: contractInfoData.signatures_complete || false
+        signatures_complete: (contractInfoData.contract_signed_by_client && contractInfoData.contract_signed_by_landlord) || false
       });
     }
   };
@@ -242,7 +266,7 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
         .from('client_portal_credentials')
         .select('id')
         .eq('client_id', client.id)
-        .single();
+        .maybeSingle();
 
       if (existingCred) {
         await supabase
@@ -281,7 +305,7 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
         .from('client_payment_config')
         .select('id')
         .eq('client_id', client.id)
-        .single();
+        .maybeSingle();
 
       if (existingPayment) {
         await supabase
@@ -308,25 +332,59 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
         .from('client_contract_info')
         .select('id')
         .eq('client_id', client.id)
-        .single();
+        .maybeSingle();
 
-      if (existingContract) {
-        await supabase
-          .from('client_contract_info')
-          .update(contractData)
-          .eq('client_id', client.id);
-      } else {
-        await supabase
-          .from('client_contract_info')
-          .insert({
-            client_id: client.id,
-            ...contractData
-          });
+      // Mapear campos correctamente según la estructura de la BD
+      // NOTA: start_date y end_date NO están en client_contract_info (tabla tiene 44 columnas sin fechas de contrato)
+      const contractDataForDB = {
+        deposit_amount: contractData.deposit_amount || 0,
+        deposit_paid: contractData.deposit_paid || false,
+        deposit_payment_date: contractData.deposit_paid ? new Date().toISOString().split('T')[0] : null,
+        guarantor_required: contractData.has_guarantor || false,
+        guarantor_name: contractData.guarantor_name || null,
+        guarantor_document_type: null,
+        guarantor_document_number: contractData.guarantor_document || null,
+        guarantor_phone: contractData.guarantor_phone || null,
+        guarantor_email: null,
+        guarantor_address: null,
+        keys_delivered: contractData.keys_delivered || false,
+        keys_quantity: 0,
+        keys_delivery_date: contractData.keys_delivered ? new Date().toISOString().split('T')[0] : null,
+        contract_signed_by_client: contractData.signatures_complete || false,
+        contract_signed_date_client: contractData.signatures_complete ? new Date().toISOString().split('T')[0] : null,
+        contract_signed_by_landlord: contractData.signatures_complete || false,
+        contract_signed_date_landlord: contractData.signatures_complete ? new Date().toISOString().split('T')[0] : null,
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        if (existingContract) {
+          const { error: updError } = await supabase
+            .from('client_contract_info')
+            .update(contractDataForDB)
+            .eq('client_id', client.id);
+
+          if (updError) throw updError;
+        } else {
+          const { error: insError } = await supabase
+            .from('client_contract_info')
+            .insert({
+              client_id: client.id,
+              ...contractDataForDB
+            });
+
+          if (insError) throw insError;
+        }
+
+        alert('✅ Cliente actualizado exitosamente');
+        onSave();
+        onClose();
+      } catch (contractErr) {
+        console.error('❌ Error al guardar contract info. Payload:', contractDataForDB);
+        console.error('❌ Supabase error:', contractErr);
+        // Mostrar mensaje pero NO cerrar el modal para que el usuario pueda seguir editando
+        alert('⚠️ No se pudo guardar la información del contrato. Revisa la consola para más detalles.');
       }
-
-      alert('✅ Cliente actualizado exitosamente');
-      onSave();
-      onClose();
 
     } catch (error) {
       console.error('❌ Error actualizando cliente:', error);
@@ -343,7 +401,8 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
     { id: 'financial', label: 'Información Financiera', icon: DollarSign },
     { id: 'credentials', label: 'Credenciales', icon: Key },
     { id: 'payments', label: 'Pagos', icon: CreditCard },
-    { id: 'contract', label: 'Contrato', icon: Shield }
+    { id: 'contract', label: 'Contrato', icon: Shield },
+    { id: 'documents', label: 'Documentos', icon: FileText }
   ];
 
   return (
@@ -432,6 +491,16 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
                 <ContractForm 
                   data={contractData} 
                   setData={setContractData} 
+                />
+              )}
+
+              {/* Documents Tab */}
+              {activeTab === 'documents' && (
+                <DocumentsForm
+                  clientId={client.id}
+                  existingDocuments={existingDocuments}
+                  onDocumentUploaded={loadClientDocuments}
+                  onDocumentDeleted={loadClientDocuments}
                 />
               )}
             </div>
@@ -910,32 +979,50 @@ const PaymentsForm: React.FC<{
 const ContractForm: React.FC<{
   data: any;
   setData: (data: any) => void;
-}> = ({ data, setData }) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Fecha de Inicio
-        </label>
-        <input
-          type="date"
-          value={data.contract_start_date}
-          onChange={(e) => setData({ ...data, contract_start_date: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+}> = ({ data, setData }) => {
+  // Función para formatear fecha correctamente
+  const formatDateForInput = (dateValue: string) => {
+    if (!dateValue) return '';
+    try {
+      // Si ya está en formato YYYY-MM-DD, devolverlo tal cual
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        return dateValue;
+      }
+      // Si no, intentar parsear y formatear
+      const date = new Date(dateValue);
+      return date.toISOString().split('T')[0];
+    } catch (error) {
+      console.error('Error formateando fecha:', error);
+      return '';
+    }
+  };
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Fecha de Fin
-        </label>
-        <input
-          type="date"
-          value={data.contract_end_date}
-          onChange={(e) => setData({ ...data, contract_end_date: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Fecha de Inicio
+          </label>
+          <input
+            type="date"
+            value={formatDateForInput(data.contract_start_date)}
+            onChange={(e) => setData({ ...data, contract_start_date: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Fecha de Fin
+          </label>
+          <input
+            type="date"
+            value={formatDateForInput(data.contract_end_date)}
+            onChange={(e) => setData({ ...data, contract_end_date: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1042,3 +1129,192 @@ const ContractForm: React.FC<{
     </div>
   </div>
 );
+};
+
+const DocumentsForm: React.FC<{
+  clientId: string;
+  existingDocuments: any[];
+  onDocumentUploaded: () => void;
+  onDocumentDeleted: () => void;
+}> = ({ clientId, existingDocuments, onDocumentUploaded, onDocumentDeleted }) => {
+  const [uploading, setUploading] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState<string>('cedula_frente');
+
+  const documentTypes = [
+    { value: 'cedula_frente', label: 'Cédula (Frente)' },
+    { value: 'cedula_reverso', label: 'Cédula (Reverso)' },
+    { value: 'certificado_laboral', label: 'Certificado Laboral' },
+    { value: 'certificado_ingresos', label: 'Certificado de Ingresos' },
+    { value: 'referencias_bancarias', label: 'Referencias Bancarias' },
+    { value: 'contrato_firmado', label: 'Contrato Firmado' },
+    { value: 'recibo_pago', label: 'Recibo de Pago' },
+    { value: 'garantia', label: 'Documentos del Fiador' },
+    { value: 'otro', label: 'Otro Documento' }
+  ];
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      await uploadClientDocument(clientId, selectedDocType as any, file);
+      alert('✅ Documento subido exitosamente');
+      onDocumentUploaded();
+      e.target.value = ''; // Reset input
+    } catch (error) {
+      console.error('Error subiendo documento:', error);
+      alert('❌ Error al subir el documento');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string, storagePath: string) => {
+    if (!confirm('¿Estás seguro de eliminar este documento?')) return;
+
+    try {
+      // Eliminar de Storage
+      if (storagePath) {
+        await deleteClientFile(storagePath);
+      }
+
+      // Eliminar de la base de datos
+      const { error } = await supabase
+        .from('client_documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (error) throw error;
+
+      alert('✅ Documento eliminado');
+      onDocumentDeleted();
+    } catch (error) {
+      console.error('Error eliminando documento:', error);
+      alert('❌ Error al eliminar el documento');
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (!bytes) return 'N/A';
+    const kb = bytes / 1024;
+    const mb = kb / 1024;
+    return mb >= 1 ? `${mb.toFixed(2)} MB` : `${kb.toFixed(2)} KB`;
+  };
+
+  const getDocumentTypeLabel = (type: string): string => {
+    const docType = documentTypes.find(dt => dt.value === type);
+    return docType?.label || type;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Uploader */}
+      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h4 className="font-medium text-gray-900 mb-4">Subir Nuevo Documento</h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tipo de Documento
+            </label>
+            <select
+              value={selectedDocType}
+              onChange={(e) => setSelectedDocType(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              {documentTypes.map(type => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Seleccionar Archivo
+            </label>
+            <input
+              type="file"
+              onChange={handleFileSelect}
+              disabled={uploading}
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip,.rar"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </div>
+        </div>
+
+        {uploading && (
+          <div className="mt-4 flex items-center gap-2 text-blue-600">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            <span className="text-sm">Subiendo documento...</span>
+          </div>
+        )}
+
+        <p className="mt-3 text-xs text-gray-500">
+          Formatos permitidos: PDF, JPG, PNG, Word, Excel, ZIP, RAR • Máximo 20MB
+        </p>
+      </div>
+
+      {/* Lista de documentos existentes */}
+      <div>
+        <h4 className="font-medium text-gray-900 mb-4">Documentos Subidos ({existingDocuments.length})</h4>
+        
+        {existingDocuments.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No hay documentos subidos aún
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {existingDocuments.map((doc) => (
+              <div
+                key={doc.id}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 truncate">
+                        {getDocumentTypeLabel(doc.document_type)}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {doc.document_name} • {formatFileSize(doc.file_size)}
+                      </p>
+                      {doc.created_at && (
+                        <p className="text-xs text-gray-400">
+                          Subido: {new Date(doc.created_at).toLocaleDateString('es-CO')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 ml-4">
+                  {doc.file_path && (
+                    <a
+                      href={doc.file_path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      Ver
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteDocument(doc.id, doc.storage_path)}
+                    className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
