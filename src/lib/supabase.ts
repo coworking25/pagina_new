@@ -3877,3 +3877,140 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).createUserManually = createUserManually;
 }
 
+// ==========================================
+// FUNCIONES DE WHATSAPP
+// ==========================================
+
+/**
+ * Enviar mensaje de WhatsApp al cliente para confirmar cita
+ */
+export async function sendWhatsAppToClient(
+  phoneNumber: string,
+  data: {
+    client_name: string;
+    appointment_date: string;
+    appointment_type: string;
+    property_title: string;
+    advisor_name: string;
+    appointment_id?: string;
+  }
+): Promise<boolean> {
+  try {
+    console.log('📱 Enviando WhatsApp al cliente:', phoneNumber);
+
+    // Formatear fecha para Colombia
+    const appointmentDate = new Date(data.appointment_date);
+    const formattedDate = appointmentDate.toLocaleDateString('es-CO', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Crear mensaje de WhatsApp
+    const message = `Hola ${data.client_name}! 👋
+
+Tu cita ha sido agendada exitosamente:
+
+🏠 *Propiedad:* ${data.property_title}
+📅 *Fecha:* ${formattedDate}
+🏷️ *Tipo:* ${data.appointment_type}
+👨‍💼 *Asesor:* ${data.advisor_name}
+
+Te esperamos en nuestras oficinas.
+¿Tienes alguna pregunta?
+
+*Inmobiliaria Coworking*`;
+
+    // Codificar mensaje para URL
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+
+    console.log('✅ WhatsApp URL generado:', whatsappUrl);
+
+    // En un entorno real, aquí se haría la llamada a la API de WhatsApp
+    // Por ahora, solo simulamos el envío
+    console.log('📤 Simulando envío de WhatsApp al cliente');
+
+    // En producción, aquí iría la integración con Twilio, 360Dialog, etc.
+    // Por ejemplo:
+    // const response = await fetch('/api/whatsapp/send', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ phoneNumber, message })
+    // });
+
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error enviando WhatsApp al cliente:', error);
+    return false;
+  }
+}
+
+/**
+ * Enviar mensaje de WhatsApp al asesor confirmando cita asignada
+ */
+export async function sendWhatsAppConfirmationToAdvisor(
+  phoneNumber: string,
+  data: {
+    client_name: string;
+    appointment_date: string;
+    appointment_type: string;
+    property_title: string;
+    advisor_name: string;
+    client_phone: string;
+    client_email: string;
+  }
+): Promise<boolean> {
+  try {
+    console.log('📱 Enviando WhatsApp al asesor:', phoneNumber);
+
+    // Formatear fecha para Colombia
+    const appointmentDate = new Date(data.appointment_date);
+    const formattedDate = appointmentDate.toLocaleDateString('es-CO', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Crear mensaje de WhatsApp para el asesor
+    const message = `Hola ${data.advisor_name}! 👋
+
+Se ha confirmado una nueva cita a tu nombre:
+
+👤 *Cliente:* ${data.client_name}
+📧 *Email:* ${data.client_email}
+📱 *Teléfono:* ${data.client_phone}
+🏠 *Propiedad:* ${data.property_title}
+📅 *Fecha:* ${formattedDate}
+🏷️ *Tipo:* ${data.appointment_type}
+
+Por favor confirma tu disponibilidad.
+
+*Sistema de Citas - Inmobiliaria Coworking*`;
+
+    // Codificar mensaje para URL
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+
+    console.log('✅ WhatsApp URL generado para asesor:', whatsappUrl);
+
+    // En un entorno real, aquí se haría la llamada a la API de WhatsApp
+    console.log('📤 Simulando envío de WhatsApp al asesor');
+
+    // En producción, aquí iría la integración con Twilio, 360Dialog, etc.
+
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error enviando WhatsApp al asesor:', error);
+    return false;
+  }
+}
+
