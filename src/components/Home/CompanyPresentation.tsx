@@ -7,22 +7,22 @@ const CompanyPresentation: React.FC = () => {
     {
       icon: Shield,
       title: 'Confianza y Seguridad',
-      description: 'Más de 10 años de experiencia en el sector inmobiliario, con procesos transparentes y seguros.'
+      description: 'En Coworking Inmobiliario, trabajamos con el respaldo de una aseguradora aliada, lo que garantiza seguridad, cumplimiento y tranquilidad tanto para propietarios como para arrendatarios.'
     },
     {
       icon: Users,
       title: 'Equipo Experto',
-      description: 'Nuestros asesores especializados te guían en cada paso del proceso de compra, venta o arriendo.'
+      description: 'En Coworking Inmobiliario, contamos con asesores especializados que te acompañan en cada etapa del proceso de compra, venta o arriendo, brindándote confianza, experiencia y resultados garantizados.'
     },
     {
       icon: Award,
       title: 'Excelencia en Servicio',
-      description: 'Comprometidos con la calidad y satisfacción de nuestros clientes en cada transacción.'
+      description: 'En Coworking Inmobiliario, trabajamos con compromiso y calidad, garantizando la total satisfacción de nuestros clientes en cada transacción, con atención personalizada y soluciones efectivas.'
     },
     {
       icon: Heart,
       title: 'Pasión por el Servicio',
-      description: 'Amamos ayudar a las personas a encontrar su hogar ideal y hacer realidad sus sueños.'
+      description: 'En Coworking Inmobiliario, nos apasiona ayudar a las personas a encontrar su hogar ideal, ofreciendo un servicio cercano, humano y dedicado a hacer realidad sus sueños inmobiliarios.'
     }
   ];
 
