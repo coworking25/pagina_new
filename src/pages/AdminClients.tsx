@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import ClientWizard from '../components/ClientWizard';
 import { ClientDetailsEnhanced } from '../components/ClientDetailsEnhanced';
 import { ClientEditForm } from '../components/ClientEditForm';
+import CreatePortalCredentialsModal from '../components/CreatePortalCredentialsModal';
 import {
   Users,
   Search,
@@ -28,6 +29,7 @@ import {
   CheckSquare,
   Square as CheckboxIcon,
   Minus,
+  Key,
 } from 'lucide-react';
 import {
   getClients, 
@@ -49,7 +51,9 @@ import {
   uploadClientDocument,
   savePaymentConfig,
   saveClientReferences,
-  saveContractInfo
+  saveContractInfo,
+  sanitizeNumericValue,
+  sanitizePaymentConcepts
 } from '../lib/clientsApi';
 import { getProperties, updatePropertyStatus } from '../lib/supabase';
 import Modal from '../components/UI/Modal';
@@ -207,6 +211,7 @@ function AdminClients() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showWizard, setShowWizard] = useState(false); // Wizard de cliente
+  const [showPortalCredentialsModal, setShowPortalCredentialsModal] = useState(false); // Modal de credenciales del portal
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editForm, setEditForm] = useState<Partial<Client>>({});
   
@@ -939,58 +944,7 @@ Nos comunicamos desde *Coworking Inmobiliario* para darle seguimiento.
     }
   };
 
-  // Helper para convertir valores numÃ©ricos del wizard
-  const sanitizeNumericValue = (value: any): number | undefined => {
-    if (value === null || value === undefined || value === '') {
-      return undefined;
-    }
-    const num = Number(value);
-    return isNaN(num) ? undefined : num;
-  };
-
-  // Helper para sanitizar payment_concepts
-  const sanitizePaymentConcepts = (concepts: any) => {
-    if (!concepts) return undefined;
-    
-    const sanitized: any = {};
-    
-    if (concepts.arriendo) {
-      sanitized.arriendo = {
-        enabled: concepts.arriendo.enabled,
-        amount: sanitizeNumericValue(concepts.arriendo.amount) || 0
-      };
-    }
-    
-    if (concepts.administracion) {
-      sanitized.administracion = {
-        enabled: concepts.administracion.enabled,
-        amount: sanitizeNumericValue(concepts.administracion.amount) || 0
-      };
-    }
-    
-    if (concepts.servicios_publicos) {
-      sanitized.servicios_publicos = {
-        enabled: concepts.servicios_publicos.enabled,
-        amount: sanitizeNumericValue(concepts.servicios_publicos.amount) || 0,
-        services: concepts.servicios_publicos.services || []
-      };
-    }
-    
-    if (concepts.otros) {
-      sanitized.otros = {
-        enabled: concepts.otros.enabled,
-        amount: sanitizeNumericValue(concepts.otros.amount) || 0,
-        description: concepts.otros.description || ''
-      };
-    }
-    
-    return Object.keys(sanitized).length > 0 ? sanitized : undefined;
-  };
-
- // NUEVA VERSIÓN MEJORADA DEL handleWizardSubmit
-// Copiar y pegar esto en AdminClients.tsx línea 991
-
-// Handler para el wizard de cliente
+  // Handler para el wizard de cliente
 const handleWizardSubmit = async (wizardData: any) => {
   console.log('\n==============================================');
   console.log('🧙‍♂️ INICIANDO CREACIÓN DE CLIENTE DESDE WIZARD');
@@ -1571,6 +1525,16 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={() => {
+                      setSelectedClient(client);
+                      setShowPortalCredentialsModal(true);
+                    }}
+                    className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                    title="Crear credenciales del portal"
+                  >
+                    <Key className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -2054,6 +2018,24 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }
         ]}
       />
+
+      {/* Modal de Credenciales del Portal */}
+      {selectedClient && (
+        <CreatePortalCredentialsModal
+          isOpen={showPortalCredentialsModal}
+          onClose={() => {
+            setShowPortalCredentialsModal(false);
+            setSelectedClient(null);
+          }}
+          client={selectedClient}
+          onSuccess={() => {
+            setShowPortalCredentialsModal(false);
+            setSelectedClient(null);
+            // Opcional: recargar lista de clientes si es necesario
+            loadClients();
+          }}
+        />
+      )}
     </div>
   );
 }

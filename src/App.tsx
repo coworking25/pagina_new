@@ -43,6 +43,9 @@ const ClientLayout = lazy(() => import('./components/client-portal/ClientLayout'
 const ClientDashboard = lazy(() => import('./pages/client-portal/ClientDashboard'));
 const ClientChangePassword = lazy(() => import('./pages/client-portal/ClientChangePassword'));
 const ClientPayments = lazy(() => import('./pages/client-portal/ClientPayments'));
+const ClientProperties = lazy(() => import('./pages/client-portal/ClientProperties'));
+const ClientDocuments = lazy(() => import('./pages/client-portal/ClientDocuments'));
+const ClientExtractos = lazy(() => import('./pages/client-portal/ClientExtractos'));
 
 // Componente para manejar el layout según la ruta
 const AppLayout = () => {
@@ -109,10 +112,10 @@ const AppLayout = () => {
               <Route path="/cliente/*" element={<ClientLayout />}>
                 <Route path="dashboard" element={<ClientDashboard />} />
                 <Route path="cambiar-password" element={<ClientChangePassword />} />
-                <Route path="contratos" element={<div className="p-6">Contratos - En desarrollo</div>} />
+                <Route path="contratos" element={<ClientProperties />} />
                 <Route path="pagos" element={<ClientPayments />} />
-                <Route path="extractos" element={<div className="p-6">Extractos - En desarrollo</div>} />
-                <Route path="documentos" element={<div className="p-6">Documentos - En desarrollo</div>} />
+                <Route path="extractos" element={<ClientExtractos />} />
+                <Route path="documentos" element={<ClientDocuments />} />
                 <Route path="perfil" element={<div className="p-6">Perfil - En desarrollo</div>} />
               </Route>
             

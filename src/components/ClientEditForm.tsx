@@ -13,7 +13,15 @@ import {
   Shield,
   Save,
   AlertCircle,
-  FileText
+  FileText,
+  Users,
+  Home,
+  Clock,
+  CheckCircle,
+  Eye,
+  Download,
+  Calendar,
+  XCircle
 } from 'lucide-react';
 
 import type { ClientWithDetails } from '../types/clients';
@@ -105,11 +113,22 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
   const [uploadingDocuments, setUploadingDocuments] = useState(false);
 
+  // Estados para referencias y propiedades
+  const [references, setReferences] = useState<any[]>([]);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [availableProperties, setAvailableProperties] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [uploadingReceipt, setUploadingReceipt] = useState<string | null>(null);
+
   // Cargar datos cuando se abre el modal
   useEffect(() => {
     if (isOpen && client) {
       loadClientData();
       loadClientDocuments();
+      loadClientReferences();
+      loadClientProperties();
+      loadAvailableProperties();
+      loadClientPayments();
     }
   }, [isOpen, client]);
 
@@ -127,6 +146,85 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
       setExistingDocuments(data || []);
     } catch (error) {
       console.error('Error cargando documentos:', error);
+    }
+  };
+
+  const loadClientReferences = async () => {
+    if (!client) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('client_references')
+        .select('*')
+        .eq('client_id', client.id);
+
+      if (error) throw error;
+      setReferences(data || []);
+    } catch (error) {
+      console.error('Error cargando referencias:', error);
+    }
+  };
+
+  const loadClientProperties = async () => {
+    if (!client) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('client_property_relations')
+        .select(`
+          *,
+          property:properties!inner(
+            id,
+            code,
+            title,
+            type,
+            location,
+            price,
+            cover_image,
+            bedrooms,
+            bathrooms,
+            area,
+            status
+          )
+        `)
+        .eq('client_id', client.id);
+
+      if (error) throw error;
+      setProperties(data || []);
+    } catch (error) {
+      console.error('Error cargando propiedades:', error);
+    }
+  };
+
+  const loadAvailableProperties = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, code, title, type, location, price, cover_image, bedrooms, bathrooms, area, status')
+        .eq('status', 'available')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAvailableProperties(data || []);
+    } catch (error) {
+      console.error('Error cargando propiedades disponibles:', error);
+    }
+  };
+
+  const loadClientPayments = async () => {
+    if (!client) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('client_id', client.id)
+        .order('due_date', { ascending: false });
+
+      if (error) throw error;
+      setPayments(data || []);
+    } catch (error) {
+      console.error('Error cargando pagos:', error);
     }
   };
 
@@ -401,6 +499,47 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
     }
   };
 
+  const handleUploadReceipt = async (paymentId: string, file: File) => {
+    setUploadingReceipt(paymentId);
+    try {
+      // 1. Subir archivo a Supabase Storage
+      const fileName = `payment-receipts/${paymentId}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file);
+        
+      if (uploadError) throw uploadError;
+      
+      // 2. Obtener URL pública
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(fileName);
+        
+      // 3. Actualizar registro de pago
+      const { error: updateError } = await supabase
+        .from('payments')
+        .update({
+          receipt_url: urlData.publicUrl,
+          receipt_file_name: file.name,
+          paid_date: new Date().toISOString(),
+          status: 'paid'
+        })
+        .eq('id', paymentId);
+        
+      if (updateError) throw updateError;
+      
+      // 4. Recargar pagos
+      await loadClientPayments();
+      
+      alert('✅ Comprobante subido exitosamente');
+    } catch (error) {
+      console.error('❌ Error subiendo comprobante:', error);
+      alert('❌ Error subiendo comprobante');
+    } finally {
+      setUploadingReceipt(null);
+    }
+  };
+
   if (!isOpen || !client) return null;
 
   const tabs = [
@@ -409,7 +548,10 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
     { id: 'credentials', label: 'Credenciales', icon: Key },
     { id: 'payments', label: 'Pagos', icon: CreditCard },
     { id: 'contract', label: 'Contrato', icon: Shield },
-    { id: 'documents', label: 'Documentos', icon: FileText }
+    { id: 'references', label: 'Referencias', icon: Users },
+    { id: 'properties', label: 'Propiedades', icon: Home },
+    { id: 'documents', label: 'Documentos', icon: FileText },
+    { id: 'history', label: 'Historial de Pagos', icon: Clock }
   ];
 
   return (
@@ -496,8 +638,28 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
               {/* Contract Tab */}
               {activeTab === 'contract' && (
                 <ContractForm 
-                  data={contractData} 
-                  setData={setContractData} 
+                  data={contractData}
+                  setData={setContractData}
+                />
+              )}
+
+              {/* References Tab */}
+              {activeTab === 'references' && (
+                <ReferencesForm
+                  references={references}
+                  setReferences={setReferences}
+                  clientId={client.id}
+                />
+              )}
+
+              {/* Properties Tab */}
+              {activeTab === 'properties' && (
+                <PropertiesForm
+                  properties={properties}
+                  availableProperties={availableProperties}
+                  setProperties={setProperties}
+                  clientId={client.id}
+                  onPropertiesChange={loadClientProperties}
                 />
               )}
 
@@ -508,6 +670,15 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
                   existingDocuments={existingDocuments}
                   onDocumentUploaded={loadClientDocuments}
                   onDocumentDeleted={loadClientDocuments}
+                />
+              )}
+
+              {/* History Tab */}
+              {activeTab === 'history' && (
+                <PaymentsHistoryForm
+                  payments={payments}
+                  onUploadReceipt={handleUploadReceipt}
+                  uploadingReceipt={uploadingReceipt}
                 />
               )}
             </div>
@@ -1322,6 +1493,670 @@ const DocumentsForm: React.FC<{
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+const ReferencesForm: React.FC<{
+  references: any[];
+  setReferences: (refs: any[]) => void;
+  clientId: string;
+}> = ({ references, setReferences, clientId }) => {
+  const [newReference, setNewReference] = useState({
+    reference_type: 'personal',
+    name: '',
+    phone: '',
+    relationship: '',
+    company_name: ''
+  });
+
+  const personalRefs = references.filter(r => r.reference_type === 'personal');
+  const commercialRefs = references.filter(r => r.reference_type === 'commercial');
+
+  const handleAddReference = async () => {
+    if (!newReference.name.trim() || !newReference.phone.trim()) {
+      alert('Nombre y teléfono son obligatorios');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('client_references')
+        .insert({
+          client_id: clientId,
+          reference_type: newReference.reference_type,
+          name: newReference.name,
+          phone: newReference.phone,
+          relationship: newReference.reference_type === 'personal' ? newReference.relationship : null,
+          company_name: newReference.reference_type === 'commercial' ? newReference.company_name : null
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setReferences([...references, data]);
+      setNewReference({
+        reference_type: 'personal',
+        name: '',
+        phone: '',
+        relationship: '',
+        company_name: ''
+      });
+    } catch (error) {
+      console.error('Error agregando referencia:', error);
+      alert('Error al agregar referencia');
+    }
+  };
+
+  const handleDeleteReference = async (refId: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta referencia?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('client_references')
+        .delete()
+        .eq('id', refId);
+
+      if (error) throw error;
+
+      setReferences(references.filter(r => r.id !== refId));
+    } catch (error) {
+      console.error('Error eliminando referencia:', error);
+      alert('Error al eliminar referencia');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Formulario para agregar nueva referencia */}
+      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <h4 className="font-medium text-gray-900 dark:text-white mb-4">Agregar Nueva Referencia</h4>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Tipo de Referencia
+            </label>
+            <select
+              value={newReference.reference_type}
+              onChange={(e) => setNewReference({ ...newReference, reference_type: e.target.value as 'personal' | 'commercial' })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="personal">Personal</option>
+              <option value="commercial">Comercial</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Nombre *
+            </label>
+            <input
+              type="text"
+              value={newReference.name}
+              onChange={(e) => setNewReference({ ...newReference, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+              placeholder="Nombre completo"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Teléfono *
+            </label>
+            <input
+              type="text"
+              value={newReference.phone}
+              onChange={(e) => setNewReference({ ...newReference, phone: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+              placeholder="Número de teléfono"
+            />
+          </div>
+
+          {newReference.reference_type === 'personal' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Relación
+              </label>
+              <input
+                type="text"
+                value={newReference.relationship}
+                onChange={(e) => setNewReference({ ...newReference, relationship: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                placeholder="Ej: Amigo, Familiar, Compañero"
+              />
+            </div>
+          )}
+
+          {newReference.reference_type === 'commercial' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Empresa
+              </label>
+              <input
+                type="text"
+                value={newReference.company_name}
+                onChange={(e) => setNewReference({ ...newReference, company_name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                placeholder="Nombre de la empresa"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={handleAddReference}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Agregar Referencia
+          </button>
+        </div>
+      </div>
+
+      {/* Lista de referencias personales */}
+      {personalRefs.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-medium text-gray-900 dark:text-white">Referencias Personales ({personalRefs.length})</h4>
+          {personalRefs.map((ref) => (
+            <div key={ref.id} className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h5 className="font-medium text-blue-900 dark:text-blue-100">{ref.name}</h5>
+                  <div className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                    <p>📞 {ref.phone}</p>
+                    {ref.relationship && <p>👥 {ref.relationship}</p>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteReference(ref.id)}
+                  className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 ml-4"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Lista de referencias comerciales */}
+      {commercialRefs.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-medium text-gray-900 dark:text-white">Referencias Comerciales ({commercialRefs.length})</h4>
+          {commercialRefs.map((ref) => (
+            <div key={ref.id} className="p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h5 className="font-medium text-purple-900 dark:text-purple-100">{ref.name}</h5>
+                  <div className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                    <p>📞 {ref.phone}</p>
+                    {ref.company_name && <p>🏢 {ref.company_name}</p>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteReference(ref.id)}
+                  className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 ml-4"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {references.length === 0 && (
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          No hay referencias registradas
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PropertiesForm: React.FC<{
+  properties: any[];
+  availableProperties: any[];
+  setProperties: (props: any[]) => void;
+  clientId: string;
+  onPropertiesChange: () => void;
+}> = ({ properties, availableProperties, setProperties, clientId, onPropertiesChange }) => {
+  const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [relationType, setRelationType] = useState<'owner' | 'tenant' | 'interested' | 'pending_contract'>('tenant');
+
+  const handleAssignProperty = async () => {
+    if (!selectedPropertyId) {
+      alert('Selecciona una propiedad');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('client_property_relations')
+        .insert({
+          client_id: clientId,
+          property_id: parseInt(selectedPropertyId),
+          relation_type: relationType,
+          status: 'active'
+        })
+        .select(`
+          *,
+          property:properties!inner(
+            id,
+            code,
+            title,
+            type,
+            location,
+            price,
+            cover_image,
+            bedrooms,
+            bathrooms,
+            area,
+            status
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setProperties([...properties, data]);
+      setSelectedPropertyId('');
+      setRelationType('tenant');
+      onPropertiesChange();
+    } catch (error) {
+      console.error('Error asignando propiedad:', error);
+      alert('Error al asignar propiedad');
+    }
+  };
+
+  const handleUnassignProperty = async (relationId: string) => {
+    if (!confirm('¿Estás seguro de desasignar esta propiedad del cliente?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('client_property_relations')
+        .delete()
+        .eq('id', relationId);
+
+      if (error) throw error;
+
+      setProperties(properties.filter(p => p.id !== relationId));
+      onPropertiesChange();
+    } catch (error) {
+      console.error('Error desasignando propiedad:', error);
+      alert('Error al desasignar propiedad');
+    }
+  };
+
+  const getRelationTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      'owner': 'Propietario',
+      'tenant': 'Arrendatario',
+      'interested': 'Interesado',
+      'pending_contract': 'Contrato Pendiente'
+    };
+    return labels[type] || type;
+  };
+
+  const getRelationTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      'owner': 'bg-purple-100 text-purple-800',
+      'tenant': 'bg-blue-100 text-blue-800',
+      'interested': 'bg-yellow-100 text-yellow-800',
+      'pending_contract': 'bg-orange-100 text-orange-800'
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Filtrar propiedades que ya están asignadas
+  const unassignedProperties = availableProperties.filter(prop =>
+    !properties.some(assigned => assigned.property_id === prop.id)
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Formulario para asignar propiedad */}
+      <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+        <h4 className="font-medium text-gray-900 dark:text-white mb-4">Asignar Propiedad</h4>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Propiedad Disponible
+            </label>
+            <select
+              value={selectedPropertyId}
+              onChange={(e) => setSelectedPropertyId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecciona una propiedad...</option>
+              {unassignedProperties.map((prop) => (
+                <option key={prop.id} value={prop.id}>
+                  {prop.code} - {prop.title} ({prop.location})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Tipo de Relación
+            </label>
+            <select
+              value={relationType}
+              onChange={(e) => setRelationType(e.target.value as any)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="tenant">Arrendatario</option>
+              <option value="owner">Propietario</option>
+              <option value="interested">Interesado</option>
+              <option value="pending_contract">Contrato Pendiente</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={handleAssignProperty}
+            disabled={!selectedPropertyId}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            Asignar Propiedad
+          </button>
+        </div>
+      </div>
+
+      {/* Lista de propiedades asignadas */}
+      <div>
+        <h4 className="font-medium text-gray-900 dark:text-white mb-4">Propiedades Asignadas ({properties.length})</h4>
+
+        {properties.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            No hay propiedades asignadas
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {properties.map((prop) => (
+              <div
+                key={prop.id}
+                className="flex items-start gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                {/* Imagen de la propiedad */}
+                <div className="flex-shrink-0 w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
+                  {prop.property.cover_image ? (
+                    <img
+                      src={prop.property.cover_image}
+                      alt={prop.property.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Home className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Información de la propiedad */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{prop.property.title || 'Sin título'}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{prop.property.code}</span>
+                        <span className="text-sm text-gray-400">•</span>
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRelationTypeColor(prop.relation_type)}`}>
+                          {getRelationTypeLabel(prop.relation_type)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUnassignProperty(prop.id)}
+                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 ml-4"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      🏠 {prop.property.type || 'Sin tipo'}
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      📍 {prop.property.location || 'Sin ubicación'}
+                    </div>
+                    {prop.property.bedrooms && (
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        🛏️ {prop.property.bedrooms} habitaciones
+                      </div>
+                    )}
+                    {prop.property.bathrooms && (
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        🚿 {prop.property.bathrooms} baños
+                      </div>
+                    )}
+                    {prop.property.area && (
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        📏 {prop.property.area} m²
+                      </div>
+                    )}
+                    {prop.property.price && (
+                      <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                        💰 ${prop.property.price.toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    Asignada el {new Date(prop.created_at).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const PaymentsHistoryForm: React.FC<{
+  payments: any[];
+  onUploadReceipt: (paymentId: string, file: File) => void;
+  uploadingReceipt: string | null;
+}> = ({ payments, onUploadReceipt, uploadingReceipt }) => {
+  
+  const fileInputRefs = React.useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  if (payments.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <CreditCard className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">No hay pagos registrados</p>
+        <p className="text-sm text-gray-500 mt-2">
+          El historial de pagos del cliente aparecerá aquí
+        </p>
+      </div>
+    );
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid': return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />;
+      case 'overdue': return <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />;
+      case 'pending': return <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
+      default: return <Clock className="w-5 h-5 text-gray-600" />;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'paid': 'Pagado',
+      'pending': 'Pendiente',
+      'overdue': 'Vencido',
+      'partial': 'Parcial',
+      'cancelled': 'Cancelado'
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'paid': 'bg-green-100 text-green-800',
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'overdue': 'bg-red-100 text-red-800',
+      'partial': 'bg-blue-100 text-blue-800',
+      'cancelled': 'bg-gray-100 text-gray-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getPaymentTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      'rent': 'Arriendo',
+      'deposit': 'Depósito',
+      'administration': 'Administración',
+      'utilities': 'Servicios Públicos',
+      'late_fee': 'Mora',
+      'other': 'Otro'
+    };
+    return labels[type] || type;
+  };
+
+  const handleFileSelect = (paymentId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validar tamaño (máximo 20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Máximo 20MB.');
+        return;
+      }
+      
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+      if (!validTypes.includes(file.type)) {
+        alert('Formato no válido. Solo se permiten imágenes (JPG, PNG, WEBP) o PDF.');
+        return;
+      }
+      
+      onUploadReceipt(paymentId, file);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {payments.map((payment) => (
+        <div 
+          key={payment.id} 
+          className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        >
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              {getStatusIcon(payment.status)}
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-white">
+                  {getPaymentTypeLabel(payment.payment_type)}
+                </h4>
+                <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full mt-1 ${getStatusColor(payment.status)}`}>
+                  {getStatusLabel(payment.status)}
+                </span>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                ${payment.amount.toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+              <Calendar className="w-4 h-4" />
+              <span>Vencimiento: {new Date(payment.due_date).toLocaleDateString('es-ES')}</span>
+            </div>
+            {payment.paid_date && (
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <CheckCircle className="w-4 h-4" />
+                <span>Pagado: {new Date(payment.paid_date).toLocaleDateString('es-ES')}</span>
+              </div>
+            )}
+            {payment.payment_method && (
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <CreditCard className="w-4 h-4" />
+                <span>{payment.payment_method}</span>
+              </div>
+            )}
+          </div>
+
+          {payment.notes && (
+            <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm text-gray-600 dark:text-gray-400">
+              📝 {payment.notes}
+            </div>
+          )}
+
+          {/* Botones de acción */}
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            {payment.receipt_url ? (
+              <>
+                <a
+                  href={payment.receipt_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                >
+                  <Eye className="w-4 h-4" />
+                  Ver Comprobante
+                </a>
+                <a
+                  href={payment.receipt_url}
+                  download={payment.receipt_file_name || 'comprobante.pdf'}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Descargar
+                </a>
+              </>
+            ) : (
+              <>
+                <input
+                  ref={(el) => fileInputRefs.current[payment.id] = el}
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => handleFileSelect(payment.id, e)}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRefs.current[payment.id]?.click()}
+                  disabled={uploadingReceipt === payment.id}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  {uploadingReceipt === payment.id ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Subiendo...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4" />
+                      Subir Comprobante
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

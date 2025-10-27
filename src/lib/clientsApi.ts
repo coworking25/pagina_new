@@ -3,6 +3,7 @@
 // =====================================================
 
 import { supabase } from './supabase';
+import { emailService } from './emailService';
 import type { 
   Client, 
   Contract, 
@@ -1332,5 +1333,465 @@ export async function saveContractInfo(
   } catch (error) {
     console.error('❌ Error en saveContractInfo:', error);
     throw error;
+  }
+}
+
+// =====================================================
+// FUNCIONES DE UTILIDAD PARA SANITIZACIÓN
+// =====================================================
+
+/**
+ * Sanitiza un valor numérico, convirtiéndolo a number o null si es inválido
+ */
+export function sanitizeNumericValue(value: any): number | null {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const num = Number(value);
+  if (isNaN(num) || !isFinite(num)) {
+    return null;
+  }
+
+  return num;
+}
+
+/**
+ * Sanitiza la configuración de conceptos de pago
+ */
+export function sanitizePaymentConcepts(unsanitizedConcepts: any): {
+  arriendo?: { enabled: boolean; amount: number };
+  administracion?: { enabled: boolean; amount: number };
+  servicios_publicos?: { enabled: boolean; amount: number; services: string[] };
+  otros?: { enabled: boolean; amount: number; description: string };
+} {
+  const sanitized: any = {};
+
+  if (!unsanitizedConcepts || typeof unsanitizedConcepts !== 'object') {
+    return {};
+  }
+
+  // Sanitizar arriendo
+  if (unsanitizedConcepts.arriendo) {
+    const amount = sanitizeNumericValue(unsanitizedConcepts.arriendo.amount);
+    if (amount !== null && amount >= 0) {
+      sanitized.arriendo = {
+        enabled: Boolean(unsanitizedConcepts.arriendo.enabled),
+        amount: amount
+      };
+    }
+  }
+
+  // Sanitizar administración
+  if (unsanitizedConcepts.administracion) {
+    const amount = sanitizeNumericValue(unsanitizedConcepts.administracion.amount);
+    if (amount !== null && amount >= 0) {
+      sanitized.administracion = {
+        enabled: Boolean(unsanitizedConcepts.administracion.enabled),
+        amount: amount
+      };
+    }
+  }
+
+  // Sanitizar servicios públicos
+  if (unsanitizedConcepts.servicios_publicos) {
+    const amount = sanitizeNumericValue(unsanitizedConcepts.servicios_publicos.amount);
+    if (amount !== null && amount >= 0) {
+      sanitized.servicios_publicos = {
+        enabled: Boolean(unsanitizedConcepts.servicios_publicos.enabled),
+        amount: amount,
+        services: Array.isArray(unsanitizedConcepts.servicios_publicos.services)
+          ? unsanitizedConcepts.servicios_publicos.services.filter((s: any) => typeof s === 'string' && s.trim())
+          : []
+      };
+    }
+  }
+
+  // Sanitizar otros
+  if (unsanitizedConcepts.otros) {
+    const amount = sanitizeNumericValue(unsanitizedConcepts.otros.amount);
+    if (amount !== null && amount >= 0) {
+      sanitized.otros = {
+        enabled: Boolean(unsanitizedConcepts.otros.enabled),
+        amount: amount,
+        description: typeof unsanitizedConcepts.otros.description === 'string'
+          ? unsanitizedConcepts.otros.description.trim()
+          : ''
+      };
+    }
+  }
+
+  return sanitized;
+}
+
+// =====================================================
+// FUNCIONES PARA PORTAL DE CLIENTES (FASE 4)
+// =====================================================
+
+/**
+ * Generar contraseña temporal segura
+ */
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
+/**
+ * Crear credenciales para el portal de clientes
+ */
+export async function createClientPortalCredentials(clientId: number): Promise<{ success: boolean; password?: string; error?: string }> {
+  try {
+    // Verificar que el cliente existe
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('id, email, full_name')
+      .eq('id', clientId)
+      .single();
+
+    if (clientError || !client) {
+      return { success: false, error: 'Cliente no encontrado' };
+    }
+
+    // Verificar si ya tiene credenciales
+    const { data: existingCredentials, error: checkError } = await supabase
+      .from('client_credentials')
+      .select('id')
+      .eq('client_id', clientId)
+      .single();
+
+    if (existingCredentials) {
+      return { success: false, error: 'El cliente ya tiene credenciales del portal' };
+    }
+
+    // Generar contraseña temporal
+    const temporaryPassword = generateTemporaryPassword();
+
+    // Crear hash de la contraseña
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
+
+    // Crear credenciales
+    const { error: insertError } = await supabase
+      .from('client_credentials')
+      .insert({
+        client_id: clientId,
+        password_hash: hashedPassword,
+        must_change_password: true,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+    if (insertError) {
+      console.error('Error creando credenciales:', insertError);
+      return { success: false, error: 'Error al crear las credenciales' };
+    }
+
+    return { success: true, password: temporaryPassword };
+
+  } catch (error) {
+    console.error('Error en createClientPortalCredentials:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+}
+
+/**
+ * Obtener estado de acceso al portal de un cliente
+ */
+export async function getClientPortalStatus(clientId: number): Promise<{
+  hasCredentials: boolean;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  lastLogin?: string;
+  createdAt?: string;
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('client_credentials')
+      .select('is_active, must_change_password, last_login_at, created_at')
+      .eq('client_id', clientId)
+      .single();
+
+    if (error || !data) {
+      return {
+        hasCredentials: false,
+        isActive: false,
+        mustChangePassword: false
+      };
+    }
+
+    return {
+      hasCredentials: true,
+      isActive: data.is_active,
+      mustChangePassword: data.must_change_password,
+      lastLogin: data.last_login_at,
+      createdAt: data.created_at
+    };
+
+  } catch (error) {
+    console.error('Error en getClientPortalStatus:', error);
+    return {
+      hasCredentials: false,
+      isActive: false,
+      mustChangePassword: false
+    };
+  }
+}
+
+/**
+ * Resetear contraseña del portal desde admin
+ */
+export async function resetClientPortalPassword(clientId: number): Promise<{ success: boolean; newPassword?: string; error?: string }> {
+  try {
+    // Generar nueva contraseña temporal
+    const newPassword = generateTemporaryPassword();
+
+    // Crear hash
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Actualizar credenciales
+    const { error } = await supabase
+      .from('client_credentials')
+      .update({
+        password_hash: hashedPassword,
+        must_change_password: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('client_id', clientId);
+
+    if (error) {
+      console.error('Error reseteando contraseña:', error);
+      return { success: false, error: 'Error al resetear la contraseña' };
+    }
+
+    return { success: true, newPassword };
+
+  } catch (error) {
+    console.error('Error en resetClientPortalPassword:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+}
+
+/**
+ * Activar/desactivar acceso al portal
+ */
+export async function toggleClientPortalAccess(clientId: number, isActive: boolean): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('client_credentials')
+      .update({
+        is_active: isActive,
+        updated_at: new Date().toISOString()
+      })
+      .eq('client_id', clientId);
+
+    if (error) {
+      console.error('Error cambiando estado del portal:', error);
+      return { success: false, error: 'Error al cambiar el estado del acceso' };
+    }
+
+    return { success: true };
+
+  } catch (error) {
+    console.error('Error en toggleClientPortalAccess:', error);
+    return { success: false, error: 'Error interno del servidor' };
+  }
+}
+
+/**
+ * Enviar credenciales por email usando SendGrid
+ */
+export async function sendPortalCredentialsEmail(
+  clientEmail: string,
+  clientName: string,
+  password: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log('📧 Enviando credenciales del portal a:', clientEmail);
+
+    // Verificar que el servicio de email esté configurado
+    if (!emailService.isServiceConfigured()) {
+      console.warn('⚠️ Servicio de email no configurado. Configura VITE_SENDGRID_API_KEY en las variables de entorno.');
+      return {
+        success: false,
+        error: 'Servicio de email no configurado. Contacta al administrador.'
+      };
+    }
+
+    // Enviar email usando el servicio
+    const result = await emailService.sendPortalCredentials(
+      clientEmail,
+      clientName,
+      password
+    );
+
+    if (result.success) {
+      console.log('✅ Email de credenciales enviado exitosamente');
+      return { success: true };
+    } else {
+      console.error('❌ Error enviando email:', result.error);
+      return {
+        success: false,
+        error: result.error || 'Error desconocido al enviar el email'
+      };
+    }
+
+  } catch (error) {
+    console.error('❌ Error en sendPortalCredentialsEmail:', error);
+    return {
+      success: false,
+      error: 'Error interno al enviar el email'
+    };
+  }
+}
+export async function sendAppointmentConfirmationEmail(
+  clientEmail: string,
+  clientName: string,
+  appointmentDetails: {
+    date: string;
+    time: string;
+    propertyTitle: string;
+    advisorName: string;
+    advisorPhone: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log('📧 Enviando confirmación de cita a:', clientEmail);
+
+    // Verificar que el servicio de email esté configurado
+    if (!emailService.isServiceConfigured()) {
+      console.warn('⚠️ Servicio de email no configurado. Configura VITE_SENDGRID_API_KEY en las variables de entorno.');
+      return {
+        success: false,
+        error: 'Servicio de email no configurado. Contacta al administrador.'
+      };
+    }
+
+    // Enviar email usando el servicio
+    const result = await emailService.sendAppointmentConfirmation(
+      clientEmail,
+      clientName,
+      appointmentDetails
+    );
+
+    if (result.success) {
+      console.log('✅ Email de confirmación de cita enviado exitosamente');
+      return { success: true };
+    } else {
+      console.error('❌ Error enviando email de cita:', result.error);
+      return {
+        success: false,
+        error: result.error || 'Error desconocido al enviar el email'
+      };
+    }
+
+  } catch (error) {
+    console.error('❌ Error en sendAppointmentConfirmationEmail:', error);
+    return {
+      success: false,
+      error: 'Error interno al enviar el email'
+    };
+  }
+}
+
+/**
+ * Enviar email de recordatorio de pago
+ */
+export async function sendPaymentReminderEmail(
+  clientEmail: string,
+  clientName: string,
+  paymentDetails: {
+    amount: number;
+    dueDate: string;
+    description: string;
+    paymentLink?: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log('📧 Enviando recordatorio de pago a:', clientEmail);
+
+    // Verificar que el servicio de email esté configurado
+    if (!emailService.isServiceConfigured()) {
+      console.warn('⚠️ Servicio de email no configurado. Configura VITE_SENDGRID_API_KEY en las variables de entorno.');
+      return {
+        success: false,
+        error: 'Servicio de email no configurado. Contacta al administrador.'
+      };
+    }
+
+    // Enviar email usando el servicio
+    const result = await emailService.sendPaymentReminder(
+      clientEmail,
+      clientName,
+      paymentDetails
+    );
+
+    if (result.success) {
+      console.log('✅ Email de recordatorio de pago enviado exitosamente');
+      return { success: true };
+    } else {
+      console.error('❌ Error enviando email de pago:', result.error);
+      return {
+        success: false,
+        error: result.error || 'Error desconocido al enviar el email'
+      };
+    }
+
+  } catch (error) {
+    console.error('❌ Error en sendPaymentReminderEmail:', error);
+    return {
+      success: false,
+      error: 'Error interno al enviar el email'
+    };
+  }
+}
+
+/**
+ * Enviar email de bienvenida a nuevo cliente
+ */
+export async function sendWelcomeEmail(
+  clientEmail: string,
+  clientName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log('📧 Enviando email de bienvenida a:', clientEmail);
+
+    // Verificar que el servicio de email esté configurado
+    if (!emailService.isServiceConfigured()) {
+      console.warn('⚠️ Servicio de email no configurado. Configura VITE_SENDGRID_API_KEY en las variables de entorno.');
+      return {
+        success: false,
+        error: 'Servicio de email no configurado. Contacta al administrador.'
+      };
+    }
+
+    // Enviar email usando el servicio
+    const result = await emailService.sendWelcomeEmail(
+      clientEmail,
+      clientName
+    );
+
+    if (result.success) {
+      console.log('✅ Email de bienvenida enviado exitosamente');
+      return { success: true };
+    } else {
+      console.error('❌ Error enviando email de bienvenida:', result.error);
+      return {
+        success: false,
+        error: result.error || 'Error desconocido al enviar el email'
+      };
+    }
+
+  } catch (error) {
+    console.error('❌ Error en sendWelcomeEmail:', error);
+    return {
+      success: false,
+      error: 'Error interno al enviar el email'
+    };
   }
 }

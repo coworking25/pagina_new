@@ -102,6 +102,30 @@ export interface ClientContract {
   notes: string;
 }
 
+// Propiedad (vista cliente)
+export interface ClientProperty {
+  id: string;
+  client_id: string;
+  property_id: number;
+  relation_type: 'owner' | 'tenant' | 'interested' | 'pending_contract';
+  status: 'active' | 'pending' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+  property: {
+    id: number;
+    code: string;
+    title: string;
+    type: string;
+    location: string;
+    price: number;
+    cover_image: string;
+    bedrooms: number;
+    bathrooms: number;
+    area: number;
+    status: string;
+  };
+}
+
 // Pago (vista cliente)
 export interface ClientPayment {
   id: string;

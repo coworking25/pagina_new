@@ -11,6 +11,7 @@ import type {
   ClientPayment,
   ClientDocument,
   ClientDashboardSummary,
+  ClientProperty,
   PaymentFilters,
   DocumentFilters,
   ApiResponse
@@ -749,6 +750,106 @@ export async function getClientPayments(): Promise<ClientPayment[]> {
     return enrichedPayments;
   } catch (error) {
     console.error('Error en getClientPayments:', error);
+    throw error;
+  }
+}
+
+// ============================================
+// PROPIEDADES DEL CLIENTE
+// ============================================
+
+/**
+ * Obtener propiedades asignadas al cliente autenticado
+ */
+export async function getClientProperties(): Promise<ClientProperty[]> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      throw new Error('No estás autenticado');
+    }
+
+    // Obtener relaciones cliente-propiedad
+    const { data: relations, error: relationsError } = await supabase
+      .from('client_property_relations')
+      .select(`
+        *,
+        property:properties!inner(
+          id,
+          code,
+          title,
+          type,
+          location,
+          price,
+          cover_image,
+          bedrooms,
+          bathrooms,
+          area,
+          status
+        )
+      `)
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+
+    if (relationsError) {
+      console.error('Error obteniendo relaciones cliente-propiedad:', relationsError);
+      throw relationsError;
+    }
+
+    if (!relations || relations.length === 0) {
+      return [];
+    }
+
+    // Formatear respuesta
+    return relations.map(relation => ({
+      id: relation.id,
+      client_id: relation.client_id,
+      property_id: relation.property_id,
+      relation_type: relation.relation_type,
+      status: relation.status,
+      created_at: relation.created_at,
+      updated_at: relation.updated_at,
+      property: relation.property
+    })) as ClientProperty[];
+
+  } catch (error) {
+    console.error('Error en getClientProperties:', error);
+    throw error;
+  }
+}
+
+// ============================================
+// DOCUMENTOS DEL CLIENTE
+// ============================================
+
+/**
+ * Obtener documentos del cliente autenticado
+ */
+export async function getClientDocuments(): Promise<ClientDocument[]> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      throw new Error('No estás autenticado');
+    }
+
+    const { data: documents, error } = await supabase
+      .from('client_documents')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error obteniendo documentos del cliente:', error);
+      throw error;
+    }
+
+    if (!documents || documents.length === 0) {
+      return [];
+    }
+
+    return documents as ClientDocument[];
+
+  } catch (error) {
+    console.error('Error en getClientDocuments:', error);
     throw error;
   }
 }
