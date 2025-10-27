@@ -734,6 +734,18 @@ function AdminDashboard() {
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/admin/calendar')}
+                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-900/30 dark:to-cyan-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-cyan-200/50 dark:border-cyan-700/50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 to-cyan-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Calendar className="w-5 h-5 text-cyan-600 dark:text-cyan-400 mr-3 relative z-10" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10">Sistema de Calendario</span>
+                <ArrowUpRight className="w-4 h-4 ml-auto text-cyan-600 dark:text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/admin/appointments')}
                 className="group relative w-full flex items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-blue-200/50 dark:border-blue-700/50 overflow-hidden"
               >

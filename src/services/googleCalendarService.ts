@@ -1,4 +1,3 @@
-import { createCalendarClient, getGoogleTokens, saveGoogleTokens, revokeGoogleAccess } from '../config/googleCalendar';
 import { supabase } from '../lib/supabase';
 
 export interface GoogleCalendarEvent {
@@ -13,41 +12,69 @@ export interface GoogleCalendarEvent {
 }
 
 export class GoogleCalendarService {
-  // Static methods to expose config functions
-  static async getGoogleTokens(userId: string) {
-    return getGoogleTokens(userId);
+  // Token management - now using Supabase directly
+  static async saveGoogleTokens(userId: string, tokens: any) {
+    const { error } = await supabase
+      .from('calendar_settings')
+      .upsert({
+        user_id: userId,
+        google_tokens: tokens,
+        google_calendar_enabled: true,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
   }
 
-  static async saveGoogleTokens(userId: string, tokens: any) {
-    return saveGoogleTokens(userId, tokens);
+  static async getGoogleTokens(userId: string) {
+    const { data, error } = await supabase
+      .from('calendar_settings')
+      .select('google_tokens')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data?.google_tokens;
   }
 
   static async revokeGoogleAccess(userId: string) {
-    return revokeGoogleAccess(userId);
+    const { error } = await supabase
+      .from('calendar_settings')
+      .update({
+        google_tokens: null,
+        google_calendar_enabled: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (error) throw error;
   }
 
-  private static async getCalendarClient(userId: string) {
-    const tokens = await getGoogleTokens(userId);
-    if (!tokens) {
-      throw new Error('Google Calendar not connected for this user');
+  // Call Edge Function for Google Calendar operations
+  private static async callEdgeFunction(action: string, userId: string, data?: any) {
+    const { data: result, error } = await supabase.functions.invoke('google-calendar', {
+      body: {
+        action,
+        userId,
+        data
+      },
+    });
+
+    if (error) {
+      console.error(`Google Calendar ${action} error:`, error);
+      throw new Error(error.message || `Error in ${action}`);
     }
-    return createCalendarClient(tokens);
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    return result?.data;
   }
 
   // Sync appointment to Google Calendar
   static async createGoogleEvent(userId: string, appointment: any): Promise<string | null> {
     try {
-      const calendar = await this.getCalendarClient(userId);
-
-      // Get calendar settings
-      const { data: settings } = await supabase
-        .from('calendar_settings')
-        .select('google_calendar_id')
-        .eq('user_id', userId)
-        .single();
-
-      const calendarId = settings?.google_calendar_id || 'primary';
-
       const event = {
         summary: `${appointment.title} - ${appointment.client_name || 'Cliente'}`,
         description: appointment.notes || '',
@@ -66,12 +93,8 @@ export class GoogleCalendarService {
         })) || []
       };
 
-      const response = await calendar.events.insert({
-        calendarId,
-        requestBody: event
-      });
-
-      return response.data.id || null;
+      const result = await this.callEdgeFunction('create_event', userId, { event });
+      return result?.id || null;
     } catch (error) {
       console.error('Error creating Google Calendar event:', error);
       return null;
@@ -83,16 +106,6 @@ export class GoogleCalendarService {
     try {
       if (!appointment.google_event_id) return;
 
-      const calendar = await this.getCalendarClient(userId);
-
-      const { data: settings } = await supabase
-        .from('calendar_settings')
-        .select('google_calendar_id')
-        .eq('user_id', userId)
-        .single();
-
-      const calendarId = settings?.google_calendar_id || 'primary';
-
       const event = {
         summary: `${appointment.title} - ${appointment.client_name || 'Cliente'}`,
         description: appointment.notes || '',
@@ -111,10 +124,9 @@ export class GoogleCalendarService {
         })) || []
       };
 
-      await calendar.events.update({
-        calendarId,
+      await this.callEdgeFunction('update_event', userId, {
         eventId: appointment.google_event_id,
-        requestBody: event
+        event
       });
     } catch (error) {
       console.error('Error updating Google Calendar event:', error);
@@ -124,20 +136,7 @@ export class GoogleCalendarService {
   // Delete Google Calendar event
   static async deleteGoogleEvent(userId: string, googleEventId: string): Promise<void> {
     try {
-      const calendar = await this.getCalendarClient(userId);
-
-      const { data: settings } = await supabase
-        .from('calendar_settings')
-        .select('google_calendar_id')
-        .eq('user_id', userId)
-        .single();
-
-      const calendarId = settings?.google_calendar_id || 'primary';
-
-      await calendar.events.delete({
-        calendarId,
-        eventId: googleEventId
-      });
+      await this.callEdgeFunction('delete_event', userId, { eventId: googleEventId });
     } catch (error) {
       console.error('Error deleting Google Calendar event:', error);
     }
@@ -146,26 +145,17 @@ export class GoogleCalendarService {
   // Sync from Google Calendar to local
   static async syncFromGoogleCalendar(userId: string): Promise<void> {
     try {
-      const calendar = await this.getCalendarClient(userId);
-
+      // Get last sync time
       const { data: settings } = await supabase
         .from('calendar_settings')
-        .select('google_calendar_id, last_sync')
+        .select('last_sync')
         .eq('user_id', userId)
         .single();
 
-      const calendarId = settings?.google_calendar_id || 'primary';
       const lastSync = settings?.last_sync;
+      const result = await this.callEdgeFunction('sync_events', userId, { lastSync });
 
-      // Get events from Google Calendar
-      const response = await calendar.events.list({
-        calendarId,
-        timeMin: lastSync || new Date().toISOString(),
-        singleEvents: true,
-        orderBy: 'startTime'
-      });
-
-      const googleEvents = response.data.items || [];
+      const googleEvents = result?.items || [];
 
       // Process each event
       for (const event of googleEvents) {
@@ -209,10 +199,8 @@ export class GoogleCalendarService {
   // Get available calendars
   static async getAvailableCalendars(userId: string) {
     try {
-      const calendar = await this.getCalendarClient(userId);
-
-      const response = await calendar.calendarList.list();
-      return response.data.items || [];
+      const result = await this.callEdgeFunction('get_calendars', userId);
+      return result?.items || [];
     } catch (error) {
       console.error('Error getting available calendars:', error);
       return [];
@@ -230,5 +218,16 @@ export class GoogleCalendarService {
       .eq('user_id', userId);
 
     if (error) throw error;
+  }
+
+  // Test connection
+  static async testConnection(userId: string) {
+    try {
+      const result = await this.callEdgeFunction('test_connection', userId);
+      return result?.connected || false;
+    } catch (error) {
+      console.error('Error testing Google Calendar connection:', error);
+      return false;
+    }
   }
 }

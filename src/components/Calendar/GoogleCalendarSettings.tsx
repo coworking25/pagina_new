@@ -53,25 +53,33 @@ export const GoogleCalendarSettings: React.FC<GoogleCalendarSettingsProps> = ({
     setSuccess('');
 
     try {
-      // En un entorno real, esto redirigiría a Google OAuth
-      // Por ahora, simulamos la conexión
+      // Para conectar Google Calendar, necesitamos redirigir al usuario a Google OAuth
+      // Por ahora, simulamos la conexión exitosa
+      // En un entorno real, esto debería redirigir a Google OAuth
       const mockTokens = {
-        access_token: 'mock_access_token',
-        refresh_token: 'mock_refresh_token',
+        access_token: 'mock_access_token_' + Date.now(),
+        refresh_token: 'mock_refresh_token_' + Date.now(),
         expiry_date: Date.now() + 3600000,
+        token_type: 'Bearer'
       };
 
       await GoogleCalendarService.saveGoogleTokens(userId, mockTokens);
 
-      setIsConnected(true);
-      setSuccess('Cuenta de Google Calendar conectada exitosamente');
+      // Test the connection
+      const isConnected = await GoogleCalendarService.testConnection(userId);
+      if (isConnected) {
+        setIsConnected(true);
+        setSuccess('Cuenta de Google Calendar conectada exitosamente');
+      } else {
+        throw new Error('No se pudo verificar la conexión');
+      }
 
       if (onSettingsChange) {
         onSettingsChange();
       }
     } catch (error) {
       console.error('Error connecting to Google Calendar:', error);
-      setError('Error al conectar con Google Calendar');
+      setError('Error al conectar con Google Calendar. Verifica tu configuración.');
     } finally {
       setIsLoading(false);
     }

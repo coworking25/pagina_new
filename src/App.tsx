@@ -37,6 +37,7 @@ const AdminProperties = lazy(() => import('./pages/AdminProperties'));
 const AdminAdvisors = lazy(() => import('./pages/AdminAdvisors'));
 const AdminInquiries = lazy(() => import('./pages/AdminInquiries'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
+const AdminCalendar = lazy(() => import('./pages/AdminCalendar').then(module => ({ default: module.AdminCalendarPage })));
 
 // Code Splitting: Lazy loading de páginas de cliente
 const ClientLayout = lazy(() => import('./components/client-portal/ClientLayout'));
@@ -99,6 +100,7 @@ const AppLayout = () => {
               >
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="appointments" element={<AdminAppointments />} />
+                <Route path="calendar" element={<AdminCalendar />} />
                 <Route path="clients" element={<AdminClients />} />
                 <Route path="properties" element={<AdminProperties />} />
                 <Route path="advisors" element={<AdminAdvisors />} />

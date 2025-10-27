@@ -56,6 +56,12 @@ function AdminLayout() {
       badge: badges.appointments
     },
     {
+      id: 'calendar',
+      label: 'Calendario',
+      icon: Calendar,
+      path: '/admin/calendar'
+    },
+    {
       id: 'clients',
       label: 'Clientes',
       icon: Users,
