@@ -426,11 +426,42 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                           </span>
                         </div>
                         <div className="mb-4">
-                          <span className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
-                            {formatPrice(property.price)}
-                          </span>
-                          {property.status === 'rent' && (
-                            <span className="text-sm sm:text-base text-gray-500 dark:text-gray-400 ml-2">/mes</span>
+                          {property.availability_type === 'both' ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                  Venta: {property.sale_price ? formatPrice(property.sale_price) : 'No disponible'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
+                                  Arriendo: {property.rent_price ? formatPrice(property.rent_price) : 'No disponible'}
+                                </span>
+                                <span className="text-sm sm:text-base text-gray-500 dark:text-gray-400">/mes</span>
+                              </div>
+                            </div>
+                          ) : property.availability_type === 'sale' ? (
+                            <div>
+                              <span className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400">
+                                {property.sale_price ? formatPrice(property.sale_price) : formatPrice(property.price || 0)}
+                              </span>
+                            </div>
+                          ) : property.availability_type === 'rent' ? (
+                            <div>
+                              <span className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
+                                {property.rent_price ? formatPrice(property.rent_price) : formatPrice(property.price || 0)}
+                              </span>
+                              <span className="text-sm sm:text-base text-gray-500 dark:text-gray-400 ml-2">/mes</span>
+                            </div>
+                          ) : (
+                            <div>
+                              <span className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
+                                {formatPrice(property.price || 0)}
+                              </span>
+                              {property.status === 'rent' && (
+                                <span className="text-sm sm:text-base text-gray-500 dark:text-gray-400 ml-2">/mes</span>
+                              )}
+                            </div>
                           )}
                         </div>
 
