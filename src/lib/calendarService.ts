@@ -77,6 +77,7 @@ export interface CreateAppointmentData {
   notes?: string;
   internal_notes?: string;
   follow_up_required?: boolean;
+  created_by?: string;
 }
 
 export interface AppointmentFilters {
@@ -216,6 +217,12 @@ export class CalendarService {
    */
   public async createAppointment(appointmentData: CreateAppointmentData): Promise<Appointment> {
     try {
+      // Obtener el usuario autenticado
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Usuario no autenticado');
+      }
+
       // Validar conflictos de horario si hay asesor asignado
       if (appointmentData.advisor_id) {
         const hasConflict = await this.checkAppointmentConflicts(
@@ -233,6 +240,7 @@ export class CalendarService {
         .from('appointments')
         .insert([{
           ...appointmentData,
+          created_by: user.id,
           status: 'scheduled',
           reminder_sent: false,
           follow_up_required: appointmentData.follow_up_required || false,

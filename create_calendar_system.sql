@@ -192,6 +192,22 @@ CREATE POLICY "Advisors can manage their own availability" ON advisor_availabili
         )
     );
 
+CREATE POLICY "Admins can view all advisor availability" ON advisor_availability
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can manage all advisor availability" ON advisor_availability
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
 -- Políticas para availability_exceptions
 CREATE POLICY "Advisors can view their own exceptions" ON availability_exceptions
     FOR SELECT USING (
@@ -207,8 +223,7 @@ CREATE POLICY "Advisors can manage their own exceptions" ON availability_excepti
         )
     );
 
--- Políticas para calendar_settings (solo admins)
-CREATE POLICY "Only admins can view calendar settings" ON calendar_settings
+CREATE POLICY "Admins can view all advisor exceptions" ON availability_exceptions
     FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM profiles
@@ -216,12 +231,34 @@ CREATE POLICY "Only admins can view calendar settings" ON calendar_settings
         )
     );
 
-CREATE POLICY "Only admins can manage calendar settings" ON calendar_settings
+CREATE POLICY "Admins can manage all advisor exceptions" ON availability_exceptions
     FOR ALL USING (
         EXISTS (
             SELECT 1 FROM profiles
             WHERE id = auth.uid() AND role = 'admin'
         )
+    );
+
+-- Políticas para calendar_settings (admins ven todo, usuarios ven sus settings)
+DROP POLICY IF EXISTS "Only admins can view calendar settings" ON calendar_settings;
+DROP POLICY IF EXISTS "Only admins can manage calendar settings" ON calendar_settings;
+
+CREATE POLICY "Users can view their own calendar settings and admins can view all" ON calendar_settings
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        ) OR
+        setting_key LIKE '%' || auth.uid()::text || '%'
+    );
+
+CREATE POLICY "Users can manage their own calendar settings and admins can manage all" ON calendar_settings
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        ) OR
+        setting_key LIKE '%' || auth.uid()::text || '%'
     );
 
 -- =====================================================

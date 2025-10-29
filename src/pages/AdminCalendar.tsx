@@ -6,6 +6,7 @@ import { AvailabilityManager } from '../components/Calendar/AvailabilityManager'
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
 import { Calendar, Settings, Plus, Users, Clock, UserCheck } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AdminCalendarPageProps {
   userId?: string;
@@ -16,6 +17,7 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = ({ userId }) 
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { user } = useAuth();
 
   const handleNewAppointment = () => {
     setSelectedAppointment(null);
@@ -160,15 +162,15 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = ({ userId }) 
 
           {activeTab === 'availability' && (
             <AvailabilityManager
-              advisorId={userId || ''}
-              advisorName="Administrador"
+              advisorId=""
+              advisorName=""
             />
           )}
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
               <GoogleCalendarSettings
-                userId={userId}
+                userId={user?.id}
                 onSettingsChange={handleSettingsChange}
               />
 

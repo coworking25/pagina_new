@@ -120,10 +120,26 @@ function AdminProperties() {
   });
 
   // Estados para modales y ventanas flotantes
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const { state: showAddModal, setState: setShowAddModal } = usePersistedState({
+    key: 'admin-properties-show-add-modal',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000 // 30 minutos
+  });
+  const { state: showDetailsModal, setState: setShowDetailsModal } = usePersistedState({
+    key: 'admin-properties-show-details-modal',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000
+  });
+  const { state: showEditModal, setState: setShowEditModal } = usePersistedState({
+    key: 'admin-properties-show-edit-modal',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000
+  });
+  const { state: selectedProperty, setState: setSelectedProperty } = usePersistedState({
+    key: 'admin-properties-selected-property',
+    initialValue: null as Property | null,
+    expirationTime: 30 * 60 * 1000
+  });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeMediaTab, setActiveMediaTab] = useState<'images' | 'videos'>('images');
   const [tenantMap, setTenantMap] = useState<Record<string, { id: string; full_name: string }>>({});
@@ -143,8 +159,16 @@ function AdminProperties() {
   const [loadingStats, setLoadingStats] = useState(false);
   
   // Estados para modales de contacto y citas
-  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
-  const [showContactModal, setShowContactModal] = useState(false);
+  const { state: showAppointmentModal, setState: setShowAppointmentModal } = usePersistedState({
+    key: 'admin-properties-show-appointment-modal',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000
+  });
+  const { state: showContactModal, setState: setShowContactModal } = usePersistedState({
+    key: 'admin-properties-show-contact-modal',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000
+  });
   
   // Estados para formularios con persistencia en localStorage
   const initialFormData = {
@@ -210,7 +234,11 @@ function AdminProperties() {
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   
   // Estado para mostrar/ocultar alerta de borrador
-  const [showDraftAlert, setShowDraftAlert] = useState(false);
+  const { state: showDraftAlert, setState: setShowDraftAlert } = usePersistedState({
+    key: 'admin-properties-show-draft-alert',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000
+  });
 
   // NO verificamos automáticamente al montar - solo cuando se abre el modal
   // El borrador se restaura automáticamente por usePersistedState

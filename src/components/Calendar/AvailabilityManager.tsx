@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
-import { Clock, Calendar, Plus, Trash2 } from 'lucide-react';
+import { Clock, Calendar, Plus, Trash2, Users } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AdvisorAvailability {
   id: string;
@@ -21,6 +22,12 @@ interface AvailabilityException {
   start_time?: string;
   end_time?: string;
   reason?: string;
+}
+
+interface Advisor {
+  id: string;
+  name: string;
+  email: string;
 }
 
 interface AvailabilityManagerProps {
@@ -42,11 +49,15 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
   advisorId,
   advisorName
 }) => {
+  const { user } = useAuth();
   const [availability, setAvailability] = useState<AdvisorAvailability[]>([]);
   const [exceptions, setExceptions] = useState<AvailabilityException[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'weekly' | 'exceptions'>('weekly');
+  const [advisors, setAdvisors] = useState<Advisor[]>([]);
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState<string>(advisorId || '');
+  const [loadingAdvisors, setLoadingAdvisors] = useState(false);
 
   // Estado para nueva excepción
   const [newException, setNewException] = useState({
@@ -57,17 +68,35 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
     reason: ''
   });
 
+  const isAdmin = user?.role === 'admin';
+
   useEffect(() => {
-    loadAvailability();
-    loadExceptions();
-  }, [advisorId]);
+    if (isAdmin) {
+      loadAdvisors();
+    } else {
+      setSelectedAdvisorId(advisorId);
+      setLoading(false); // Para usuarios no admin, no esperamos carga de asesores
+    }
+  }, [isAdmin, advisorId]);
+
+  useEffect(() => {
+    if (selectedAdvisorId) {
+      loadAvailability();
+      loadExceptions();
+    } else if (!isAdmin) {
+      // Si no es admin y no hay advisorId, mostrar mensaje de error
+      setLoading(false);
+    }
+  }, [selectedAdvisorId, isAdmin]);
 
   const loadAvailability = async () => {
+    if (!selectedAdvisorId) return;
+
     try {
       const { data, error } = await supabase
         .from('advisor_availability')
         .select('*')
-        .eq('advisor_id', advisorId)
+        .eq('advisor_id', selectedAdvisorId)
         .order('day_of_week');
 
       if (error) throw error;
@@ -78,11 +107,13 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
   };
 
   const loadExceptions = async () => {
+    if (!selectedAdvisorId) return;
+
     try {
       const { data, error } = await supabase
         .from('availability_exceptions')
         .select('*')
-        .eq('advisor_id', advisorId)
+        .eq('advisor_id', selectedAdvisorId)
         .order('exception_date', { ascending: false });
 
       if (error) throw error;
@@ -95,6 +126,8 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
   };
 
   const updateAvailability = async (dayOfWeek: number, field: string, value: any) => {
+    if (!selectedAdvisorId) return;
+
     try {
       const existing = availability.find(a => a.day_of_week === dayOfWeek);
 
@@ -115,7 +148,7 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
         const { data, error } = await supabase
           .from('advisor_availability')
           .insert({
-            advisor_id: advisorId,
+            advisor_id: selectedAdvisorId,
             day_of_week: dayOfWeek,
             start_time: '09:00',
             end_time: '17:00',
@@ -135,14 +168,14 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
   };
 
   const addException = async () => {
-    if (!newException.exception_date) return;
+    if (!selectedAdvisorId || !newException.exception_date) return;
 
     setSaving(true);
     try {
       const { data, error } = await supabase
         .from('availability_exceptions')
         .insert({
-          advisor_id: advisorId,
+          advisor_id: selectedAdvisorId,
           exception_date: newException.exception_date,
           is_available: newException.is_available,
           start_time: newException.is_available ? newException.start_time : null,
@@ -188,6 +221,26 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
     return time.substring(0, 5); // HH:MM format
   };
 
+  const loadAdvisors = async () => {
+    setLoadingAdvisors(true);
+    try {
+      const { data, error } = await supabase
+        .from('advisors')
+        .select('id, name, email')
+        .eq('is_active', true)
+        .is('deleted_at', null)
+        .order('name');
+
+      if (error) throw error;
+      setAdvisors(data || []);
+    } catch (error) {
+      console.error('Error loading advisors:', error);
+    } finally {
+      setLoadingAdvisors(false);
+      setLoading(false); // Para admins, terminamos la carga inicial aquí
+    }
+  };
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -207,7 +260,7 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               Gestión de Disponibilidad
             </h2>
-            {advisorName && (
+            {advisorName && !isAdmin && (
               <p className="text-gray-600 dark:text-gray-400 mt-1">
                 Configurando horarios para {advisorName}
               </p>
@@ -215,7 +268,39 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Advisor Selector for Admin */}
+        {isAdmin && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <Users className="w-4 h-4 inline mr-2" />
+              Seleccionar Asesor
+            </label>
+            <select
+              value={selectedAdvisorId}
+              onChange={(e) => setSelectedAdvisorId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700"
+              disabled={loadingAdvisors}
+            >
+              <option value="">
+                {loadingAdvisors ? 'Cargando asesores...' : 'Seleccionar asesor'}
+              </option>
+              {advisors.map((advisor) => (
+                <option key={advisor.id} value={advisor.id}>
+                  {advisor.name} ({advisor.email})
+                </option>
+              ))}
+            </select>
+            {!selectedAdvisorId && (
+              <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                Selecciona un asesor para gestionar su disponibilidad
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Show content only when advisor is selected OR when user is admin */}
+        {(selectedAdvisorId || isAdmin) && (
+          <>
         <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
           <button
             onClick={() => setActiveTab('weekly')}
@@ -242,7 +327,7 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
         </div>
 
         {/* Weekly Availability Tab */}
-        {activeTab === 'weekly' && (
+        {activeTab === 'weekly' && selectedAdvisorId && (
           <div className="space-y-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -301,8 +386,21 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
           </div>
         )}
 
+        {/* Show message when no advisor is selected for weekly tab */}
+        {activeTab === 'weekly' && !selectedAdvisorId && isAdmin && (
+          <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg text-center">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Selecciona un Asesor
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Elige un asesor de la lista desplegable arriba para gestionar su disponibilidad semanal.
+            </p>
+          </div>
+        )}
+
         {/* Exceptions Tab */}
-        {activeTab === 'exceptions' && (
+        {activeTab === 'exceptions' && selectedAdvisorId && (
           <div className="space-y-6">
             <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
               <p className="text-sm text-amber-800 dark:text-amber-200">
@@ -450,6 +548,34 @@ export const AvailabilityManager: React.FC<AvailabilityManagerProps> = ({
                 ))
               )}
             </div>
+          </div>
+        )}
+
+        {/* Show message when no advisor is selected for exceptions tab */}
+        {activeTab === 'exceptions' && !selectedAdvisorId && isAdmin && (
+          <div className="bg-gray-50 dark:bg-gray-800 p-8 rounded-lg text-center">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Selecciona un Asesor
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Elige un asesor de la lista desplegable arriba para gestionar sus excepciones de disponibilidad.
+            </p>
+          </div>
+        )}
+          </>
+        )}
+
+        {/* Show message when no advisor is available for non-admin users */}
+        {!isAdmin && !advisorId && (
+          <div className="bg-red-50 dark:bg-red-900/20 p-8 rounded-lg text-center">
+            <Users className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-red-800 dark:text-red-200 mb-2">
+              Acceso Denegado
+            </h3>
+            <p className="text-red-600 dark:text-red-400">
+              No tienes permisos para gestionar la disponibilidad. Contacta a un administrador.
+            </p>
           </div>
         )}
       </Card>

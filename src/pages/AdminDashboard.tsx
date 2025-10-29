@@ -40,6 +40,8 @@ import FloatingCard from '../components/UI/FloatingCard';
 import ReportsModal from '../components/Modals/ReportsModal';
 import UserManagementModal from '../components/Modals/UserManagementModal';
 import { useAuth } from '../contexts/AuthContext';
+import { usePersistedState } from '../hooks/usePersistedState';
+import { useAppState } from '../contexts/AppStateContext';
 
 interface DashboardStats {
   properties: {
@@ -115,15 +117,40 @@ interface SmartAlertsData {
 }
 
 function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const { state: stats, setState: setStats } = usePersistedState({
+    key: 'dashboard-stats',
+    initialValue: null as DashboardStats | null,
+    expirationTime: 60 * 60 * 1000 // 1 hora
+  });
+  const { state: recentActivity, setState: setRecentActivity } = usePersistedState({
+    key: 'dashboard-recent-activity',
+    initialValue: [] as RecentActivity[],
+    expirationTime: 60 * 60 * 1000
+  });
   const [loading, setLoading] = useState(true);
-  const [revenueTrends, setRevenueTrends] = useState<RevenueTrend[]>([]);
-  const [smartAlerts, setSmartAlerts] = useState<SmartAlertsData | null>(null);
-  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
-  const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState(false);
+  const { state: revenueTrends, setState: setRevenueTrends } = usePersistedState({
+    key: 'dashboard-revenue-trends',
+    initialValue: [] as RevenueTrend[],
+    expirationTime: 60 * 60 * 1000
+  });
+  const { state: smartAlerts, setState: setSmartAlerts } = usePersistedState({
+    key: 'dashboard-smart-alerts',
+    initialValue: null as SmartAlertsData | null,
+    expirationTime: 60 * 60 * 1000
+  });
+  const { state: isReportsModalOpen, setState: setIsReportsModalOpen } = usePersistedState({
+    key: 'dashboard-reports-modal',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000 // 30 minutos
+  });
+  const { state: isUserManagementModalOpen, setState: setIsUserManagementModalOpen } = usePersistedState({
+    key: 'dashboard-user-management-modal',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000
+  });
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const { updateAppState } = useAppState();
 
   // Usar el contexto de notificaciones
   const {
@@ -132,6 +159,11 @@ function AdminDashboard() {
 
   useEffect(() => {
     loadDashboardData();
+    // Actualizar estado global de la app
+    updateAppState({
+      currentView: 'dashboard',
+      lastVisitedRoute: '/admin/dashboard'
+    });
   }, []);
 
   const loadDashboardData = async () => {

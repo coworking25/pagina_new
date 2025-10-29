@@ -14,14 +14,19 @@ export interface GoogleCalendarEvent {
 export class GoogleCalendarService {
   // Token management - now using Supabase directly
   static async saveGoogleTokens(userId: string, tokens: any) {
+    // Save tokens as JSON in calendar_settings using key-value system
     const { error } = await supabase
       .from('calendar_settings')
-      .upsert({
-        user_id: userId,
-        google_tokens: tokens,
-        google_calendar_enabled: true,
-        updated_at: new Date().toISOString()
-      });
+      .upsert([
+        {
+          setting_key: `google_tokens_${userId}`,
+          setting_value: JSON.stringify(tokens),
+        },
+        {
+          setting_key: `google_calendar_enabled_${userId}`,
+          setting_value: 'true',
+        }
+      ], { onConflict: 'setting_key' });
 
     if (error) throw error;
   }
@@ -29,25 +34,32 @@ export class GoogleCalendarService {
   static async getGoogleTokens(userId: string) {
     const { data, error } = await supabase
       .from('calendar_settings')
-      .select('google_tokens')
-      .eq('user_id', userId)
+      .select('setting_value')
+      .eq('setting_key', `google_tokens_${userId}`)
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data?.google_tokens;
+    return data ? JSON.parse(data.setting_value) : null;
   }
 
   static async revokeGoogleAccess(userId: string) {
-    const { error } = await supabase
+    // Update the enabled flag and clear tokens
+    const { error: updateError } = await supabase
       .from('calendar_settings')
-      .update({
-        google_tokens: null,
-        google_calendar_enabled: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
+      .upsert({
+        setting_key: `google_calendar_enabled_${userId}`,
+        setting_value: 'false',
+      }, { onConflict: 'setting_key' });
 
-    if (error) throw error;
+    if (updateError) throw updateError;
+
+    // Clear tokens
+    const { error: deleteError } = await supabase
+      .from('calendar_settings')
+      .delete()
+      .eq('setting_key', `google_tokens_${userId}`);
+
+    if (deleteError) throw deleteError;
   }
 
   // Call Edge Function for Google Calendar operations
@@ -148,11 +160,11 @@ export class GoogleCalendarService {
       // Get last sync time
       const { data: settings } = await supabase
         .from('calendar_settings')
-        .select('last_sync')
-        .eq('user_id', userId)
+        .select('setting_value')
+        .eq('setting_key', `last_sync_${userId}`)
         .single();
 
-      const lastSync = settings?.last_sync;
+      const lastSync = settings ? settings.setting_value : null;
       const result = await this.callEdgeFunction('sync_events', userId, { lastSync });
 
       const googleEvents = result?.items || [];
@@ -188,8 +200,10 @@ export class GoogleCalendarService {
       // Update last sync time
       await supabase
         .from('calendar_settings')
-        .update({ last_sync: new Date().toISOString() })
-        .eq('user_id', userId);
+        .upsert({
+          setting_key: `last_sync_${userId}`,
+          setting_value: new Date().toISOString(),
+        }, { onConflict: 'setting_key' });
 
     } catch (error) {
       console.error('Error syncing from Google Calendar:', error);
@@ -211,11 +225,10 @@ export class GoogleCalendarService {
   static async setDefaultCalendar(userId: string, calendarId: string) {
     const { error } = await supabase
       .from('calendar_settings')
-      .update({
-        google_calendar_id: calendarId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
+      .upsert({
+        setting_key: `google_calendar_id_${userId}`,
+        setting_value: calendarId,
+      }, { onConflict: 'setting_key' });
 
     if (error) throw error;
   }

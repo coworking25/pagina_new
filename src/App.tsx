@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminBadgeProvider } from './contexts/AdminBadgeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { AppStateProvider } from './contexts/AppStateContext';
 import './utils/debug';
 
 // Code Splitting: Lazy loading de páginas públicas
@@ -27,6 +28,7 @@ const Documentation = lazy(() => import('./pages/Documentation'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Login = lazy(() => import('./pages/Login'));
 const TestPage = lazy(() => import('./pages/TestPage'));
+const TestAppointmentPage = lazy(() => import('./pages/TestAppointmentPage'));
 
 // Code Splitting: Lazy loading de páginas admin
 const AdminLayout = lazy(() => import('./components/Layout/AdminLayout'));
@@ -77,6 +79,7 @@ const AppLayout = () => {
               {/* Rutas Públicas */}
               <Route path="/" element={<Home />} />
               <Route path="/test" element={<TestPage />} />
+              <Route path="/test-appointment" element={<TestAppointmentPage />} />
               <Route path="/properties" element={<Properties />} />
               <Route path="/property/:id" element={<PropertyDetail />} />
               <Route path="/services" element={<Services />} />
@@ -208,14 +211,16 @@ function App() {
   try {
     return (
       <AuthProvider>
-        <NotificationProvider>
-          <AdminBadgeProvider>
-            <Router>
-              <ScrollToTopOnRouteChange />
-              <AppLayout />
-            </Router>
-          </AdminBadgeProvider>
-        </NotificationProvider>
+        <AppStateProvider>
+          <NotificationProvider>
+            <AdminBadgeProvider>
+              <Router>
+                <ScrollToTopOnRouteChange />
+                <AppLayout />
+              </Router>
+            </AdminBadgeProvider>
+          </NotificationProvider>
+        </AppStateProvider>
       </AuthProvider>
     );
   } catch (error) {

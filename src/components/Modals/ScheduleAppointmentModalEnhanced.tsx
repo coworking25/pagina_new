@@ -42,7 +42,7 @@ import {
 import { Property, Advisor } from '../../types';
 import Button from '../UI/Button';
 import Calendar from '../UI/Calendar';
-import TimeSlotSelector from '../UI/TimeSlotSelector';
+import { TimeSlotSelector } from '../Calendar/TimeSlotSelector';
 import { savePropertyAppointment } from '../../lib/supabase';
 
 interface ScheduleAppointmentModalProps {
@@ -772,15 +772,32 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                         Selecciona la hora
                       </h3>
-                      <TimeSlotSelector
-                        selectedTime={formData.preferredTime}
-                        onTimeSelect={(time) => updateFormData('preferredTime', time)}
-                        disabled={!formData.preferredDate}
-                        availableSlots={[
-                          '09:00', '10:00', '11:00', '12:00', '13:00',
-                          '14:00', '15:00', '16:00', '17:00'
-                        ]}
-                      />
+                      {formData.preferredDate ? (
+                        <TimeSlotSelector
+                          selectedDate={new Date(formData.preferredDate)}
+                          advisorId={advisor.id}
+                          selectedTime={formData.preferredTime}
+                          onTimeSelect={(time: string) => updateFormData('preferredTime', time)}
+                          onValidationChange={(isValid: boolean, message?: string) => {
+                            if (!isValid && message) {
+                              setFormErrors(prev => ({ ...prev, preferredTime: message }));
+                            } else {
+                              setFormErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors.preferredTime;
+                                return newErrors;
+                              });
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
+                          <Clock className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                          <p className="text-gray-500 dark:text-gray-400">
+                            Selecciona una fecha para ver horarios disponibles
+                          </p>
+                        </div>
+                      )}
                       {formErrors.preferredTime && (
                         <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
                           {formErrors.preferredTime}

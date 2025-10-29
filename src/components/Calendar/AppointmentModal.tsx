@@ -45,6 +45,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   const [clients, setClients] = useState<Client[]>([]);
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   const [formData, setFormData] = useState<CreateAppointmentData & {
     status?: Appointment['status'];
@@ -68,6 +69,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     internal_notes: '',
     follow_up_required: false,
     follow_up_notes: '',
+    created_by: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -76,12 +78,26 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadInitialData();
+    }
+  }, [isOpen]);
+
+  // Inicializar formulario cuando cambien los datos
+  useEffect(() => {
+    if (isOpen) {
       initializeForm();
     }
-  }, [isOpen, appointment, selectedDate, advisorId]);
+  }, [isOpen, appointment, selectedDate, advisorId, currentUserId]);
 
   const loadInitialData = async () => {
     try {
+      // Obtener usuario autenticado
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('Error obteniendo usuario:', userError);
+      } else if (user) {
+        setCurrentUserId(user.id);
+      }
+
       // Cargar clientes
       const clientsData = await getClients();
       setClients(clientsData);
@@ -126,6 +142,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         internal_notes: appointment.internal_notes || '',
         follow_up_required: appointment.follow_up_required,
         follow_up_notes: appointment.follow_up_notes || '',
+        created_by: appointment.created_by || '',
       });
     } else {
       // Nueva cita
@@ -151,6 +168,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         internal_notes: '',
         follow_up_required: false,
         follow_up_notes: '',
+        created_by: currentUserId,
       });
     }
     setErrors({});
