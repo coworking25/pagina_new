@@ -22,13 +22,14 @@
  * Para admin/interno, usar: ScheduleAppointmentModal.tsx
  */
 import React, { useState, useEffect } from 'react';
-import { 
-  Clock, 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Star, 
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Clock,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Star,
   Send,
   X,
   Home,
@@ -44,6 +45,7 @@ import Button from '../UI/Button';
 import Calendar from '../UI/Calendar';
 import { TimeSlotSelector } from '../Calendar/TimeSlotSelector';
 import { savePropertyAppointment } from '../../lib/supabase';
+
 
 interface ScheduleAppointmentModalProps {
   property: Property | null;
@@ -139,6 +141,35 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
   const [errorMessage, setErrorMessage] = useState('');
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Google Calendar integration - REMOVED (not needed)
+
+  // Variantes de animación
+  const modalVariants = {
+    hidden: { opacity: 0, scale: 0.95, y: 20 },
+    visible: { opacity: 1, scale: 1, y: 0 },
+    exit: { opacity: 0, scale: 0.95, y: 20 }
+  };
+
+  const stepVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0,
+      scale: 0.95
+    }),
+    center: { x: 0, opacity: 1, scale: 1 },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 300 : -300,
+      opacity: 0,
+      scale: 0.95
+    })
+  };
+
+  const buttonVariants = {
+    idle: { scale: 1 },
+    hover: { scale: 1.02 },
+    tap: { scale: 0.98 }
+  };
   
   const [formData, setFormData] = useState<AppointmentForm>({
     name: '',
@@ -323,9 +354,11 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
         contact_method: formData.contactMethod,
         marketing_consent: formData.marketingConsent
       };
-      
+
       await savePropertyAppointment(appointmentData);
       console.log('✅ Cita guardada en BD correctamente');
+
+      // Google Calendar integration - REMOVED (not needed)
 
       // 🎯 Fallback: Si WhatsApp no se abrió, intentar de nuevo
       if (formData.contactMethod === 'whatsapp' && !whatsappOpened) {
@@ -427,8 +460,7 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
 Me interesa agendar una cita para la siguiente propiedad:
 
 🏠 *${property.title}*
-${property.location ? `📍 ${property.location}\n` : ''}💰 ${property.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}
-` : `
+${property.location ? `📍 ${property.location}\n` : ''}${property.price ? `💰 ${property.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}\n` : ''}` : `
 Me interesa agendar una cita de asesoría inmobiliaria.
 `;
 
@@ -507,20 +539,29 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
-      onClick={(e) => e.target === e.currentTarget && handleClose()}
-      onKeyDown={handleKeyDown}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-      aria-describedby="modal-description"
-    >
-      <div 
-        className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto"
-        style={modalContainerStyle}
-        role="document"
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={(e) => e.target === e.currentTarget && handleClose()}
+          onKeyDown={handleKeyDown}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          aria-describedby="modal-description"
+        >
+          <motion.div
+            className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto"
+            style={modalContainerStyle}
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            role="document"
+          >
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sm:p-6 rounded-t-xl sm:rounded-t-2xl">
           <div className="flex items-center justify-between">
@@ -566,41 +607,99 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
         </div>
 
         {submissionStatus === 'success' ? (
-          <div className="p-8 flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="p-8 flex flex-col items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4"
+            >
               <CheckCircle className="w-10 h-10 text-green-500" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            </motion.div>
+            <motion.h3
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-xl font-bold text-gray-900 dark:text-white mb-2"
+            >
               Cita Agendada Exitosamente
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 text-center mb-6 max-w-md">
-              Hemos registrado tu cita para {formData.preferredDate} a las {formData.preferredTime}. 
+            </motion.h3>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="text-gray-600 dark:text-gray-300 text-center mb-6 max-w-md"
+            >
+              Hemos registrado tu cita para {formData.preferredDate} a las {formData.preferredTime}.
               El asesor se pondrá en contacto contigo pronto para confirmar los detalles.
-            </p>
-            <Button onClick={onClose}>Cerrar</Button>
-          </div>
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <Button onClick={onClose}>Cerrar</Button>
+            </motion.div>
+          </motion.div>
         ) : submissionStatus === 'error' ? (
-          <div className="p-8 flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, x: -20 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            className="p-8 flex flex-col items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4"
+            >
               <AlertCircle className="w-10 h-10 text-red-500" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            </motion.div>
+            <motion.h3
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-xl font-bold text-gray-900 dark:text-white mb-2"
+            >
               Error al Agendar
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 text-center mb-6 max-w-md">
+            </motion.h3>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="text-gray-600 dark:text-gray-300 text-center mb-6 max-w-md"
+            >
               {errorMessage || 'Ocurrió un error inesperado. Por favor intenta nuevamente.'}
-            </p>
-            <div className="flex space-x-3">
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex space-x-3"
+            >
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button onClick={() => setSubmissionStatus('idle')}>Intentar Nuevamente</Button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         ) : (
           <>
             <div style={contentStyle}>
-              {/* Step 1: Información Personal y Tipo de Cita */}
-              {currentStep === 1 && (
-                <div className="p-3 sm:p-6 space-y-3 sm:space-y-6">
+              <AnimatePresence mode="wait" custom={currentStep}>
+                {/* Step 1: Información Personal y Tipo de Cita */}
+                {currentStep === 1 && (
+                  <motion.div
+                    key="step1"
+                    custom={currentStep}
+                    variants={stepVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    className="p-3 sm:p-6 space-y-3 sm:space-y-6"
+                  >
                   {/* Información del Asesor - Compacta en móvil */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg sm:rounded-xl p-3 sm:p-6">
                     <div className="flex flex-col sm:flex-row items-start space-y-2 sm:space-y-0 sm:space-x-4">
@@ -656,57 +755,95 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                   </div>
 
                   {/* Formulario Personal Compacto en Móvil */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
-                    <InputField
-                      key="name-field"
-                      label="Nombre completo"
-                      type="text"
-                      field="name"
-                      value={formData.name}
-                      onChange={(value) => updateFormData('name', value)}
-                      placeholder="Ingresa tu nombre completo"
-                      icon={User}
-                      required={true}
-                      error={formErrors.name}
-                    />
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <InputField
+                        key="name-field"
+                        label="Nombre completo"
+                        type="text"
+                        field="name"
+                        value={formData.name}
+                        onChange={(value) => updateFormData('name', value)}
+                        placeholder="Ingresa tu nombre completo"
+                        icon={User}
+                        required={true}
+                        error={formErrors.name}
+                      />
+                    </motion.div>
 
-                    <InputField
-                      key="email-field"
-                      label="Correo electrónico"
-                      type="email"
-                      field="email"
-                      value={formData.email}
-                      onChange={(value) => updateFormData('email', value)}
-                      placeholder="tu@email.com"
-                      icon={Mail}
-                      required={true}
-                      error={formErrors.email}
-                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <InputField
+                        key="email-field"
+                        label="Correo electrónico"
+                        type="email"
+                        field="email"
+                        value={formData.email}
+                        onChange={(value) => updateFormData('email', value)}
+                        placeholder="tu@email.com"
+                        icon={Mail}
+                        required={true}
+                        error={formErrors.email}
+                      />
+                    </motion.div>
 
-                    <InputField
-                      key="phone-field"
-                      label="Número de teléfono"
-                      type="tel"
-                      field="phone"
-                      value={formData.phone}
-                      onChange={(value) => updateFormData('phone', value)}
-                      placeholder="+57 300 123 4567"
-                      icon={Phone}
-                      required={true}
-                      colSpan={2}
-                      error={formErrors.phone}
-                    />
-                  </div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="md:col-span-2"
+                    >
+                      <InputField
+                        key="phone-field"
+                        label="Número de teléfono"
+                        type="tel"
+                        field="phone"
+                        value={formData.phone}
+                        onChange={(value) => updateFormData('phone', value)}
+                        placeholder="+57 300 123 4567"
+                        icon={Phone}
+                        required={true}
+                        colSpan={2}
+                        error={formErrors.phone}
+                      />
+                    </motion.div>
+                  </motion.div>
 
                   {/* Tipo de Cita Compacto en Móvil */}
-                  <div>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                  >
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-4">
                       ¿Qué tipo de cita necesitas? <span className="text-red-500">*</span>
                     </label>
-                    <div className="grid grid-cols-1 gap-2 sm:gap-4">
-                      {appointmentTypes.map((type) => (
-                        <button
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.7 }}
+                      className="grid grid-cols-1 gap-2 sm:gap-4"
+                    >
+                      {appointmentTypes.map((type, index) => (
+                        <motion.button
                           key={type.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.8 + index * 0.1 }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           type="button"
                           onClick={() => updateFormData('appointmentType', type.id)}
                           className={`p-2.5 sm:p-6 rounded-lg sm:rounded-xl border-2 transition-all duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -733,21 +870,34 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                               </p>
                             </div>
                           </div>
-                        </button>
+                        </motion.button>
                       ))}
-                    </div>
+                    </motion.div>
                     {formErrors.appointmentType && (
-                      <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 text-sm text-red-600 dark:text-red-400"
+                        role="alert"
+                      >
                         {formErrors.appointmentType}
-                      </p>
+                      </motion.p>
                     )}
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                  </motion.div>
+                )}
 
-              {/* Step 2: Fecha, Hora y Modalidad */}
-              {currentStep === 2 && (
-                <div className="p-4 sm:p-6 space-y-6">
+                {/* Step 2: Fecha, Hora y Modalidad */}
+                {currentStep === 2 && (
+                  <motion.div
+                    key="step2"
+                    custom={currentStep}
+                    variants={stepVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    className="p-4 sm:p-6 space-y-6"
+                  >
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                     {/* Calendario */}
                     <div>
@@ -846,12 +996,20 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                       </p>
                     )}
                   </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
 
-              {/* Step 3: Detalles Adicionales y Confirmación */}
-              {currentStep === 3 && (
-                <div className="p-4 sm:p-6 space-y-6">
+                {/* Step 3: Detalles Adicionales y Confirmación */}
+                {currentStep === 3 && (
+                  <motion.div
+                    key="step3"
+                    custom={currentStep}
+                    variants={stepVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    className="p-4 sm:p-6 space-y-6"
+                  >
                   {/* Resumen */}
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 sm:p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -934,56 +1092,78 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                       Acepto recibir información comercial sobre propiedades similares por WhatsApp, correo electrónico o teléfono.
                     </label>
                   </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Footer con botones mejorado - Optimizado para móviles */}
-            <div className="p-3 sm:p-6 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 w-full rounded-b-xl sm:rounded-b-2xl flex-shrink-0">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="p-3 sm:p-6 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 w-full rounded-b-xl sm:rounded-b-2xl flex-shrink-0"
+            >
               <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center space-y-2 sm:space-y-0 sm:gap-3">
-                <button
+                <motion.button
+                  variants={buttonVariants}
+                  initial="idle"
+                  whileHover="hover"
+                  whileTap="tap"
+                  disabled={isSubmitting}
                   type="button"
                   onClick={currentStep === 1 ? handleClose : prevStep}
-                  disabled={isSubmitting}
                   className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 border-2 border-gray-300 dark:border-gray-500 rounded-lg font-medium text-sm sm:text-base text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] transition-colors"
                   aria-label={currentStep === 1 ? 'Cerrar modal' : 'Ir al paso anterior'}
                 >
                   {currentStep === 1 ? 'Cancelar' : 'Anterior'}
-                </button>
+                </motion.button>
 
                 {currentStep < 3 ? (
-                  <button
-                    type="button"
-                    onClick={nextStep}
+                  <motion.button
+                    variants={buttonVariants}
+                    initial="idle"
+                    whileHover="hover"
+                    whileTap="tap"
                     disabled={
                       (currentStep === 1 && !canProceedFromStep1) ||
                       (currentStep === 2 && !canProceedFromStep2)
                     }
+                    type="button"
+                    onClick={nextStep}
                     className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent rounded-lg font-medium text-sm sm:text-base text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] transition-colors"
                     aria-label="Ir al siguiente paso"
                   >
                     Siguiente
-                  </button>
+                  </motion.button>
                 ) : (
-                  <button
+                  <motion.button
+                    variants={buttonVariants}
+                    initial="idle"
+                    whileHover="hover"
+                    whileTap="tap"
+                    disabled={isSubmitting || Object.keys(validateStep(3)).length > 0}
                     type="button"
                     onClick={handleSubmit}
-                    disabled={isSubmitting || Object.keys(validateStep(3)).length > 0}
                     className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent rounded-lg font-medium text-sm sm:text-base text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px] transition-colors"
                     aria-label="Confirmar y agendar cita"
                   >
                     {isSubmitting ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="flex items-center space-x-2"
+                      >
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                         <span>Procesando...</span>
-                      </div>
+                      </motion.div>
                     ) : (
                       <div className="flex items-center space-x-2">
                         <Send className="w-4 h-4" />
                         <span>Confirmar Cita</span>
                       </div>
                     )}
-                  </button>
+                  </motion.button>
                 )}
               </div>
               
@@ -993,11 +1173,13 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                   Paso {currentStep} de 3
                 </span>
               </div>
-            </div>
+            </motion.div>
           </>
         )}
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

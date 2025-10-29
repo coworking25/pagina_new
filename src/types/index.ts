@@ -1,6 +1,9 @@
 // Re-export all client-related types
 export * from './clients';
 
+// Re-export notification types
+export * from './notifications';
+
 export interface PropertyVideo {
   url: string;
   thumbnail?: string;

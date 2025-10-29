@@ -6,6 +6,7 @@ import { calendarService, Appointment, CreateAppointmentData } from '../../lib/c
 import { getClients } from '../../lib/clientsApi';
 import { supabase } from '../../lib/supabase';
 import { Client } from '../../types/clients';
+import { reminderService } from '../../services/reminderService';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
 import Modal from '../UI/Modal';
@@ -252,6 +253,30 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       } else {
         // Crear nueva cita
         savedAppointment = await calendarService.createAppointment(formData);
+
+        // Programar recordatorios automáticos para la nueva cita
+        try {
+          // Convertir el Appointment al formato que espera reminderService
+          const propertyAppointment = {
+            id: savedAppointment.id,
+            appointment_date: savedAppointment.start_time,
+            client_name: savedAppointment.contact_name || 'Cliente',
+            client_email: savedAppointment.contact_email || '',
+            client_phone: savedAppointment.contact_phone || '',
+            advisor_id: savedAppointment.advisor_id || '',
+            property_id: savedAppointment.property_id || '',
+            appointment_type: savedAppointment.appointment_type,
+            status: savedAppointment.status,
+            location: savedAppointment.location || '',
+            notes: savedAppointment.notes || '',
+          };
+
+          await reminderService.scheduleAppointmentReminders(propertyAppointment);
+          console.log('Recordatorios programados para la cita:', savedAppointment.id);
+        } catch (reminderError) {
+          console.error('Error programando recordatorios:', reminderError);
+          // No fallar la creación de la cita por error en recordatorios
+        }
       }
 
       if (onSave) {

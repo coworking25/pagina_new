@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
 import { CalendarView } from '../components/Calendar/CalendarView';
 import { AppointmentModal } from '../components/Calendar/AppointmentModal';
-import { GoogleCalendarSettings } from '../components/Calendar/GoogleCalendarSettings';
 import { AvailabilityManager } from '../components/Calendar/AvailabilityManager';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
 import { Calendar, Settings, Plus, Users, Clock, UserCheck } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 
 interface AdminCalendarPageProps {
   userId?: string;
 }
 
-export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = ({ userId }) => {
+export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
   const [activeTab, setActiveTab] = useState<'calendar' | 'availability' | 'settings'>('calendar');
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { user } = useAuth();
 
   const handleNewAppointment = () => {
     setSelectedAppointment(null);
@@ -33,10 +30,6 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = ({ userId }) 
     setShowAppointmentModal(false);
     setSelectedAppointment(null);
     setRefreshKey(prev => prev + 1); // Trigger refresh
-  };
-
-  const handleSettingsChange = () => {
-    setRefreshKey(prev => prev + 1); // Trigger refresh when settings change
   };
 
   const tabs = [
@@ -56,7 +49,7 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = ({ userId }) 
       id: 'settings' as const,
       label: 'Configuración',
       icon: Settings,
-      description: 'Configuración de Google Calendar y preferencias'
+      description: 'Configuración general del calendario y notificaciones'
     }
   ];
 
@@ -169,11 +162,6 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = ({ userId }) 
 
           {activeTab === 'settings' && (
             <div className="space-y-6">
-              <GoogleCalendarSettings
-                userId={user?.id}
-                onSettingsChange={handleSettingsChange}
-              />
-
               {/* Additional Settings */}
               <Card className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Configuración General</h3>
