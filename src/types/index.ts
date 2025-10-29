@@ -15,14 +15,17 @@ export interface Property {
   id: number;
   code?: string;  // Código único de la propiedad (ej: CA-001)
   title: string;
-  price: number;
+  price?: number; // Mantener para compatibilidad, pero ahora opcional
+  availability_type: 'sale' | 'rent' | 'both'; // Nuevo: tipo de disponibilidad
+  sale_price?: number; // Nuevo: precio de venta (opcional basado en availability_type)
+  rent_price?: number; // Nuevo: precio de arriendo (opcional basado en availability_type)
   bedrooms: number;
   bathrooms: number;
   area: number;
   location?: string;
   type: 'apartment' | 'apartaestudio' | 'house' | 'office' | 'commercial';
   // Estados posibles: incluimos tanto los legacy ('sale','rent') como los canónicos
-  status: 'sale' | 'rent' | 'sold' | 'rented' | 'available' | 'reserved' | 'maintenance' | 'pending';
+  status: 'sale' | 'rent' | 'both' | 'sold' | 'rented' | 'available' | 'reserved' | 'maintenance' | 'pending';
   images: string[];
   videos?: PropertyVideo[];  // Videos de la propiedad
   cover_image?: string;  // URL de la imagen de portada seleccionada

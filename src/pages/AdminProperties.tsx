@@ -175,13 +175,15 @@ function AdminProperties() {
     code: '',
     title: '',
     description: '',
-    price: '',
+    sale_price: '',
+    rent_price: '',
+    availability_type: 'sale', // 'sale', 'rent', 'both'
     location: '',
     bedrooms: '',
     bathrooms: '',
     area: '',
     type: 'house',
-    status: 'sale',
+    status: 'available',
     advisor_id: '',
     images: [] as string[],
     videos: [] as PropertyVideo[],
@@ -381,6 +383,18 @@ function AdminProperties() {
         filtered = filtered.filter(p => 
           p.status === 'maintenance' || p.status === 'pending' || p.status === 'reserved'
         );
+      } else if (statusFilter === 'both') {
+        filtered = filtered.filter(p => p.availability_type === 'both');
+      } else if (statusFilter === 'sale') {
+        filtered = filtered.filter(p => 
+          (p.availability_type === 'sale' || p.availability_type === 'both') && 
+          (p.status === 'available' || p.status === 'sale')
+        );
+      } else if (statusFilter === 'rent') {
+        filtered = filtered.filter(p => 
+          (p.availability_type === 'rent' || p.availability_type === 'both') && 
+          (p.status === 'available' || p.status === 'rent')
+        );
       } else {
         filtered = filtered.filter(p => p.status === statusFilter);
       }
@@ -514,6 +528,7 @@ function AdminProperties() {
       case 'available': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'sale': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'rent': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'both': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
       case 'sold': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       case 'rented': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
       case 'reserved': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
@@ -951,13 +966,15 @@ function AdminProperties() {
       code: property.code || '',
       title: property.title || '',
       description: property.description || '',
-      price: property.price?.toString() || '',
+      sale_price: property.sale_price?.toString() || '',
+      rent_price: property.rent_price?.toString() || '',
+      availability_type: property.availability_type || 'sale',
       location: property.location || '',
       bedrooms: property.bedrooms?.toString() || '',
       bathrooms: property.bathrooms?.toString() || '',
       area: property.area?.toString() || '',
       type: property.type || 'house',
-      status: property.status || 'sale',
+      status: property.status || 'available',
       advisor_id: property.advisor_id || '',
       images: property.images || [],
       videos: property.videos || [],
@@ -1048,7 +1065,9 @@ function AdminProperties() {
         code: propertyCode,
         title: formData.title,
         description: formData.description,
-        price: Number(formData.price),
+        sale_price: formData.availability_type === 'sale' || formData.availability_type === 'both' ? Number(formData.sale_price) : null,
+        rent_price: formData.availability_type === 'rent' || formData.availability_type === 'both' ? Number(formData.rent_price) : null,
+        availability_type: formData.availability_type,
         location: formData.location,
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
@@ -1086,6 +1105,7 @@ function AdminProperties() {
     const v = String(s).toLowerCase().trim();
   if (v === 'sale') return 'sale';
   if (v === 'rent') return 'rent';
+    if (v === 'both') return 'both';
     if (v === 'sold') return 'sold';
     if (v === 'rented') return 'rented';
     if (v === 'reserved') return 'reserved';
@@ -1112,7 +1132,9 @@ function AdminProperties() {
         code: formData.code,
         title: formData.title,
         description: formData.description,
-        price: Number(formData.price),
+        sale_price: formData.availability_type === 'sale' || formData.availability_type === 'both' ? Number(formData.sale_price) : null,
+        rent_price: formData.availability_type === 'rent' || formData.availability_type === 'both' ? Number(formData.rent_price) : null,
+        availability_type: formData.availability_type,
         location: formData.location,
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
@@ -1407,7 +1429,10 @@ function AdminProperties() {
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">En Venta</p>
                 <p className="text-3xl font-bold text-blue-600">
-                  {allProperties.filter(p => p.status === 'sale').length}
+                  {allProperties.filter(p => 
+                    (p.availability_type === 'sale' || p.availability_type === 'both') && 
+                    (p.status === 'available' || p.status === 'sale')
+                  ).length}
                 </p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Disponibles</p>
               </div>
@@ -1436,7 +1461,10 @@ function AdminProperties() {
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">En Arriendo</p>
                 <p className="text-3xl font-bold text-green-600">
-                  {allProperties.filter(p => p.status === 'rent').length}
+                  {allProperties.filter(p => 
+                    (p.availability_type === 'rent' || p.availability_type === 'both') && 
+                    (p.status === 'available' || p.status === 'rent')
+                  ).length}
                 </p>
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1">Disponibles</p>
               </div>
@@ -1546,6 +1574,7 @@ function AdminProperties() {
                 <option value="available">Disponible</option>
                 <option value="sale">En Venta</option>
                 <option value="rent">En Arriendo</option>
+                <option value="both">Venta y Arriendo</option>
                 <option value="sold">Vendido</option>
                 <option value="rented">Arrendado</option>
                 <option value="reserved">Reservado</option>
@@ -1651,14 +1680,22 @@ function AdminProperties() {
                 {/* Status Badge */}
                 <div className="absolute top-4 left-4">
                   <span className={`px-3 py-1 text-xs font-semibold rounded-full backdrop-blur-sm ${getStatusColor(property.status)}`}>
-                    {property.status === 'available' && 'Disponible'}
-                    {property.status === 'sale' && 'En Venta'}
-                    {property.status === 'rent' && 'En Arriendo'}
-                    {property.status === 'sold' && 'Vendido'}
-                    {property.status === 'rented' && 'Arrendado'}
-                    {property.status === 'reserved' && 'Reservado'}
-                    {property.status === 'maintenance' && 'Mantenimiento'}
-                    {property.status === 'pending' && 'Pendiente'}
+                    {(() => {
+                      if (property.status === 'both') return 'En Venta y Arriendo';
+                      if (property.status === 'available') {
+                        if (property.availability_type === 'both') return 'En Venta y Arriendo';
+                        if (property.availability_type === 'sale') return 'En Venta';
+                        if (property.availability_type === 'rent') return 'En Arriendo';
+                      }
+                      if (property.status === 'sale') return 'En Venta';
+                      if (property.status === 'rent') return 'En Arriendo';
+                      if (property.status === 'sold') return 'Vendido';
+                      if (property.status === 'rented') return 'Arrendado';
+                      if (property.status === 'reserved') return 'Reservado';
+                      if (property.status === 'maintenance') return 'Mantenimiento';
+                      if (property.status === 'pending') return 'Pendiente';
+                      return 'Disponible';
+                    })()}
                   </span>
                 </div>
 
@@ -1703,8 +1740,25 @@ function AdminProperties() {
                   <span className="text-sm truncate">{property.location || 'Ubicación no disponible'}</span>
                 </div>
 
-                <div className="text-2xl font-bold text-blue-600 mb-4">
-                  {formatPrice(property.price)}
+                <div className="mb-4">
+                  {property.availability_type === 'both' ? (
+                    <div className="space-y-1">
+                      <div className="text-lg font-bold text-blue-600">
+                        💰 Venta: {formatPrice(property.sale_price)}
+                      </div>
+                      <div className="text-lg font-bold text-green-600">
+                        🏠 Arriendo: {formatPrice(property.rent_price)}
+                      </div>
+                    </div>
+                  ) : property.availability_type === 'sale' ? (
+                    <div className="text-2xl font-bold text-blue-600">
+                      💰 {formatPrice(property.sale_price)}
+                    </div>
+                  ) : (
+                    <div className="text-2xl font-bold text-green-600">
+                      🏠 {formatPrice(property.rent_price)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Property Features */}
@@ -1939,23 +1993,63 @@ function AdminProperties() {
                 />
               </div>
 
-              {/* Precio */}
+              {/* Tipo de Disponibilidad */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <DollarSign className="w-4 h-4 inline mr-1" />
-                  Precio *
+                  Tipo de Disponibilidad *
                 </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
+                <select
+                  name="availability_type"
+                  value={formData.availability_type}
                   onChange={handleFormChange}
                   required
-                  min="0"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
-                  placeholder="Valor en COP"
-                />
+                >
+                  <option value="sale">💰 Solo Venta</option>
+                  <option value="rent">🏠 Solo Arriendo</option>
+                  <option value="both">🔄 Venta y Arriendo</option>
+                </select>
               </div>
+
+              {/* Precio de Venta - Solo si es venta o ambos */}
+              {(formData.availability_type === 'sale' || formData.availability_type === 'both') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <DollarSign className="w-4 h-4 inline mr-1" />
+                    Precio de Venta *
+                  </label>
+                  <input
+                    type="number"
+                    name="sale_price"
+                    value={formData.sale_price}
+                    onChange={handleFormChange}
+                    required={formData.availability_type === 'sale' || formData.availability_type === 'both'}
+                    min="0"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                    placeholder="Valor de venta en COP"
+                  />
+                </div>
+              )}
+
+              {/* Precio de Arriendo - Solo si es arriendo o ambos */}
+              {(formData.availability_type === 'rent' || formData.availability_type === 'both') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <Home className="w-4 h-4 inline mr-1" />
+                    Precio de Arriendo *
+                  </label>
+                  <input
+                    type="number"
+                    name="rent_price"
+                    value={formData.rent_price}
+                    onChange={handleFormChange}
+                    required={formData.availability_type === 'rent' || formData.availability_type === 'both'}
+                    min="0"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                    placeholder="Valor de arriendo en COP"
+                  />
+                </div>
+              )}
 
               {/* Ubicación */}
               <div>
@@ -2066,6 +2160,7 @@ function AdminProperties() {
                   { value: 'available', label: '🟢 Disponible', color: 'green' },
                   { value: 'sale', label: '💰 En Venta', color: 'blue' },
                   { value: 'rent', label: '🏠 En Arriendo', color: 'green' },
+                  { value: 'both', label: '🔄 En Venta y Arriendo', color: 'purple' },
                   { value: 'sold', label: '✅ Vendido', color: 'gray' },
                   { value: 'rented', label: '🔒 Arrendado', color: 'purple' },
                   { value: 'reserved', label: '📅 Reservado', color: 'yellow' },
@@ -2604,14 +2699,22 @@ function AdminProperties() {
                             {/* Badge de Estado */}
                             <div className="absolute top-4 left-4">
                               <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(selectedProperty.status)}`}>
-                                {selectedProperty.status === 'available' && 'Disponible'}
-                                {selectedProperty.status === 'sale' && 'En Venta'}
-                                {selectedProperty.status === 'rent' && 'En Arriendo'}
-                                {selectedProperty.status === 'sold' && 'Vendido'}
-                                {selectedProperty.status === 'rented' && 'Arrendado'}
-                                {selectedProperty.status === 'reserved' && 'Reservado'}
-                                {selectedProperty.status === 'maintenance' && 'Mantenimiento'}
-                                {selectedProperty.status === 'pending' && 'Pendiente'}
+                                {(() => {
+                                  if (selectedProperty.status === 'both') return 'En Venta y Arriendo';
+                                  if (selectedProperty.status === 'available') {
+                                    if (selectedProperty.availability_type === 'both') return 'En Venta y Arriendo';
+                                    if (selectedProperty.availability_type === 'sale') return 'En Venta';
+                                    if (selectedProperty.availability_type === 'rent') return 'En Arriendo';
+                                  }
+                                  if (selectedProperty.status === 'sale') return 'En Venta';
+                                  if (selectedProperty.status === 'rent') return 'En Arriendo';
+                                  if (selectedProperty.status === 'sold') return 'Vendido';
+                                  if (selectedProperty.status === 'rented') return 'Arrendado';
+                                  if (selectedProperty.status === 'reserved') return 'Reservado';
+                                  if (selectedProperty.status === 'maintenance') return 'Mantenimiento';
+                                  if (selectedProperty.status === 'pending') return 'Pendiente';
+                                  return 'Disponible';
+                                })()}
                               </span>
                             </div>
                           </>
@@ -2733,9 +2836,32 @@ function AdminProperties() {
                       <DollarSign className="w-5 h-5 mr-2 text-green-600" />
                       Precio
                     </h4>
-                    <p className="text-3xl font-bold text-green-600 bg-white dark:bg-gray-700 p-3 rounded-lg">
-                      {formatPrice(selectedProperty.price)}
-                    </p>
+                    {selectedProperty.availability_type === 'both' ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">💰 Venta</span>
+                          <span className="text-xl font-bold text-blue-600">{formatPrice(selectedProperty.sale_price)}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                          <span className="text-sm font-medium text-green-900 dark:text-green-100">🏠 Arriendo</span>
+                          <span className="text-xl font-bold text-green-600">{formatPrice(selectedProperty.rent_price)}</span>
+                        </div>
+                      </div>
+                    ) : selectedProperty.availability_type === 'sale' ? (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">💰 Precio de Venta</span>
+                          <span className="text-2xl font-bold text-blue-600">{formatPrice(selectedProperty.sale_price)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-green-900 dark:text-green-100">🏠 Precio de Arriendo</span>
+                          <span className="text-2xl font-bold text-green-600">{formatPrice(selectedProperty.rent_price)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Amenidades */}
@@ -2994,21 +3120,63 @@ function AdminProperties() {
               />
             </div>
 
-            {/* Precio */}
+            {/* Tipo de Disponibilidad */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Precio *
+                Tipo de Disponibilidad *
               </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
+              <select
+                name="availability_type"
+                value={formData.availability_type}
                 onChange={handleFormChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                placeholder="0"
-              />
+              >
+                <option value="sale">💰 Solo Venta</option>
+                <option value="rent">🏠 Solo Arriendo</option>
+                <option value="both">🔄 Venta y Arriendo</option>
+              </select>
             </div>
+
+            {/* Precio de Venta - Solo si es venta o ambos */}
+            {(formData.availability_type === 'sale' || formData.availability_type === 'both') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <DollarSign className="w-4 h-4 inline mr-1" />
+                  Precio de Venta *
+                </label>
+                <input
+                  type="number"
+                  name="sale_price"
+                  value={formData.sale_price}
+                  onChange={handleFormChange}
+                  required={formData.availability_type === 'sale' || formData.availability_type === 'both'}
+                  min="0"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  placeholder="Valor de venta en COP"
+                />
+              </div>
+            )}
+
+            {/* Precio de Arriendo - Solo si es arriendo o ambos */}
+            {(formData.availability_type === 'rent' || formData.availability_type === 'both') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Home className="w-4 h-4 inline mr-1" />
+                  Precio de Arriendo *
+                </label>
+                <input
+                  type="number"
+                  name="rent_price"
+                  value={formData.rent_price}
+                  onChange={handleFormChange}
+                  required={formData.availability_type === 'rent' || formData.availability_type === 'both'}
+                  min="0"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  placeholder="Valor de arriendo en COP"
+                />
+              </div>
+            )}
 
             {/* Ubicación */}
             <div>
@@ -3110,6 +3278,7 @@ function AdminProperties() {
                 <option value="available">Disponible</option>
                 <option value="sale">En Venta</option>
                 <option value="rent">En Arriendo</option>
+                <option value="both">En Venta y Arriendo</option>
                 <option value="sold">Vendido</option>
                 <option value="rented">Arrendado</option>
                 <option value="reserved">Reservado</option>

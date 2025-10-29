@@ -1557,7 +1557,7 @@ export async function updateAdvisor(advisorId: string, updates: Partial<Advisor>
       updateData.availability_weekends = updates.availability.weekends;
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('advisors')
       .update(updateData)
       .eq('id', advisorId)
@@ -1688,9 +1688,9 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
 
     // Si solo queremos propiedades disponibles para mostrar en la página pública
     if (onlyAvailable) {
-      // Incluir solo propiedades con status: 'rent', 'sale', o 'available'
+      // Incluir solo propiedades con status: 'rent', 'sale', 'available', o 'both'
       // Estas son las únicas que deben aparecer en la página web pública
-      query = query.or('status.eq.rent,status.eq.sale,status.eq.available');
+      query = query.or('status.eq.rent,status.eq.sale,status.eq.available,status.eq.both');
     }
 
     const { data, error } = await query;
@@ -1761,11 +1761,14 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
         title: prop.title,
         location: prop.location,
         price: prop.price,
+        availability_type: prop.availability_type,
+        sale_price: prop.sale_price,
+        rent_price: prop.rent_price,
         bedrooms: prop.bedrooms,
         bathrooms: prop.bathrooms,
         area: prop.area,
         type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
-        status: prop.status as 'sale' | 'rent' | 'sold' | 'rented',
+        status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
         images: processedImages,
         videos: processedVideos,
         cover_image: prop.cover_image,
@@ -1853,11 +1856,14 @@ export async function getFeaturedProperties(): Promise<Property[]> {
           title: prop.title,
           location: prop.location,
           price: prop.price,
+          availability_type: prop.availability_type,
+          sale_price: prop.sale_price,
+          rent_price: prop.rent_price,
           bedrooms: prop.bedrooms,
           bathrooms: prop.bathrooms,
           area: prop.area,
           type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
-          status: prop.status as 'sale' | 'rent' | 'sold' | 'rented',
+          status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
           images: processedImages,
           amenities: prop.amenities || [],
           featured: prop.featured || false,
@@ -1906,11 +1912,14 @@ export async function getFeaturedProperties(): Promise<Property[]> {
         title: prop.title,
         location: prop.location,
         price: prop.price,
+        availability_type: prop.availability_type,
+        sale_price: prop.sale_price,
+        rent_price: prop.rent_price,
         bedrooms: prop.bedrooms,
         bathrooms: prop.bathrooms,
         area: prop.area,
         type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
-        status: prop.status as 'sale' | 'rent' | 'sold' | 'rented',
+        status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
         images: processedImages,
         amenities: prop.amenities || [],
         featured: prop.featured || false,
@@ -3060,25 +3069,38 @@ export async function logPropertyActivity(
 export async function createProperty(propertyData: Omit<Property, 'id' | 'created_at' | 'updated_at'>) {
   try {
     // Validar datos requeridos
-    if (!propertyData.title || !propertyData.price || !propertyData.location) {
-      throw new Error('Título, precio y ubicación son campos obligatorios');
+    if (!propertyData.title || !propertyData.location) {
+      throw new Error('Título y ubicación son campos obligatorios');
     }
 
-    // Validar que el precio sea un número positivo
-    if (propertyData.price <= 0) {
-      throw new Error('El precio debe ser mayor a 0');
+    // Validar availability_type
+    if (!propertyData.availability_type || !['sale', 'rent', 'both'].includes(propertyData.availability_type)) {
+      throw new Error('Tipo de disponibilidad debe ser: sale, rent o both');
+    }
+
+    // Validar precios basados en availability_type
+    if (propertyData.availability_type === 'sale' || propertyData.availability_type === 'both') {
+      if (!propertyData.sale_price || propertyData.sale_price <= 0) {
+        throw new Error('Precio de venta es obligatorio para propiedades en venta');
+      }
+    }
+
+    if (propertyData.availability_type === 'rent' || propertyData.availability_type === 'both') {
+      if (!propertyData.rent_price || propertyData.rent_price <= 0) {
+        throw new Error('Precio de arriendo es obligatorio para propiedades en arriendo');
+      }
     }
 
     // Validar que bedrooms, bathrooms y area sean números positivos
-    if (propertyData.bedrooms < 0) {
+    if (propertyData.bedrooms !== undefined && propertyData.bedrooms < 0) {
       throw new Error('El número de habitaciones no puede ser negativo');
     }
 
-    if (propertyData.bathrooms < 0) {
+    if (propertyData.bathrooms !== undefined && propertyData.bathrooms < 0) {
       throw new Error('El número de baños no puede ser negativo');
     }
 
-    if (propertyData.area <= 0) {
+    if (propertyData.area !== undefined && propertyData.area <= 0) {
       throw new Error('El área debe ser mayor a 0');
     }
 
@@ -3125,6 +3147,7 @@ function normalizePropertyStatus(s: string): Property['status'] {
   const v = (s || '').toLowerCase().trim();
   if (['sale','venta','sale','for sale'].includes(v)) return 'sale';
   if (['rent','renta','rental','alquiler','for rent'].includes(v)) return 'rent';
+  if (['both','venta y arriendo','venta y alquiler','ambos','sale and rent'].includes(v)) return 'both';
   if (['sold','vendido','vendida','sale','venta','for sale'].includes(v)) return 'sold';
   if (['rented','arrendada','arrendado','occupied','ocupada','ocupado'].includes(v)) return 'rented';
   if (['reserved','reservada','reservado','booked'].includes(v)) return 'reserved';
@@ -3147,6 +3170,26 @@ export async function updateProperty(propertyId: number, propertyData: Partial<P
     
     if (updateFields.length === 0) {
       throw new Error('No hay campos válidos para actualizar');
+    }
+
+    // Validaciones específicas basadas en availability_type
+    if (propertyData.availability_type) {
+      if (!['sale', 'rent', 'both'].includes(propertyData.availability_type)) {
+        throw new Error('Tipo de disponibilidad debe ser: sale, rent o both');
+      }
+
+      // Validar precios basados en availability_type
+      if (propertyData.availability_type === 'sale' || propertyData.availability_type === 'both') {
+        if (propertyData.sale_price !== undefined && propertyData.sale_price <= 0) {
+          throw new Error('Precio de venta debe ser mayor a 0');
+        }
+      }
+
+      if (propertyData.availability_type === 'rent' || propertyData.availability_type === 'both') {
+        if (propertyData.rent_price !== undefined && propertyData.rent_price <= 0) {
+          throw new Error('Precio de arriendo debe ser mayor a 0');
+        }
+      }
     }
 
     // Validaciones específicas

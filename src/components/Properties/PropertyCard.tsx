@@ -15,6 +15,7 @@ interface PropertyCardProps {
   onSchedule: (property: Property) => void;
   onEdit?: (property: Property) => void;
   onDelete?: (property: Property) => void;
+  onStatusChange?: () => void;
   showAdminActions?: boolean;
 }
 
@@ -25,6 +26,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   onSchedule,
   onEdit,
   onDelete,
+  onStatusChange,
   showAdminActions = false,
 }) => {
   const [isFavorite, setIsFavorite] = useState(false);
@@ -109,6 +111,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       await updatePropertyStatus(property.id, newStatus);
       setCurrentStatus(newStatus as Property['status']);
       console.log(`✅ Estado de propiedad ${property.id} actualizado a: ${newStatus}`);
+      
+      // Notificar al componente padre que se actualizó el estado
+      if (onStatusChange) {
+        onStatusChange();
+      }
     } catch (error) {
       console.error('❌ Error al actualizar el estado:', error);
       // Aquí podrías mostrar un toast de error
@@ -160,6 +167,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       case 'available': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'sale': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'rent': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'both': return 'bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-400';
       case 'sold': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       case 'rented': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
       case 'reserved': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
@@ -174,6 +182,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       case 'available': return 'Disponible';
       case 'sale': return 'En Venta';
       case 'rent': return 'En Arriendo';
+      case 'both': return 'En Venta y Arriendo';
       case 'sold': return 'Vendido';
       case 'rented': return 'Arrendado';
       case 'reserved': return 'Reservado';
@@ -230,7 +239,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Status Badge */}
         <div className={`absolute bottom-3 left-3 ${publicImageUrls.length > 1 ? 'bottom-12' : 'bottom-3'}`}>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(currentStatus)} ${isUpdatingStatus ? 'opacity-50' : ''}`}>
+          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(currentStatus)} ${isUpdatingStatus ? 'opacity-50' : ''}`}>
             {isUpdatingStatus ? 'Actualizando...' : getStatusText(currentStatus)}
           </span>
         </div>
@@ -239,7 +248,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         <button
           onClick={handleLikeClick}
           disabled={isLoadingLike}
-          className="absolute bottom-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50"
+          className={`absolute bottom-3 right-3 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 ${publicImageUrls.length > 1 ? 'bottom-12' : 'bottom-3'}`}
         >
           <Heart 
             className={`w-4 h-4 transition-colors duration-200 ${
@@ -311,6 +320,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
                 🏠 En Arriendo
               </DropdownItem>
               <DropdownItem
+                onClick={() => handleStatusChange('both')}
+                className={currentStatus === 'both' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
+              >
+                💰🏠 En Venta y Arriendo
+              </DropdownItem>
+              <DropdownItem
                 onClick={() => handleStatusChange('sold')}
                 className={currentStatus === 'sold' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600' : ''}
               >
@@ -356,7 +371,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Image Navigation */}
         {publicImageUrls.length > 1 && (
-          <div className="absolute bottom-3 left-3 flex space-x-1">
+          <div className="absolute bottom-16 left-3 flex space-x-1">
             {publicImageUrls.map((_, index) => (
               <button
                 key={index}
@@ -399,11 +414,42 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Price */}
         <div className="mb-4">
-          <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {formatPrice(property.price)}
-          </span>
-          {currentStatus === 'rent' && (
-            <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/mes</span>
+          {property.availability_type === 'both' ? (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  Venta: {property.sale_price ? formatPrice(property.sale_price) : 'No disponible'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                  Arriendo: {property.rent_price ? formatPrice(property.rent_price) : 'No disponible'}
+                </span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">/mes</span>
+              </div>
+            </div>
+          ) : property.availability_type === 'sale' ? (
+            <div>
+              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {property.sale_price ? formatPrice(property.sale_price) : formatPrice(property.price || 0)}
+              </span>
+            </div>
+          ) : property.availability_type === 'rent' ? (
+            <div>
+              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {property.rent_price ? formatPrice(property.rent_price) : formatPrice(property.price || 0)}
+              </span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/mes</span>
+            </div>
+          ) : (
+            <div>
+              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {formatPrice(property.price || 0)}
+              </span>
+              {currentStatus === 'rent' && (
+                <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/mes</span>
+              )}
+            </div>
           )}
         </div>
 

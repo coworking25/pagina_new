@@ -58,6 +58,21 @@ const FeaturedPropertiesSlider: React.FC = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Función para formatear precios según disponibilidad
+  const formatPropertyPrice = (property: Property) => {
+    if (property.availability_type === 'both') {
+      const salePrice = property.sale_price ? `$${property.sale_price.toLocaleString()}` : 'N/A';
+      const rentPrice = property.rent_price ? `$${property.rent_price.toLocaleString()}/mes` : 'N/A';
+      return `${salePrice} • ${rentPrice}`;
+    } else if (property.availability_type === 'sale') {
+      return property.sale_price ? `$${property.sale_price.toLocaleString()}` : `$${property.price?.toLocaleString() || '0'}`;
+    } else if (property.availability_type === 'rent') {
+      return property.rent_price ? `$${property.rent_price.toLocaleString()}/mes` : `$${property.price?.toLocaleString() || '0'}/mes`;
+    } else {
+      return `$${property.price?.toLocaleString() || '0'}`;
+    }
+  };
+
   useEffect(() => {
     loadFeaturedProperties();
   }, []);
@@ -217,7 +232,7 @@ const FeaturedPropertiesSlider: React.FC = () => {
                     {property.location}
                   </p>
                   <p className="text-lg sm:text-xl md:text-2xl font-semibold mt-1 sm:mt-2 text-green-400">
-                    ${property.price.toLocaleString()}
+                    {formatPropertyPrice(property)}
                   </p>
                 </div>
               </motion.div>

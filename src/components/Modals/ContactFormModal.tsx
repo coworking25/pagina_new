@@ -38,6 +38,34 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
     message?: string;
   }>({});
 
+  // Función para obtener el precio formateado de la propiedad
+  const getPropertyPriceDisplay = (property: Property) => {
+    if (property.availability_type === 'both') {
+      const salePrice = property.sale_price ? `Venta: $${property.sale_price.toLocaleString()}` : '';
+      const rentPrice = property.rent_price ? `Arriendo: $${property.rent_price.toLocaleString()}/mes` : '';
+      return [salePrice, rentPrice].filter(Boolean).join(' • ');
+    } else if (property.availability_type === 'sale') {
+      return property.sale_price ? `$${property.sale_price.toLocaleString()}` : `$${property.price?.toLocaleString() || '0'}`;
+    } else if (property.availability_type === 'rent') {
+      return property.rent_price ? `$${property.rent_price.toLocaleString()}/mes` : `$${property.price?.toLocaleString() || '0'}/mes`;
+    } else {
+      return `$${property.price?.toLocaleString() || '0'}`;
+    }
+  };
+
+  // Función para obtener el precio numérico para el mensaje de WhatsApp
+  const getPropertyPriceForMessage = (property: Property) => {
+    if (property.availability_type === 'sale' && property.sale_price) {
+      return property.sale_price;
+    } else if (property.availability_type === 'rent' && property.rent_price) {
+      return property.rent_price;
+    } else if (property.availability_type === 'both') {
+      // Para 'both', usar el precio de venta como principal
+      return property.sale_price || property.price || 0;
+    }
+    return property.price || 0;
+  };
+
   // 🎯 ACCESIBILIDAD: Cerrar modal con tecla ESC
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
@@ -143,7 +171,7 @@ Me interesa la propiedad: *${property.title}*
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0,
-    }).format(property.price)}
+    }).format(getPropertyPriceForMessage(property))}
 
 *Datos de contacto:*
 👤 Nombre: ${formData.name}
@@ -365,11 +393,7 @@ ${formData.message ? `*Mensaje adicional:*\n${formData.message}` : ''}
               <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 line-clamp-2">{property.title}</p>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">{property.location}</p>
               <p className="text-base sm:text-lg font-semibold text-green-600 dark:text-green-400 mt-2">
-                {new Intl.NumberFormat('es-CO', {
-                  style: 'currency',
-                  currency: 'COP',
-                  minimumFractionDigits: 0,
-                }).format(property.price)}
+                {getPropertyPriceDisplay(property)}
               </p>
             </div>
 

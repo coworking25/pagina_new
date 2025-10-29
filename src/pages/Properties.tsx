@@ -501,6 +501,7 @@ const Properties: React.FC = () => {
                         onViewDetails={handleViewDetails}
                         onContact={handleContact}
                         onSchedule={handleSchedule}
+                        onStatusChange={loadProperties}
                         showAdminActions={false}
                       />
                     </motion.div>

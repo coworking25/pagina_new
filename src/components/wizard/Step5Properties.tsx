@@ -15,6 +15,9 @@ interface Property {
   location: string;
   status: string;
   image_url?: string;
+  availability_type?: string;
+  sale_price?: number;
+  rent_price?: number;
 }
 
 interface Step5Props {
@@ -33,6 +36,19 @@ export default function Step5Properties({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  // Función para obtener el precio principal de una propiedad
+  const getPropertyPrice = (property: Property) => {
+    if (property.availability_type === 'sale' && property.sale_price) {
+      return property.sale_price;
+    } else if (property.availability_type === 'rent' && property.rent_price) {
+      return property.rent_price;
+    } else if (property.availability_type === 'both') {
+      // Para 'both', usar el precio de venta como principal, o el precio legacy
+      return property.sale_price || property.price || 0;
+    }
+    return property.price || 0;
+  };
 
   // Propiedades seleccionadas
   const selectedPropertyIds = formData.assigned_property_ids || [];
@@ -83,7 +99,7 @@ export default function Step5Properties({
   const selectedPropertiesTotal = useMemo(() => {
     return selectedPropertyIds.reduce((sum: number, id: string) => {
       const property = getPropertyById(id);
-      return sum + (property?.price || 0);
+      return sum + (property ? getPropertyPrice(property) : 0);
     }, 0);
   }, [selectedPropertyIds, properties]);
 
@@ -375,7 +391,7 @@ export default function Step5Properties({
                       </p>
                       <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
                         <DollarSign className="w-4 h-4" />
-                        ${property.price.toLocaleString()}
+                        ${getPropertyPrice(property).toLocaleString()}
                       </p>
                     </div>
 
