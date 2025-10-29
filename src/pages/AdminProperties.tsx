@@ -1170,7 +1170,6 @@ function AdminProperties() {
       const newFeaturedState = !property.featured;
       
       await updateProperty(property.id, {
-        ...property,
         featured: newFeaturedState
       });
       
