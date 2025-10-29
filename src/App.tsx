@@ -49,6 +49,7 @@ const ClientPayments = lazy(() => import('./pages/client-portal/ClientPayments')
 const ClientProperties = lazy(() => import('./pages/client-portal/ClientProperties'));
 const ClientDocuments = lazy(() => import('./pages/client-portal/ClientDocuments'));
 const ClientExtractos = lazy(() => import('./pages/client-portal/ClientExtractos'));
+const ClientProfile = lazy(() => import('./pages/client-portal/ClientProfile'));
 
 // Componente para manejar el layout según la ruta
 const AppLayout = () => {
@@ -121,7 +122,7 @@ const AppLayout = () => {
                 <Route path="pagos" element={<ClientPayments />} />
                 <Route path="extractos" element={<ClientExtractos />} />
                 <Route path="documentos" element={<ClientDocuments />} />
-                <Route path="perfil" element={<div className="p-6">Perfil - En desarrollo</div>} />
+                <Route path="perfil" element={<ClientProfile />} />
               </Route>
             
             {/* Ruta de fallback para 404 */}
