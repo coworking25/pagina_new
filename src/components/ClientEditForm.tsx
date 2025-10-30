@@ -1736,6 +1736,7 @@ const PropertiesForm: React.FC<{
     }
 
     try {
+      // 1. Crear la relación cliente-propiedad
       const { data, error } = await supabase
         .from('client_property_relations')
         .insert({
@@ -1764,6 +1765,17 @@ const PropertiesForm: React.FC<{
 
       if (error) throw error;
 
+      // 2. Actualizar el status de la propiedad a 'rented'
+      const { error: updateError } = await supabase
+        .from('properties')
+        .update({ status: 'rented' })
+        .eq('id', parseInt(selectedPropertyId));
+
+      if (updateError) {
+        console.error('Error actualizando status de propiedad:', updateError);
+        // No lanzamos error aquí para no detener el proceso, pero lo registramos
+      }
+
       setProperties([...properties, data]);
       setSelectedPropertyId('');
       setRelationType('tenant');
@@ -1778,12 +1790,31 @@ const PropertiesForm: React.FC<{
     if (!confirm('¿Estás seguro de desasignar esta propiedad del cliente?')) return;
 
     try {
+      // 1. Obtener la información de la relación antes de eliminarla
+      const relationToDelete = properties.find(p => p.id === relationId);
+      if (!relationToDelete) {
+        alert('No se encontró la relación a eliminar');
+        return;
+      }
+
+      // 2. Eliminar la relación
       const { error } = await supabase
         .from('client_property_relations')
         .delete()
         .eq('id', relationId);
 
       if (error) throw error;
+
+      // 3. Cambiar el status de la propiedad de vuelta a 'available'
+      const { error: updateError } = await supabase
+        .from('properties')
+        .update({ status: 'available' })
+        .eq('id', relationToDelete.property_id);
+
+      if (updateError) {
+        console.error('Error actualizando status de propiedad:', updateError);
+        // No lanzamos error aquí para no detener el proceso, pero lo registramos
+      }
 
       setProperties(properties.filter(p => p.id !== relationId));
       onPropertiesChange();
