@@ -93,6 +93,7 @@ import { CoverImageSelector } from '../components/CoverImageSelector';
 import VideoPlayer from '../components/VideoPlayer';
 import { useMultiSelect } from '../hooks/useMultiSelect';
 import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
+import CSVImportModal from '../components/Modals/CSVImportModal';
 
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
@@ -166,6 +167,12 @@ function AdminProperties() {
   });
   const { state: showContactModal, setState: setShowContactModal } = usePersistedState({
     key: 'admin-properties-show-contact-modal',
+    initialValue: false,
+    expirationTime: 30 * 60 * 1000
+  });
+  
+  const { state: showCSVImportModal, setState: setShowCSVImportModal } = usePersistedState({
+    key: 'admin-properties-show-csv-import-modal',
     initialValue: false,
     expirationTime: 30 * 60 * 1000
   });
@@ -1367,15 +1374,26 @@ function AdminProperties() {
             Administra todas las propiedades del catálogo
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleAddProperty}
-          className="mt-4 sm:mt-0 inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Nueva Propiedad
-        </motion.button>
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowCSVImportModal(true)}
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            <Upload className="w-5 h-5 mr-2" />
+            Importar CSV
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleAddProperty}
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Nueva Propiedad
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Stats Cards */}
@@ -3764,6 +3782,16 @@ function AdminProperties() {
           property={selectedProperty}
         />
       )}
+
+      {/* Modal para Importar CSV */}
+      <CSVImportModal
+        isOpen={showCSVImportModal}
+        onClose={() => setShowCSVImportModal(false)}
+        onSuccess={() => {
+          refreshProperties();
+          setShowCSVImportModal(false);
+        }}
+      />
 
       {/* Barra de Acciones Masivas */}
       <BulkActionBar

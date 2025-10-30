@@ -3700,6 +3700,419 @@ export {
 } from './supabase-videos';
 
 // ==========================================
+// FUNCIONES DE IMPORTACIÓN CSV DE PROPIEDADES
+// ==========================================
+
+/**
+ * Interfaz para datos de propiedad desde CSV
+ */
+export interface PropertyCSVData {
+  title: string;
+  location?: string;
+  availability_type: 'sale' | 'rent' | 'both';
+  sale_price?: number;
+  rent_price?: number;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  type: 'apartment' | 'apartaestudio' | 'house' | 'office' | 'commercial';
+  status?: 'sale' | 'rent' | 'both' | 'sold' | 'rented' | 'available' | 'reserved' | 'maintenance' | 'pending';
+  amenities?: string;
+  featured?: boolean;
+  description?: string;
+  latitude?: number;
+  longitude?: number;
+  advisor_id?: string;
+}
+
+/**
+ * Resultado de validación de fila CSV
+ */
+export interface CSVValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  data?: PropertyCSVData;
+}
+
+/**
+ * Resultado de importación CSV
+ */
+export interface CSVImportResult {
+  success: boolean;
+  totalRows: number;
+  successfulImports: number;
+  failedImports: number;
+  errors: Array<{
+    row: number;
+    errors: string[];
+  }>;
+  createdProperties: Property[];
+}
+
+/**
+ * Parsear archivo CSV y convertirlo a datos de propiedades
+ */
+export function parseCSVProperties(csvText: string): PropertyCSVData[] {
+  try {
+    console.log('📄 Parseando archivo CSV...');
+
+    const lines = csvText.trim().split('\n');
+    if (lines.length < 2) {
+      throw new Error('El archivo CSV debe tener al menos una fila de encabezados y una fila de datos');
+    }
+
+    // Leer encabezados
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+    // Mapear índices de columnas requeridas
+    const columnMap: { [key: string]: number } = {};
+    const requiredColumns = ['title', 'availability_type', 'bedrooms', 'bathrooms', 'area', 'type'];
+
+    headers.forEach((header, index) => {
+      columnMap[header] = index;
+    });
+
+    // Verificar columnas requeridas
+    const missingColumns = requiredColumns.filter(col => columnMap[col] === undefined);
+    if (missingColumns.length > 0) {
+      throw new Error(`Columnas requeridas faltantes: ${missingColumns.join(', ')}`);
+    }
+
+    // Parsear filas de datos
+    const properties: PropertyCSVData[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue; // Saltar líneas vacías
+
+      const values = parseCSVLine(line);
+      if (values.length !== headers.length) {
+        console.warn(`⚠️ Línea ${i + 1}: Número de columnas no coincide (${values.length} vs ${headers.length})`);
+        continue;
+      }
+
+      const property: any = {};
+
+      // Mapear valores a campos de propiedad
+      headers.forEach((header, index) => {
+        const value = values[index]?.trim() || '';
+
+        switch (header) {
+          case 'title':
+            property.title = value;
+            break;
+          case 'location':
+            property.location = value || undefined;
+            break;
+          case 'availability_type':
+            property.availability_type = value.toLowerCase();
+            break;
+          case 'sale_price':
+            property.sale_price = value ? parseFloat(value.replace(/[$,]/g, '')) : undefined;
+            break;
+          case 'rent_price':
+            property.rent_price = value ? parseFloat(value.replace(/[$,]/g, '')) : undefined;
+            break;
+          case 'bedrooms':
+            property.bedrooms = parseInt(value) || 0;
+            break;
+          case 'bathrooms':
+            property.bathrooms = parseInt(value) || 0;
+            break;
+          case 'area':
+            property.area = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+            break;
+          case 'type':
+            property.type = value.toLowerCase();
+            break;
+          case 'status':
+            property.status = value.toLowerCase() || 'available';
+            break;
+          case 'amenities':
+            property.amenities = value ? value.split(';').map(a => a.trim()) : [];
+            break;
+          case 'featured':
+            property.featured = value.toLowerCase() === 'true' || value === '1' || value === 'sí' || value === 'si';
+            break;
+          case 'description':
+            property.description = value || undefined;
+            break;
+          case 'latitude':
+            property.latitude = value ? parseFloat(value) : undefined;
+            break;
+          case 'longitude':
+            property.longitude = value ? parseFloat(value) : undefined;
+            break;
+          case 'advisor_id':
+            property.advisor_id = value || undefined;
+            break;
+        }
+      });
+
+      properties.push(property as PropertyCSVData);
+    }
+
+    console.log(`✅ Parseadas ${properties.length} propiedades desde CSV`);
+    return properties;
+
+  } catch (error) {
+    console.error('❌ Error parseando CSV:', error);
+    throw error;
+  }
+}
+
+/**
+ * Parsear una línea CSV manejando comillas correctamente
+ */
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        // Comilla escapada
+        current += '"';
+        i++; // Saltar la siguiente comilla
+      } else {
+        // Alternar estado de comillas
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // Fin de campo
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  // Agregar el último campo
+  result.push(current);
+
+  return result;
+}
+
+/**
+ * Validar datos de propiedad desde CSV
+ */
+export function validatePropertyCSVData(data: PropertyCSVData): CSVValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Validar campos requeridos
+  if (!data.title || data.title.trim() === '') {
+    errors.push('El título es obligatorio');
+  }
+
+  if (!data.availability_type || !['sale', 'rent', 'both'].includes(data.availability_type)) {
+    errors.push('Tipo de disponibilidad debe ser: sale, rent o both');
+  }
+
+  if (data.bedrooms === undefined || data.bedrooms < 0) {
+    errors.push('Número de habitaciones debe ser un número positivo');
+  }
+
+  if (data.bathrooms === undefined || data.bathrooms < 0) {
+    errors.push('Número de baños debe ser un número positivo');
+  }
+
+  if (data.area === undefined || data.area <= 0) {
+    errors.push('Área debe ser un número positivo mayor a 0');
+  }
+
+  if (!data.type || !['apartment', 'apartaestudio', 'house', 'office', 'commercial'].includes(data.type)) {
+    errors.push('Tipo de propiedad debe ser: apartment, apartaestudio, house, office o commercial');
+  }
+
+  // Validar precios basados en availability_type
+  if (data.availability_type === 'sale' || data.availability_type === 'both') {
+    if (!data.sale_price || data.sale_price <= 0) {
+      errors.push('Precio de venta es obligatorio para propiedades en venta');
+    }
+  }
+
+  if (data.availability_type === 'rent' || data.availability_type === 'both') {
+    if (!data.rent_price || data.rent_price <= 0) {
+      errors.push('Precio de arriendo es obligatorio para propiedades en arriendo');
+    }
+  }
+
+  // Validar status si está presente
+  if (data.status && !['sale', 'rent', 'both', 'sold', 'rented', 'available', 'reserved', 'maintenance', 'pending'].includes(data.status)) {
+    errors.push('Status inválido');
+  }
+
+  // Validar coordenadas si están presentes
+  if (data.latitude !== undefined && (data.latitude < -90 || data.latitude > 90)) {
+    errors.push('Latitud debe estar entre -90 y 90');
+  }
+
+  if (data.longitude !== undefined && (data.longitude < -180 || data.longitude > 180)) {
+    errors.push('Longitud debe estar entre -180 y 180');
+  }
+
+  // Advertencias
+  if (!data.location) {
+    warnings.push('Ubicación no especificada');
+  }
+
+  if (!data.description) {
+    warnings.push('Descripción no especificada');
+  }
+
+  if (data.amenities && data.amenities.length === 0) {
+    warnings.push('No se especificaron amenidades');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+    data: errors.length === 0 ? data : undefined
+  };
+}
+
+/**
+ * Importar múltiples propiedades desde datos CSV validados
+ */
+export async function bulkCreateProperties(
+  csvData: PropertyCSVData[],
+  onProgress?: (current: number, total: number, property?: Property) => void
+): Promise<CSVImportResult> {
+  try {
+    console.log(`📤 Iniciando importación masiva de ${csvData.length} propiedades...`);
+
+    const result: CSVImportResult = {
+      success: true,
+      totalRows: csvData.length,
+      successfulImports: 0,
+      failedImports: 0,
+      errors: [],
+      createdProperties: []
+    };
+
+    // Procesar cada propiedad
+    for (let i = 0; i < csvData.length; i++) {
+      try {
+        onProgress?.(i + 1, csvData.length);
+
+        // Validar datos antes de crear
+        const validation = validatePropertyCSVData(csvData[i]);
+        if (!validation.isValid) {
+          result.failedImports++;
+          result.errors.push({
+            row: i + 1,
+            errors: validation.errors
+          });
+          console.warn(`⚠️ Fila ${i + 1} inválida:`, validation.errors);
+          continue;
+        }
+
+        // Preparar datos para creación
+        const propertyData = {
+          ...validation.data!,
+          status: validation.data!.status || 'available',
+          amenities: Array.isArray(validation.data!.amenities)
+            ? validation.data!.amenities
+            : (validation.data!.amenities ? [validation.data!.amenities] : []),
+          featured: validation.data!.featured || false,
+          images: [], // Las imágenes se pueden agregar después
+          videos: [] // Los videos se pueden agregar después
+        };
+
+        // Crear propiedad
+        const createdProperty = await createProperty(propertyData);
+        result.successfulImports++;
+        result.createdProperties.push(createdProperty);
+
+        console.log(`✅ Propiedad ${i + 1}/${csvData.length} creada: ${createdProperty.title}`);
+
+      } catch (error) {
+        result.failedImports++;
+        result.errors.push({
+          row: i + 1,
+          errors: [error instanceof Error ? error.message : 'Error desconocido']
+        });
+        console.error(`❌ Error creando propiedad ${i + 1}:`, error);
+      }
+    }
+
+    console.log(`✅ Importación completada: ${result.successfulImports}/${result.totalRows} exitosas`);
+
+    // Marcar como fallida si no se importó ninguna propiedad
+    if (result.successfulImports === 0) {
+      result.success = false;
+    }
+
+    return result;
+
+  } catch (error) {
+    console.error('❌ Error en importación masiva:', error);
+    return {
+      success: false,
+      totalRows: csvData.length,
+      successfulImports: 0,
+      failedImports: csvData.length,
+      errors: [{
+        row: 0,
+        errors: [error instanceof Error ? error.message : 'Error desconocido en importación']
+      }],
+      createdProperties: []
+    };
+  }
+}
+
+/**
+ * Generar plantilla CSV de ejemplo para propiedades
+ */
+export function generatePropertyCSVTemplate(): string {
+  const headers = [
+    'title',
+    'location',
+    'availability_type',
+    'sale_price',
+    'rent_price',
+    'bedrooms',
+    'bathrooms',
+    'area',
+    'type',
+    'status',
+    'amenities',
+    'featured',
+    'description',
+    'latitude',
+    'longitude',
+    'advisor_id'
+  ];
+
+  const exampleData = [
+    'Hermoso Apartamento en Zona Norte',
+    'Zona Norte, Bogotá',
+    'sale',
+    '450000000',
+    '',
+    '3',
+    '2',
+    '85',
+    'apartment',
+    'available',
+    'Gimnasio;Piscina;Parqueadero;Ascensor',
+    'false',
+    'Amplio apartamento de 3 habitaciones con vista panorámica',
+    '4.6500',
+    '-74.1000',
+    ''
+  ];
+
+  return [headers.join(','), exampleData.join(',')].join('\n');
+}
+
+// ==========================================
 // DEBUG FUNCTIONS (solo desarrollo)
 // ==========================================
 
