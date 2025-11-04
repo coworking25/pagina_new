@@ -1689,9 +1689,13 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
 
     // Si solo queremos propiedades disponibles para mostrar en la página pública
     if (onlyAvailable) {
-      // Incluir solo propiedades con status: 'rent', 'sale', 'available', o 'both'
-      // Estas son las únicas que deben aparecer en la página web pública
-      query = query.or('status.eq.rent,status.eq.sale,status.eq.available,status.eq.both');
+      // Incluir propiedades que:
+      // 1. NO estén vendidas (sold) ni arrendadas (rented)
+      // 2. Tengan status: 'available', 'sale', 'rent', o 'both'
+      // Esto excluye: sold, rented, reserved, maintenance, pending
+      query = query
+        .in('status', ['available', 'sale', 'rent', 'both'])
+        .not('status', 'in', '("sold","rented")');
     }
 
     const { data, error } = await query;

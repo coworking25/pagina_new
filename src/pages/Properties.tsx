@@ -271,13 +271,28 @@ const Properties: React.FC = () => {
         );
       }
 
-      // Transaction Type filter
+      // Transaction Type filter - Filtrar por availability_type, NO por status
       if (filters.transactionType && filters.transactionType.trim()) {
-        filtered = filtered.filter(property => 
-          property && property.status && 
-          ((filters.transactionType === 'Arriendo' && property.status === 'rent') ||
-           (filters.transactionType === 'Venta' && property.status === 'sale'))
-        );
+        filtered = filtered.filter(property => {
+          if (!property || !property.availability_type) return false;
+          
+          // Si busca arriendo, incluir 'rent' y 'both'
+          if (filters.transactionType === 'Arriendo') {
+            return property.availability_type === 'rent' || property.availability_type === 'both';
+          }
+          
+          // Si busca venta, incluir 'sale' y 'both'
+          if (filters.transactionType === 'Venta') {
+            return property.availability_type === 'sale' || property.availability_type === 'both';
+          }
+          
+          // Si busca "Venta y Arriendo", solo 'both'
+          if (filters.transactionType === 'Both') {
+            return property.availability_type === 'both';
+          }
+          
+          return true;
+        });
       }
 
       // Status filter

@@ -177,19 +177,26 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'available': return 'Disponible';
-      case 'sale': return 'En Venta';
-      case 'rent': return 'En Arriendo';
-      case 'both': return 'En Venta y Arriendo';
-      case 'sold': return 'Vendido';
-      case 'rented': return 'Arrendado';
-      case 'reserved': return 'Reservado';
-      case 'maintenance': return 'Mantenimiento';
-      case 'pending': return 'Pendiente';
-      default: return status;
+  // Función mejorada para obtener el texto de estado considerando availability_type
+  const getDisplayStatus = (property: Property): string => {
+    // Si la propiedad está vendida, arrendada, reservada, etc., mostrar ese estado
+    if (property.status === 'sold') return 'Vendido';
+    if (property.status === 'rented') return 'Arrendado';
+    if (property.status === 'reserved') return 'Reservado';
+    if (property.status === 'maintenance') return 'Mantenimiento';
+    if (property.status === 'pending') return 'Pendiente';
+    
+    // Si está disponible, mostrar según availability_type
+    if (property.status === 'available' || property.status === 'sale' || property.status === 'rent' || property.status === 'both') {
+      switch (property.availability_type) {
+        case 'sale': return 'En Venta';
+        case 'rent': return 'En Arriendo';
+        case 'both': return 'En Venta y Arriendo';
+        default: return 'Disponible';
+      }
     }
+    
+    return 'Disponible';
   };
 
   return (
@@ -240,7 +247,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         {/* Status Badge */}
         <div className={`absolute bottom-3 left-3 ${publicImageUrls.length > 1 ? 'bottom-12' : 'bottom-3'}`}>
           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(currentStatus)} ${isUpdatingStatus ? 'opacity-50' : ''}`}>
-            {isUpdatingStatus ? 'Actualizando...' : getStatusText(currentStatus)}
+            {isUpdatingStatus ? 'Actualizando...' : getDisplayStatus(property)}
           </span>
         </div>
 
