@@ -37,12 +37,12 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   const [loading, setLoading] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
 
-  // Generate time slots from 8:00 AM to 6:00 PM in 30-minute intervals
+  // Generate time slots from 9:00 AM to 5:00 PM in 30-minute intervals (Lunes a Viernes)
   const timeSlots = useMemo(() => {
     const slots: string[] = [];
-    const startHour = 8; // 8:00 AM
-    const endHour = 18; // 6:00 PM
-    const interval = 30; // 30 minutes
+    const startHour = 9;   // 🔧 9:00 AM (horario laboral)
+    const endHour = 17;    // 🔧 5:00 PM (17:00 en formato 24h)
+    const interval = 30;   // 30 minutos
 
     for (let hour = startHour; hour < endHour; hour++) {
       for (let minute = 0; minute < 60; minute += interval) {
@@ -55,7 +55,11 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   }, []);
 
   const loadAvailability = useCallback(async () => {
-    if (!advisorId || !selectedDate) return;
+    // 🔧 FIX: Validar DESPUÉS de declarar el useCallback, no dentro
+    if (!advisorId || !selectedDate) {
+      setAvailableSlots([]);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -242,6 +246,21 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
     }
   };
 
+  // 🔧 FIX: Mover useMemo ANTES del return condicional (regla de hooks)
+  // Group slots by morning/afternoon
+  const groupedSlots = useMemo(() => {
+    const morning = availableSlots.filter(slot => {
+      const [hours] = slot.time.split(':').map(Number);
+      return hours < 12;
+    });
+    const afternoon = availableSlots.filter(slot => {
+      const [hours] = slot.time.split(':').map(Number);
+      return hours >= 12;
+    });
+    return { morning, afternoon };
+  }, [availableSlots]);
+
+  // 🔧 FIX: Return condicional DESPUÉS de todos los hooks
   if (loading) {
     return (
       <Card className={`p-6 ${className}`}>
@@ -268,19 +287,6 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
       </Card>
     );
   }
-
-  // Group slots by morning/afternoon
-  const groupedSlots = useMemo(() => {
-    const morning = availableSlots.filter(slot => {
-      const [hours] = slot.time.split(':').map(Number);
-      return hours < 12;
-    });
-    const afternoon = availableSlots.filter(slot => {
-      const [hours] = slot.time.split(':').map(Number);
-      return hours >= 12;
-    });
-    return { morning, afternoon };
-  }, [availableSlots]);
 
   return (
     <Card className={`p-6 ${className}`}>

@@ -4040,3 +4040,109 @@ export async function generatePropertyCode(): Promise<string> {
     throw new Error('Error al generar código de propiedad');
   }
 }
+
+// ==========================================
+// FUNCIONES DE WHATSAPP
+// ==========================================
+
+/**
+ * Enviar mensaje de confirmación de cita al asesor por WhatsApp
+ */
+export function sendWhatsAppConfirmationToAdvisor(
+  phoneNumber: string,
+  appointmentData: {
+    client_name: string;
+    appointment_date: string;
+    appointment_type: string;
+    property_title?: string;
+    advisor_name?: string;
+    client_phone?: string;
+    client_email?: string;
+  }
+): void {
+  try {
+    const formattedDate = new Date(appointmentData.appointment_date).toLocaleString('es-CO', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const message = `🎉 *Nueva Cita Confirmada*\n\n` +
+      `Hola ${appointmentData.advisor_name || 'Asesor'},\n\n` +
+      `Se ha confirmado una nueva cita:\n\n` +
+      `👤 *Cliente:* ${appointmentData.client_name}\n` +
+      `📅 *Fecha:* ${formattedDate}\n` +
+      `🏠 *Propiedad:* ${appointmentData.property_title || 'No especificada'}\n` +
+      `📋 *Tipo:* ${appointmentData.appointment_type}\n` +
+      `📞 *Teléfono:* ${appointmentData.client_phone || 'No disponible'}\n` +
+      `📧 *Email:* ${appointmentData.client_email || 'No disponible'}\n\n` +
+      `Por favor, prepárate para atender a este cliente.\n\n` +
+      `¡Mucho éxito! 🚀`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+    console.log('📱 URL de WhatsApp para asesor generada:', whatsappUrl);
+    
+    // Abrir WhatsApp en nueva ventana
+    window.open(whatsappUrl, '_blank');
+    
+  } catch (error) {
+    console.error('❌ Error enviando confirmación al asesor:', error);
+    throw error;
+  }
+}
+
+/**
+ * Enviar mensaje de confirmación de cita al cliente por WhatsApp
+ */
+export function sendWhatsAppToClient(
+  phoneNumber: string,
+  appointmentData: {
+    client_name: string;
+    appointment_date: string;
+    appointment_type: string;
+    property_title?: string;
+    advisor_name?: string;
+    appointment_id: string;
+  }
+): void {
+  try {
+    const formattedDate = new Date(appointmentData.appointment_date).toLocaleString('es-CO', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const message = `✅ *Cita Confirmada*\n\n` +
+      `Hola ${appointmentData.client_name},\n\n` +
+      `Tu cita ha sido confirmada con los siguientes detalles:\n\n` +
+      `📅 *Fecha:* ${formattedDate}\n` +
+      `🏠 *Propiedad:* ${appointmentData.property_title || 'No especificada'}\n` +
+      `📋 *Tipo:* ${appointmentData.appointment_type}\n` +
+      `👨‍💼 *Asesor:* ${appointmentData.advisor_name || 'Por asignar'}\n\n` +
+      `Te esperamos. Si necesitas hacer cambios, no dudes en contactarnos.\n\n` +
+      `ID de cita: ${appointmentData.appointment_id}\n\n` +
+      `¡Gracias por tu confianza! 🏡`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+    console.log('📱 URL de WhatsApp para cliente generada:', whatsappUrl);
+    
+    // Abrir WhatsApp en nueva ventana
+    window.open(whatsappUrl, '_blank');
+    
+  } catch (error) {
+    console.error('❌ Error enviando confirmación al cliente:', error);
+    throw error;
+  }
+}

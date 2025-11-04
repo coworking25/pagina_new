@@ -22,6 +22,7 @@ import {
   Download
 } from 'lucide-react';
 import { updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple, sendWhatsAppToClient, getPropertyAppointmentsPaginated } from '../lib/supabase';
+import { appointmentSyncService } from '../services/appointmentSyncService';
 import AppointmentDetailsModal from '../components/Modals/AppointmentDetailsModal';
 import EditAppointmentModal from '../components/Modals/EditAppointmentModal';
 import CreateAppointmentModal from '../components/Modals/CreateAppointmentModal';
@@ -148,6 +149,10 @@ function AdminAppointments() {
       const appointment = appointments.find(a => a.id === appointmentId);
       
       await deleteAppointment(appointmentId);
+      
+      // 🔄 Sincronizar eliminación con el calendario
+      await appointmentSyncService.onPropertyAppointmentDeleted(appointmentId);
+      
       alert('Cita eliminada exitosamente');
       
       // Generar notificación del sistema
@@ -186,6 +191,9 @@ function AdminAppointments() {
     // Para estados simples, cambiar directamente
     try {
       await updateAppointmentStatus(appointmentId, status);
+
+      // 🔄 Sincronizar cambio de estado con el calendario
+      await appointmentSyncService.onPropertyAppointmentStatusChanged(appointmentId, status);
 
       // Si se confirma la cita, enviar notificación al asesor
       if (status === 'confirmed') {
@@ -429,6 +437,11 @@ function AdminAppointments() {
     try {
       if (selectedAppointment?.id) {
         await updateAppointment(selectedAppointment.id, appointmentData);
+        
+        // 🔄 Sincronizar actualización con el calendario
+        const updatedAppointment = { ...selectedAppointment, ...appointmentData };
+        await appointmentSyncService.onPropertyAppointmentUpdated(updatedAppointment as PropertyAppointment);
+        
         alert('Cita actualizada exitosamente');
       }
       refreshAppointments(); // Recargar la lista
@@ -460,6 +473,12 @@ function AdminAppointments() {
       // Crear la cita
       const createdAppointment = await savePropertyAppointmentSimple(formattedData);
       console.log('✅ Cita creada:', createdAppointment);
+
+      // 🔄 Sincronizar con el calendario automáticamente
+      if (createdAppointment) {
+        await appointmentSyncService.onPropertyAppointmentCreated(createdAppointment);
+        console.log('✅ Cita sincronizada con el calendario');
+      }
 
       // Enviar WhatsApp al cliente para confirmación
       if (appointmentData.client_phone) {

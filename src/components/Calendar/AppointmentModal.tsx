@@ -125,11 +125,19 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   const initializeForm = () => {
     if (appointment) {
       // Editando cita existente
+      // 🔧 FIX: Validar fechas antes de formatear
+      const startTime = appointment.start_time ? new Date(appointment.start_time) : new Date();
+      const endTime = appointment.end_time ? new Date(appointment.end_time) : new Date();
+      
+      // Verificar que las fechas sean válidas
+      const isValidStartTime = !isNaN(startTime.getTime());
+      const isValidEndTime = !isNaN(endTime.getTime());
+      
       setFormData({
         title: appointment.title,
         description: appointment.description || '',
-        start_time: format(new Date(appointment.start_time), "yyyy-MM-dd'T'HH:mm"),
-        end_time: format(new Date(appointment.end_time), "yyyy-MM-dd'T'HH:mm"),
+        start_time: isValidStartTime ? format(startTime, "yyyy-MM-dd'T'HH:mm") : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+        end_time: isValidEndTime ? format(endTime, "yyyy-MM-dd'T'HH:mm") : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
         all_day: appointment.all_day,
         client_id: appointment.client_id || '',
         advisor_id: appointment.advisor_id || '',
@@ -247,12 +255,21 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     try {
       let savedAppointment: Appointment;
 
+      // 🔧 Limpiar strings vacíos a undefined para campos UUID (evitar error "invalid input syntax for type uuid: """)
+      const cleanedFormData = {
+        ...formData,
+        advisor_id: formData.advisor_id?.trim() || undefined,
+        property_id: formData.property_id?.trim() || undefined,
+        contact_email: formData.contact_email?.trim() || undefined,
+        contact_phone: formData.contact_phone?.trim() || undefined,
+      };
+
       if (appointment) {
         // Actualizar cita existente
-        savedAppointment = await calendarService.updateAppointment(appointment.id, formData);
+        savedAppointment = await calendarService.updateAppointment(appointment.id, cleanedFormData);
       } else {
         // Crear nueva cita
-        savedAppointment = await calendarService.createAppointment(formData);
+        savedAppointment = await calendarService.createAppointment(cleanedFormData);
 
         // Programar recordatorios automáticos para la nueva cita
         try {
@@ -269,9 +286,14 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             status: savedAppointment.status,
             location: savedAppointment.location || '',
             notes: savedAppointment.notes || '',
+            // Campos adicionales requeridos por PropertyAppointment
+            visit_type: savedAppointment.appointment_type,
+            attendees: 1,
+            contact_method: 'phone',
+            marketing_consent: false,
           };
 
-          await reminderService.scheduleAppointmentReminders(propertyAppointment);
+          await reminderService.scheduleAppointmentReminders(propertyAppointment as any);
           console.log('Recordatorios programados para la cita:', savedAppointment.id);
         } catch (reminderError) {
           console.error('Error programando recordatorios:', reminderError);
