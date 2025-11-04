@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { CalendarView } from '../components/Calendar/CalendarView';
 import { AppointmentModal } from '../components/Calendar/AppointmentModal';
+import CalendarAppointmentDetailsModal from '../components/Calendar/CalendarAppointmentDetailsModal';
 import { AvailabilityManager } from '../components/Calendar/AvailabilityManager';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
 import { Calendar, Settings, Plus, Users, Clock, UserCheck } from 'lucide-react';
+import { deleteAppointment } from '../lib/supabase';
 
 interface AdminCalendarPageProps {
   userId?: string;
@@ -13,6 +15,7 @@ interface AdminCalendarPageProps {
 export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
   const [activeTab, setActiveTab] = useState<'calendar' | 'availability' | 'settings'>('calendar');
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -21,9 +24,41 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
     setShowAppointmentModal(true);
   };
 
-  const handleEditAppointment = (appointment: any) => {
+  // 👁️ Clic en evento del calendario - Mostrar detalles
+  const handleViewAppointmentDetails = (appointment: any) => {
+    console.log('📅 Mostrando detalles de cita:', appointment);
     setSelectedAppointment(appointment);
+    setShowDetailsModal(true);
+  };
+
+  // ✏️ Editar desde el modal de detalles
+  const handleEditFromDetails = () => {
+    console.log('✏️ Abriendo modal de edición desde detalles');
+    setShowDetailsModal(false);
     setShowAppointmentModal(true);
+    // selectedAppointment ya está establecido
+  };
+
+  // 🗑️ Eliminar desde el modal de detalles
+  const handleDeleteFromDetails = async () => {
+    if (!selectedAppointment) return;
+    
+    const confirmed = window.confirm('¿Estás seguro de que deseas eliminar esta cita?');
+    if (!confirmed) return;
+
+    try {
+      console.log('🗑️ Eliminando cita:', selectedAppointment.id);
+      await deleteAppointment(selectedAppointment.id);
+      
+      setShowDetailsModal(false);
+      setSelectedAppointment(null);
+      setRefreshKey(prev => prev + 1); // Refresh calendar
+      
+      alert('✅ Cita eliminada correctamente');
+    } catch (error) {
+      console.error('❌ Error al eliminar cita:', error);
+      alert('Error al eliminar la cita. Por favor intenta de nuevo.');
+    }
   };
 
   const handleAppointmentSaved = () => {
@@ -108,7 +143,7 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
               <Card className="p-6">
                 <CalendarView
                   key={refreshKey}
-                  onAppointmentClick={handleEditAppointment}
+                  onAppointmentClick={handleViewAppointmentDetails}
                 />
               </Card>
 
@@ -206,11 +241,26 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
           )}
         </div>
 
-        {/* Appointment Modal */}
+        {/* Appointment Details Modal */}
+        <CalendarAppointmentDetailsModal
+          appointment={selectedAppointment}
+          isOpen={showDetailsModal}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedAppointment(null);
+          }}
+          onEdit={handleEditFromDetails}
+          onDelete={handleDeleteFromDetails}
+        />
+
+        {/* Appointment Create/Edit Modal */}
         {showAppointmentModal && (
           <AppointmentModal
             isOpen={showAppointmentModal}
-            onClose={() => setShowAppointmentModal(false)}
+            onClose={() => {
+              setShowAppointmentModal(false);
+              setSelectedAppointment(null);
+            }}
             appointment={selectedAppointment}
             onSave={handleAppointmentSaved}
           />
