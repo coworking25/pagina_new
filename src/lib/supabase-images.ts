@@ -2,10 +2,11 @@ import { supabase } from './supabase';
 import { addWatermarkToImage } from './watermark';
 
 // Función mejorada para subir imágenes organizadas por código de propiedad
-// CON MARCA DE AGUA AUTOMÁTICA
-async function uploadPropertyImageWithCode(file: File, propertyCode: string): Promise<string> {
+// CON MARCA DE AGUA OPCIONAL
+async function uploadPropertyImageWithCode(file: File, propertyCode: string, withWatermark: boolean = true): Promise<string> {
   try {
     console.log(`📤 Subiendo imagen para propiedad ${propertyCode}...`);
+    console.log(`🎨 Marca de agua: ${withWatermark ? 'ACTIVADA' : 'DESACTIVADA'}`);
     
     // Validar archivo
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -19,18 +20,32 @@ async function uploadPropertyImageWithCode(file: File, propertyCode: string): Pr
       throw new Error('Archivo muy grande. Máximo 5MB por imagen.');
     }
 
-    // ✨ AGREGAR MARCA DE AGUA AUTOMÁTICAMENTE
-    console.log('🎨 Agregando marca de agua a la imagen...');
-    const watermarkedFile = await addWatermarkToImage(file, '/marcaDeAgua.png', {
-      opacity: 0.7,
-      position: 'bottom-right',
-      scale: 0.15, // 15% del ancho de la imagen
-      margin: 20
-    });
-    console.log('✅ Marca de agua agregada exitosamente');
+    // ✨ AGREGAR MARCA DE AGUA SI ESTÁ HABILITADA
+    let fileToUpload = file;
+    
+    if (withWatermark) {
+      console.log('🎨 Aplicando marca de agua a la imagen...');
+      try {
+        const watermarkedFile = await addWatermarkToImage(file, '/LogoEnBlancoo.png', {
+          opacity: 0.25,
+          position: 'center',
+          scale: 0.6,
+          margin: 0,
+          rotation: 0
+        });
+        fileToUpload = watermarkedFile;
+        console.log('✅ Marca de agua agregada exitosamente');
+      } catch (watermarkError) {
+        console.error('❌ Error agregando marca de agua:', watermarkError);
+        console.warn('⚠️ Subiendo imagen original sin marca de agua');
+        fileToUpload = file;
+      }
+    } else {
+      console.log('ℹ️ Subiendo imagen sin marca de agua (opción deshabilitada)');
+    }
     
     // Generar nombre único pero organizado
-    const fileExt = watermarkedFile.name.split('.').pop();
+    const fileExt = fileToUpload.name.split('.').pop();
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 15);
     const fileName = `${timestamp}-${randomStr}.${fileExt}`;
@@ -38,10 +53,10 @@ async function uploadPropertyImageWithCode(file: File, propertyCode: string): Pr
     
     console.log(`📁 Ruta del archivo: ${filePath}`);
     
-    // Subir archivo CON MARCA DE AGUA a Supabase Storage
+    // Subir archivo (con o sin marca de agua) a Supabase Storage
     const { data, error } = await supabase.storage
       .from('property-images')
-      .upload(filePath, watermarkedFile, {
+      .upload(filePath, fileToUpload, {
         cacheControl: '3600',
         upsert: false
       });
@@ -132,10 +147,12 @@ async function deletePropertyImageByPath(propertyCode: string, fileName: string)
 async function bulkUploadPropertyImages(
   files: File[], 
   propertyCode: string,
-  onProgress?: (current: number, total: number) => void
+  onProgress?: (current: number, total: number) => void,
+  withWatermark: boolean = true
 ): Promise<string[]> {
   
   console.log(`📤 Subida masiva: ${files.length} imágenes para ${propertyCode}`);
+  console.log(`🎨 Marca de agua: ${withWatermark ? 'ACTIVADA' : 'DESACTIVADA'}`);
   
   const uploadedUrls: string[] = [];
   const errors: string[] = [];
@@ -143,7 +160,7 @@ async function bulkUploadPropertyImages(
   for (let i = 0; i < files.length; i++) {
     try {
       onProgress?.(i + 1, files.length);
-      const url = await uploadPropertyImageWithCode(files[i], propertyCode);
+      const url = await uploadPropertyImageWithCode(files[i], propertyCode, withWatermark);
       uploadedUrls.push(url);
       
     } catch (error) {
