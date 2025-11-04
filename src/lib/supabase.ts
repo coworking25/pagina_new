@@ -1689,11 +1689,12 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
 
     // Si solo queremos propiedades disponibles para mostrar en la página pública
     if (onlyAvailable) {
-      // Incluir propiedades que:
-      // 1. NO estén vendidas (sold) ni arrendadas (rented)
-      // 2. Tengan status: 'available', 'sale', 'rent', o 'both'
-      // Esto excluye: sold, rented, reserved, maintenance, pending
-      query = query.in('status', ['available', 'sale', 'rent', 'both']);
+      // Basado en análisis: las propiedades tienen:
+      // - availability_type='rent' → status='rent'
+      // - availability_type='sale' → status='sale'
+      // - availability_type='both' → status='available'
+      // Incluir: available, sale, rent (excluir: sold, rented, reserved, maintenance, pending)
+      query = query.in('status', ['available', 'sale', 'rent']);
     }
 
     const { data, error } = await query;
@@ -1709,6 +1710,12 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
     }
 
     console.log('✅ Propiedades obtenidas de BD:', data.length, 'propiedades');
+    console.log('🔍 Distribución de status:', {
+      available: data.filter(p => p.status === 'available').length,
+      sale: data.filter(p => p.status === 'sale').length,
+      rent: data.filter(p => p.status === 'rent').length,
+      otros: data.filter(p => !['available', 'sale', 'rent'].includes(p.status)).length
+    });
     
     // Transformar datos de Supabase a formato de la aplicación
     const properties: Property[] = data.map(prop => {
