@@ -1693,9 +1693,7 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
       // 1. NO estén vendidas (sold) ni arrendadas (rented)
       // 2. Tengan status: 'available', 'sale', 'rent', o 'both'
       // Esto excluye: sold, rented, reserved, maintenance, pending
-      query = query
-        .in('status', ['available', 'sale', 'rent', 'both'])
-        .not('status', 'in', '("sold","rented")');
+      query = query.in('status', ['available', 'sale', 'rent', 'both']);
     }
 
     const { data, error } = await query;
