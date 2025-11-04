@@ -75,19 +75,31 @@ async function generateVideoThumbnail(videoUrl: string, propertyCode: string, vi
 
           try {
             // Nombre del thumbnail
-            const thumbFileName = videoFileName.replace(/\.(mp4|webm|mov)$/i, '-thumb.jpg');
+            const thumbFileName = videoFileName.replace(/\.(mp4|webm|mov|avi)$/i, '-thumb.jpg');
             const thumbPath = `${propertyCode}/${thumbFileName}`;
+            
+            // Convertir blob a File con tipo MIME correcto
+            const thumbFile = new File([blob], thumbFileName, { type: 'image/jpeg' });
+            
+            console.log(`📸 Subiendo thumbnail: ${thumbPath} (${(thumbFile.size / 1024).toFixed(2)} KB)`);
             
             // Subir thumbnail
             const { error } = await supabase.storage
               .from('property-videos')
-              .upload(thumbPath, blob, {
+              .upload(thumbPath, thumbFile, {
                 cacheControl: '3600',
-                upsert: true
+                upsert: true,
+                contentType: 'image/jpeg' // ✅ Especificar tipo MIME explícitamente
               });
             
             if (error) {
               console.error('❌ Error subiendo thumbnail:', error);
+              console.error('❌ Detalles del error:', {
+                message: error.message,
+                path: thumbPath,
+                size: thumbFile.size,
+                type: thumbFile.type
+              });
               resolve(undefined);
               return;
             }
