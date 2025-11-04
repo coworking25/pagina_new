@@ -5,13 +5,12 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-interface CSVImportModalProps {
+interface ExportDataModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportComplete?: () => void;
 }
 
-const CSVImportModal: React.FC<CSVImportModalProps> = ({
+const ExportDataModal: React.FC<ExportDataModalProps> = ({
   isOpen,
   onClose
 }) => {
@@ -52,10 +51,10 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
             <div className="text-center py-8">
               <AlertTriangle className="w-16 h-16 text-yellow-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Importación CSV Temporalmente Deshabilitada
+                Exportación de Datos Temporalmente Deshabilitada
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Esta funcionalidad está siendo actualizada. Por favor, utiliza la interfaz normal para agregar propiedades individualmente.
+                Esta funcionalidad está siendo actualizada. Por favor, utiliza la interfaz normal para gestionar los datos.
               </p>
               <button
                 onClick={onClose}
@@ -71,4 +70,4 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({
   );
 };
 
-export default CSVImportModal;
+export default ExportDataModal;

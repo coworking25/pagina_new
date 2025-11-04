@@ -42,6 +42,7 @@ import {
   MessageCircle,
   Home as HomeIcon,
   Building,
+  Hash,
   Gamepad2,
   Baby,
   Building2,
@@ -1076,7 +1077,7 @@ function AdminProperties() {
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
-        estrato: formData.estrato ? Number(formData.estrato) : undefined,
+        estrato: formData.estrato && formData.estrato !== '' ? Number(formData.estrato) : null,
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
@@ -1144,7 +1145,7 @@ function AdminProperties() {
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
-        estrato: formData.estrato ? Number(formData.estrato) : undefined,
+        estrato: formData.estrato && formData.estrato !== '' ? Number(formData.estrato) : null,
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
@@ -1153,13 +1154,23 @@ function AdminProperties() {
         featured: formData.featured || false // Incluir estado destacado
       };
       
-      await updateProperty(selectedProperty.id, propertyData);
+      console.log('📝 Datos a actualizar (incluyendo estrato):', propertyData);
+      
+      const updatedProperty = await updateProperty(selectedProperty.id, propertyData);
+      
+      console.log('✅ Propiedad actualizada, datos recibidos:', updatedProperty);
+      console.log('🔍 Estrato en propiedad actualizada:', updatedProperty?.estrato);
+      
       await refreshProperties();
+      
+      // Actualizar selectedProperty con los nuevos datos para que se reflejen en el modal de detalles
+      if (updatedProperty) {
+        setSelectedProperty(updatedProperty);
+      }
+      
       setShowEditModal(false);
-      setSelectedProperty(null);
       resetForm();
       
-      console.log('✅ Propiedad actualizada exitosamente');
       showNotification('Propiedad actualizada exitosamente', 'success');
     } catch (error: any) {
       console.error('❌ Error actualizando propiedad:', error);
@@ -2824,7 +2835,7 @@ function AdminProperties() {
                     )}
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                     <div className="text-center p-4 bg-white dark:bg-gray-700 rounded-lg">
                       <Bed className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                       <span className="text-sm text-gray-600 dark:text-gray-400 block">Habitaciones</span>
@@ -2839,6 +2850,13 @@ function AdminProperties() {
                       <Square className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                       <span className="text-sm text-gray-600 dark:text-gray-400 block">Área</span>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">{selectedProperty.area}m²</p>
+                    </div>
+                    <div className="text-center p-4 bg-white dark:bg-gray-700 rounded-lg">
+                      <Hash className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block">Estrato</span>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        {selectedProperty.estrato ? selectedProperty.estrato : 'N/A'}
+                      </p>
                     </div>
                     <div className="text-center p-4 bg-white dark:bg-gray-700 rounded-lg">
                       <Home className="w-8 h-8 text-blue-600 mx-auto mb-2" />
@@ -3269,6 +3287,27 @@ function AdminProperties() {
                 min="0"
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
+            </div>
+
+            {/* Estrato */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Estrato
+              </label>
+              <select
+                name="estrato"
+                value={formData.estrato || ''}
+                onChange={handleFormChange}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">Seleccionar estrato</option>
+                <option value="1">Estrato 1</option>
+                <option value="2">Estrato 2</option>
+                <option value="3">Estrato 3</option>
+                <option value="4">Estrato 4</option>
+                <option value="5">Estrato 5</option>
+                <option value="6">Estrato 6</option>
+              </select>
             </div>
 
             {/* Tipo */}

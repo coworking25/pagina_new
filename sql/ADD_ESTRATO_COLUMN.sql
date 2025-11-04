@@ -5,20 +5,27 @@
 -- Descripción: Agregar campo de estrato socioeconómico a la tabla properties
 -- ==========================================
 
--- Agregar columna estrato (valores de 1 a 6)
+-- Paso 1: Agregar columna estrato (valores de 1 a 6)
 ALTER TABLE properties 
 ADD COLUMN IF NOT EXISTS estrato INTEGER;
 
--- Agregar constraint para validar que el estrato esté entre 1 y 6
+-- Paso 2: Eliminar constraint anterior si existe (por si acaso)
+ALTER TABLE properties
+DROP CONSTRAINT IF EXISTS check_estrato_range;
+
+-- Paso 3: Agregar constraint para validar que el estrato esté entre 1 y 6
 ALTER TABLE properties
 ADD CONSTRAINT check_estrato_range 
 CHECK (estrato IS NULL OR (estrato >= 1 AND estrato <= 6));
 
--- Agregar comentario a la columna
+-- Paso 4: Agregar comentario a la columna
 COMMENT ON COLUMN properties.estrato IS 'Estrato socioeconómico de la propiedad (1-6)';
 
--- Crear índice para mejorar búsquedas por estrato
-CREATE INDEX IF NOT EXISTS idx_properties_estrato 
+-- Paso 5: Eliminar índice anterior si existe
+DROP INDEX IF EXISTS idx_properties_estrato;
+
+-- Paso 6: Crear índice para mejorar búsquedas por estrato
+CREATE INDEX idx_properties_estrato 
 ON properties(estrato) 
 WHERE estrato IS NOT NULL;
 

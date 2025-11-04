@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, Phone, Mail, Edit, Trash2, Building, Camera, Film } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Square, Star, Calendar, MessageCircle, Heart, Share2, Play, Phone, Mail, Edit, Trash2, Building, Camera, Film, Hash } from 'lucide-react';
 import { Property, Advisor } from '../../types';
 import { getAdvisorById } from '../../lib/supabase';
 import { trackPropertyView } from '../../lib/analytics';
@@ -466,7 +466,7 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                         </div>
 
                         {/* Property Details - Optimizado para móvil */}
-                        <div className="grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="grid grid-cols-4 gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                           <div className="text-center">
                             <Bed className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-gray-600 dark:text-gray-400" />
                             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Habitaciones</p>
@@ -481,6 +481,11 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
                             <Square className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-gray-600 dark:text-gray-400" />
                             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Área</p>
                             <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{property.area}m²</p>
+                          </div>
+                          <div className="text-center">
+                            <Hash className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-gray-600 dark:text-gray-400" />
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Estrato</p>
+                            <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{property.estrato || 'N/A'}</p>
                           </div>
                         </div>
                       </div>

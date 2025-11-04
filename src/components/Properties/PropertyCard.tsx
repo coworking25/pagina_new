@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2, Building } from 'lucide-react';
+import { MapPin, Bed, Bath, Square, Star, Heart, Eye, MessageCircle, Calendar, MoreVertical, Edit, Trash2, Building, Hash } from 'lucide-react';
 import { Property } from '../../types';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
@@ -478,6 +478,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             <Square className="w-4 h-4" />
             <span>{property.area}m²</span>
           </div>
+          {property.estrato && (
+            <div className="flex items-center space-x-1">
+              <Hash className="w-4 h-4" />
+              <span>Estrato {property.estrato}</span>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

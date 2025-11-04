@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Property, Advisor, PropertyAppointment } from '../types';
+import * as XLSX from 'xlsx';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -1767,6 +1768,7 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
         bedrooms: prop.bedrooms,
         bathrooms: prop.bathrooms,
         area: prop.area,
+        estrato: prop.estrato,
         type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
         images: processedImages,
@@ -1862,6 +1864,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
           bedrooms: prop.bedrooms,
           bathrooms: prop.bathrooms,
           area: prop.area,
+          estrato: prop.estrato,
           type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
           status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
           images: processedImages,
@@ -1878,8 +1881,6 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       
       return recentProperties;
     }
-    
-    if (!data) return [];
     
     // Transformar datos usando la misma lógica que getProperties
     const properties: Property[] = data.map(prop => {
@@ -1918,6 +1919,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
         bedrooms: prop.bedrooms,
         bathrooms: prop.bathrooms,
         area: prop.area,
+        estrato: prop.estrato,
         type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
         images: processedImages,
@@ -2324,7 +2326,7 @@ export async function getSmartAlerts(): Promise<{
     // 1. Pagos vencidos (CRÍTICO)
     const { data: overduePayments } = await supabase
       .from('payments')
-      .select(`
+                                    .select(`
         id,
         amount,
         due_date,
@@ -2793,6 +2795,42 @@ export async function getDashboardStats(): Promise<{
 
   } catch (error) {
     console.error('❌ Error en getDashboardStats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Descargar archivo de exportación
+ */
+export function downloadExportFile(data: string | Uint8Array, filename: string, format: 'csv' | 'json' | 'xlsx'): void {
+  try {
+    let mimeType: string;
+    let blob: Blob;
+
+    if (format === 'xlsx' && data instanceof Uint8Array) {
+      mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      blob = new Blob([data as any], { type: mimeType });
+    } else if (format === 'json') {
+      mimeType = 'application/json';
+      blob = new Blob([data as string], { type: mimeType });
+    } else {
+      mimeType = 'text/csv';
+      blob = new Blob([data as string], { type: mimeType });
+    }
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+    console.log('✅ Archivo descargado:', filename);
+  } catch (error) {
+    console.error('❌ Error descargando archivo:', error);
     throw error;
   }
 }
@@ -3378,8 +3416,7 @@ export async function getPropertiesByStatus(status: string) {
           name,
           email,
           phone,
-          specialization,
-          image_url
+          specialization
         )
       `)
       .eq('status', status)
@@ -3524,949 +3561,482 @@ export async function getActiveTenantsForProperties(propertyIds: number[] | stri
 }
 
 // ==========================================
-// FUNCIONES DE MANEJO DE IMÁGENES AVANZADAS
+// FUNCIONES DE EXPORTACIÓN DE DATOS
 // ==========================================
 
-// Función para subir múltiples imágenes con código de propiedad
-export async function bulkUploadPropertyImages(
-  files: File[], 
-  propertyCode: string,
-  onProgress?: (current: number, total: number) => void,
-  withWatermark: boolean = true
-): Promise<string[]> {
-  
-  console.log(`📤 Subida masiva: ${files.length} imágenes para ${propertyCode}`);
-  console.log(`🎨 Marca de agua: ${withWatermark ? 'ACTIVADA ✅' : 'DESACTIVADA ❌'}`);
-  
-  const uploadedUrls: string[] = [];
-  const errors: string[] = [];
-  
-  for (let i = 0; i < files.length; i++) {
-    try {
-      onProgress?.(i + 1, files.length);
-      const url = await uploadPropertyImage(files[i], propertyCode, withWatermark);
-      uploadedUrls.push(url);
-      
-    } catch (error) {
-      console.error(`❌ Error subiendo ${files[i].name}:`, error);
-      errors.push(`${files[i].name}: ${(error as Error).message || 'Error desconocido'}`);
-    }
-  }
-  
-  if (errors.length > 0) {
-    console.warn('⚠️ Algunos archivos no se pudieron subir:', errors);
-  }
-  
-  console.log(`✅ Subida completada: ${uploadedUrls.length}/${files.length} exitosas`);
-  return uploadedUrls;
-}
-
-// Función para obtener todas las imágenes de una propiedad por código
-export async function getPropertyImagesByCode(propertyCode: string): Promise<string[]> {
-  try {
-    console.log(`🖼️ Obteniendo imágenes para propiedad ${propertyCode}...`);
-    
-    const { data, error } = await supabase.storage
-      .from('property-images')
-      .list(propertyCode, {
-        limit: 20,
-        sortBy: { column: 'name', order: 'asc' }
-      });
-    
-    if (error) {
-      console.error('❌ Error obteniendo imágenes:', error);
-      return [];
-    }
-    
-    if (!data || data.length === 0) {
-      console.log(`📭 No se encontraron imágenes para ${propertyCode}`);
-      return [];
-    }
-    
-    // Generar URLs públicas
-    const imageUrls = data.map(file => {
-      const { data: publicUrlData } = supabase.storage
-        .from('property-images')
-        .getPublicUrl(`${propertyCode}/${file.name}`);
-      return publicUrlData.publicUrl;
-    });
-    
-    console.log(`✅ ${imageUrls.length} imágenes encontradas para ${propertyCode}`);
-    return imageUrls;
-    
-  } catch (error) {
-    console.error('❌ Error en getPropertyImagesByCode:', error);
-    return [];
-  }
-}
-
-// Función para generar próximo código de propiedad disponible
 /**
- * Genera automáticamente un código único para una propiedad
- * Reutiliza códigos de propiedades eliminadas si existen
- * Formato: CA-001, CA-002, etc.
+ * Tipos para opciones de exportación
+ */
+export interface ExportOptions {
+  format: 'xlsx' | 'csv' | 'json';
+  includeSoftDeletes?: boolean;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  advisorFilter?: string;
+  statusFilter?: string;
+}
+
+/**
+ * Exportar todas las propiedades
+ */
+export async function exportProperties(options: ExportOptions = { format: 'xlsx' }) {
+  try {
+    console.log('📊 Exportando propiedades...', options);
+
+    // Construir query con filtros
+    let query = supabase
+      .from('properties')
+      .select(`
+        *,
+        advisor:advisor_id (
+          id,
+          name,
+          email,
+          phone,
+          specialization
+        )
+      `);
+
+    // Aplicar filtros
+    if (!options.includeSoftDeletes) {
+      query = query.is('deleted_at', null);
+    }
+
+    if (options.dateRange) {
+      query = query
+        .gte('created_at', options.dateRange.start)
+        .lte('created_at', options.dateRange.end);
+    }
+
+    if (options.advisorFilter) {
+      query = query.eq('advisor_id', options.advisorFilter);
+    }
+
+    if (options.statusFilter) {
+      query = query.eq('status', options.statusFilter);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data: properties, error } = await query;
+
+    if (error) {
+      console.error('❌ Error obteniendo propiedades:', error);
+      throw error;
+    }
+
+    // Preparar datos para exportación
+    const exportData = (properties || []).map(property => ({
+      'Código': property.code || '',
+      'Título': property.title || '',
+      'Descripción': property.description || '',
+      'Ubicación': property.location || '',
+      'Latitud': property.latitude || '',
+      'Longitud': property.longitude || '',
+      'Tipo Disponibilidad': property.availability_type || '',
+      'Precio Venta': property.sale_price || '',
+      'Precio Arriendo': property.rent_price || '',
+      'Habitaciones': property.bedrooms || '',
+      'Baños': property.bathrooms || '',
+      'Área': property.area || '',
+      'Tipo': property.type || '',
+      'Estado': property.status || '',
+      'Amenities': Array.isArray(property.amenities) ? property.amenities.join(', ') : '',
+      'Destacada': property.featured ? 'Sí' : 'No',
+      'Asesor': property.advisor?.name || '',
+      'Email Asesor': property.advisor?.email || '',
+      'Teléfono Asesor': property.advisor?.phone || '',
+      'Especialización Asesor': property.advisor?.specialization || '',
+      'Imágenes': Array.isArray(property.images) ? property.images.length : 0,
+      'Videos': Array.isArray(property.videos) ? property.videos.length : 0,
+      'Fecha Creación': property.created_at ? new Date(property.created_at).toLocaleDateString('es-ES') : '',
+      'Última Actualización': property.updated_at ? new Date(property.updated_at).toLocaleDateString('es-ES') : ''
+    }));
+
+    // Generar archivo según formato
+    const filename = `propiedades_${new Date().toISOString().split('T')[0]}`;
+    return generateExportFile(exportData, options.format);
+
+  } catch (error) {
+    console.error('❌ Error en exportProperties:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exportar todos los clientes
+ */
+export async function exportClients(options: ExportOptions = { format: 'xlsx' }) {
+  try {
+    console.log('📊 Exportando clientes...', options);
+
+    // Construir query con filtros
+    let query = supabase
+      .from('clients')
+      .select('*');
+
+    // Aplicar filtros
+    if (!options.includeSoftDeletes) {
+      query = query.is('deleted_at', null);
+    }
+
+    if (options.dateRange) {
+      query = query
+        .gte('created_at', options.dateRange.start)
+        .lte('created_at', options.dateRange.end);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data: clients, error } = await query;
+
+    if (error) {
+      console.error('❌ Error obteniendo clientes:', error);
+      throw error;
+    }
+
+    // Preparar datos para exportación
+    const exportData = (clients || []).map(client => ({
+      'ID': client.id || '',
+      'Nombre Completo': client.full_name || '',
+      'Email': client.email || '',
+      'Teléfono': client.phone || '',
+      'Tipo ID': client.id_type || '',
+      'Número ID': client.id_number || '',
+      'Dirección': client.address || '',
+      'Ciudad': client.city || '',
+      'Estado': client.state || '',
+      'Código Postal': client.zip_code || '',
+      'País': client.country || '',
+      'Fecha Nacimiento': client.birth_date ? new Date(client.birth_date).toLocaleDateString('es-ES') : '',
+      'Género': client.gender || '',
+      'Estado Civil': client.marital_status || '',
+      'Ocupación': client.occupation || '',
+      'Ingresos Mensuales': client.monthly_income || '',
+      'Preferencias': client.preferences || '',
+      'Notas': client.notes || '',
+      'Fecha Creación': client.created_at ? new Date(client.created_at).toLocaleDateString('es-ES') : '',
+      'Última Actualización': client.updated_at ? new Date(client.updated_at).toLocaleDateString('es-ES') : ''
+    }));
+
+    // Generar archivo según formato
+    const filename = `clientes_${new Date().toISOString().split('T')[0]}`;
+    return generateExportFile(exportData, options.format);
+
+  } catch (error) {
+    console.error('❌ Error en exportClients:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exportar todos los contratos
+ */
+export async function exportContracts(options: ExportOptions = { format: 'xlsx' }) {
+  try {
+    console.log('📊 Exportando contratos...', options);
+
+    // Construir query con filtros
+    let query = supabase
+      .from('contracts')
+      .select(`
+        *,
+        property:property_id (
+          id,
+          title,
+          code,
+          location
+        ),
+        client:client_id (
+          id,
+          full_name,
+          email
+        ),
+        advisor:advisor_id (
+          id,
+          name,
+          email
+        )
+      `);
+
+    // Aplicar filtros
+    if (!options.includeSoftDeletes) {
+      query = query.is('deleted_at', null);
+    }
+
+    if (options.dateRange) {
+      query = query
+        .gte('created_at', options.dateRange.start)
+        .lte('created_at', options.dateRange.end);
+    }
+
+    if (options.advisorFilter) {
+      query = query.eq('advisor_id', options.advisorFilter);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data: contracts, error } = await query;
+
+    if (error) {
+      console.error('❌ Error obteniendo contratos:', error);
+      throw error;
+    }
+
+    // Preparar datos para exportación
+    const exportData = (contracts || []).map(contract => ({
+      'ID Contrato': contract.id || '',
+      'Tipo Contrato': contract.contract_type || '',
+      'Estado': contract.status || '',
+      'Propiedad': contract.property?.title || '',
+      'Código Propiedad': contract.property?.code || '',
+      'Ubicación Propiedad': contract.property?.location || '',
+      'Cliente': contract.client?.full_name || '',
+      'Email Cliente': contract.client?.email || '',
+      'Asesor': contract.advisor?.name || '',
+      'Email Asesor': contract.advisor?.email || '',
+      'Fecha Inicio': contract.start_date ? new Date(contract.start_date).toLocaleDateString('es-ES') : '',
+      'Fecha Fin': contract.end_date ? new Date(contract.end_date).toLocaleDateString('es-ES') : '',
+      'Fecha Contrato': contract.contract_date ? new Date(contract.contract_date).toLocaleDateString('es-ES') : '',
+      'Monto Total': contract.total_amount || '',
+      'Monto Pagado': contract.paid_amount || '',
+      'Saldo Pendiente': contract.pending_amount || '',
+      'Moneda': contract.currency || '',
+      'Términos': contract.terms || '',
+      'Notas': contract.notes || '',
+      'Fecha Creación': contract.created_at ? new Date(contract.created_at).toLocaleDateString('es-ES') : '',
+      'Última Actualización': contract.updated_at ? new Date(contract.updated_at).toLocaleDateString('es-ES') : ''
+    }));
+
+    // Generar archivo según formato
+    const filename = `contratos_${new Date().toISOString().split('T')[0]}`;
+    return generateExportFile(exportData, options.format);
+
+  } catch (error) {
+    console.error('❌ Error en exportContracts:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exportar todos los datos (propiedades, clientes, contratos)
+ */
+export async function exportAllData(options: ExportOptions = { format: 'xlsx' }) {
+  try {
+    console.log('📊 Exportando todos los datos...', options);
+
+    // Obtener estadísticas para el resumen
+    const stats = await getDashboardStats();
+
+    // Crear libro de Excel con múltiples hojas
+    const workbook = XLSX.utils.book_new();
+
+    // Hoja de resumen
+    const summaryData = [
+      { 'Métrica': 'Total Propiedades', 'Valor': stats.properties.total },
+      { 'Métrica': 'Propiedades en Venta', 'Valor': stats.properties.forSale },
+      { 'Métrica': 'Propiedades en Arriendo', 'Valor': stats.properties.forRent },
+      { 'Métrica': 'Propiedades Vendidas', 'Valor': stats.properties.sold },
+      { 'Métrica': 'Propiedades Arrendadas', 'Valor': stats.properties.rented },
+      { 'Métrica': 'Propiedades Destacadas', 'Valor': stats.properties.featured },
+      { 'Métrica': 'Clientes Únicos', 'Valor': stats.clients.unique },
+      { 'Métrica': 'Clientes Este Mes', 'Valor': stats.clients.thisMonth },
+      { 'Métrica': 'Total Citas', 'Valor': stats.appointments.total },
+      { 'Métrica': 'Citas Pendientes', 'Valor': stats.appointments.pending },
+      { 'Métrica': 'Citas Confirmadas', 'Valor': stats.appointments.confirmed },
+      { 'Métrica': 'Citas Completadas', 'Valor': stats.appointments.completed },
+      { 'Métrica': 'Total Asesores', 'Valor': stats.advisors.total },
+      { 'Métrica': 'Asesores Activos', 'Valor': stats.advisors.active },
+      { 'Métrica': 'Total Consultas', 'Valor': stats.inquiries.total },
+      { 'Métrica': 'Consultas Pendientes', 'Valor': stats.inquiries.pending },
+      { 'Métrica': 'Consultas Este Mes', 'Valor': stats.inquiries.thisMonth }
+    ];
+
+    const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen');
+
+    // Obtener y agregar datos de propiedades
+    const { data: properties } = await supabase
+      .from('properties')
+      .select(`
+        *,
+        advisor:advisor_id (name, email)
+      `)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+
+    if (properties) {
+      const propertiesData = properties.map(p => ({
+        'Código': p.code || '',
+        'Título': p.title || '',
+        'Ubicación': p.location || '',
+        'Precio Venta': p.sale_price || '',
+        'Precio Arriendo': p.rent_price || '',
+        'Estado': p.status || '',
+        'Asesor': p.advisor?.name || '',
+        'Fecha Creación': p.created_at ? new Date(p.created_at).toLocaleDateString('es-ES') : ''
+      }));
+
+      const propertiesSheet = XLSX.utils.json_to_sheet(propertiesData);
+      XLSX.utils.book_append_sheet(workbook, propertiesSheet, 'Propiedades');
+    }
+
+    // Obtener y agregar datos de clientes
+    const { data: clients } = await supabase
+      .from('clients')
+      .select('*')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+
+    if (clients) {
+      const clientsData = clients.map(c => ({
+        'Nombre': c.full_name || '',
+        'Email': c.email || '',
+        'Teléfono': c.phone || '',
+        'Ciudad': c.city || '',
+        'Estado': c.state || '',
+        'Fecha Creación': c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES') : ''
+      }));
+
+      const clientsSheet = XLSX.utils.json_to_sheet(clientsData);
+      XLSX.utils.book_append_sheet(workbook, clientsSheet, 'Clientes');
+    }
+
+    // Obtener y agregar datos de contratos
+    const { data: contracts } = await supabase
+      .from('contracts')
+      .select(`
+        *,
+        property:property_id (title, code),
+        client:client_id (full_name),
+        advisor:advisor_id (name)
+      `)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+
+    if (contracts) {
+      const contractsData = contracts.map(c => ({
+        'Tipo': c.contract_type || '',
+        'Estado': c.status || '',
+        'Propiedad': c.property?.title || '',
+        'Cliente': c.client?.full_name || '',
+        'Asesor': c.advisor?.name || '',
+        'Monto Total': c.total_amount || '',
+        'Fecha Inicio': c.start_date ? new Date(c.start_date).toLocaleDateString('es-ES') : '',
+        'Fecha Creación': c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES') : ''
+      }));
+
+      const contractsSheet = XLSX.utils.json_to_sheet(contractsData);
+      XLSX.utils.book_append_sheet(workbook, contractsSheet, 'Contratos');
+    }
+
+    // Generar archivo Excel
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const filename = `datos_completos_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    return excelBuffer;
+
+  } catch (error) {
+    console.error('❌ Error en exportAllData:', error);
+    throw error;
+  }
+}
+
+/**
+ * Función auxiliar para generar archivo de exportación
+ */
+function generateExportFile(data: any[], format: 'xlsx' | 'csv' | 'json'): string | Uint8Array {
+  if (format === 'json') {
+    return JSON.stringify(data, null, 2);
+  }
+
+  if (format === 'csv') {
+    if (data.length === 0) return '';
+
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+      headers.join(','),
+      ...data.map(row =>
+        headers.map(header => {
+          const value = row[header];
+          // Escapar comillas y envolver en comillas si contiene coma o comillas
+          const stringValue = String(value || '');
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+            return `"${stringValue.replace(/"/g, '""')}"`;
+          }
+          return stringValue;
+        }).join(',')
+      )
+    ];
+
+    return csvRows.join('\n');
+  }
+
+  // Formato XLSX
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
+
+  return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as Uint8Array;
+}
+
+// ==========================================
+// FUNCIONES DE CÓDIGOS DE PROPIEDADES
+// ==========================================
+
+/**
+ * Genera un código único para una nueva propiedad
+ * Formato: CA-XXX (ej: CA-001, CA-002)
+ * Reutiliza códigos eliminados (gaps) para mantener secuencia ordenada
  */
 export async function generatePropertyCode(): Promise<string> {
   try {
-    console.log('🔢 Generando código de propiedad automático...');
-    
-    // 1. Obtener TODOS los códigos existentes
-    const { data: existingProperties, error: fetchError } = await supabase
+    console.log('🔢 Generando código de propiedad...');
+
+    // 1️⃣ Obtener TODOS los códigos existentes
+    const { data: properties, error } = await supabase
       .from('properties')
       .select('code')
-      .not('code', 'is', null)
       .order('code', { ascending: true });
-    
-    if (fetchError) {
-      console.error('❌ Error obteniendo códigos existentes:', fetchError);
-      return 'CA-001'; // Código por defecto
+
+    if (error) {
+      console.error('❌ Error obteniendo códigos:', error);
+      throw error;
     }
-    
-    // 2. Si no hay propiedades, retornar el primer código
-    if (!existingProperties || existingProperties.length === 0) {
-      console.log('✨ Primera propiedad, código: CA-001');
-      return 'CA-001';
-    }
-    
-    // 3. Extraer números de los códigos existentes
+
+    // 2️⃣ Extraer números de códigos existentes
+    const existingCodes = properties?.map(p => p.code).filter(Boolean) || [];
     const usedNumbers = new Set<number>();
-    existingProperties.forEach(prop => {
-      if (prop.code) {
-        const match = prop.code.match(/CA-(\d+)/);
-        if (match) {
-          usedNumbers.add(parseInt(match[1]));
-        }
+
+    existingCodes.forEach(code => {
+      const match = code.match(/CA-(\d+)/);
+      if (match) {
+        usedNumbers.add(parseInt(match[1]));
       }
     });
-    
-    console.log(`📊 Códigos en uso: ${usedNumbers.size}`);
-    
-    // 4. Buscar el primer número disponible (gaps en la secuencia)
+
+    // 3️⃣ Buscar el primer número disponible (reutilización de gaps)
     let nextNumber = 1;
     while (usedNumbers.has(nextNumber)) {
       nextNumber++;
     }
-    
+
     const newCode = `CA-${nextNumber.toString().padStart(3, '0')}`;
-    
-    if (nextNumber <= usedNumbers.size) {
-      console.log(`♻️ Reutilizando código disponible: ${newCode} (había gap en la secuencia)`);
+
+    // 4️⃣ Logs detallados
+    if (existingCodes.length > 0 && nextNumber < existingCodes.length + 1) {
+      console.log(`♻️ Reutilizando código disponible: ${newCode}`);
     } else {
       console.log(`✅ Nuevo código generado: ${newCode}`);
     }
-    
+
+    console.log(`📊 Total propiedades: ${existingCodes.length}, Siguiente número: ${nextNumber}`);
+
     return newCode;
-    
   } catch (error) {
-    console.error('❌ Error en generatePropertyCode:', error);
-    return 'CA-001';
+    console.error('❌ Error generando código:', error);
+    throw new Error('Error al generar código de propiedad');
   }
 }
-
-// ==========================================
-// FUNCIONES DE DEBUG Y TESTING
-// ==========================================
-
-// Función para debug: verificar usuarios en la base de datos
-export async function debugUsers() {
-  try {
-    
-    const { data: users, error } = await supabase
-      .from('system_users')
-      .select('*');
-    
-    if (error) {
-      console.error('❌ Error obteniendo usuarios:', error);
-      return;
-    }
-    
-    return users;
-  } catch (error) {
-    console.error('❌ Error en debugUsers:', error);
-  }
-}
-
-// ==========================================
-// RE-EXPORTAR FUNCIONES DE VIDEOS
-// ==========================================
-
-export {
-  uploadPropertyVideo,
-  bulkUploadPropertyVideos,
-  getPropertyVideos,
-  deletePropertyVideo,
-  updatePropertyVideos,
-  type PropertyVideo
-} from './supabase-videos';
-
-// ==========================================
-// FUNCIONES DE IMPORTACIÓN CSV DE PROPIEDADES
-// ==========================================
-
-/**
- * Interfaz para datos de propiedad desde CSV
- */
-export interface PropertyCSVData {
-  title: string;
-  location?: string;
-  availability_type: 'sale' | 'rent' | 'both';
-  sale_price?: number;
-  rent_price?: number;
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  type: 'apartment' | 'apartaestudio' | 'house' | 'office' | 'commercial';
-  status?: 'sale' | 'rent' | 'both' | 'sold' | 'rented' | 'available' | 'reserved' | 'maintenance' | 'pending';
-  amenities?: string;
-  featured?: boolean;
-  description?: string;
-  latitude?: number;
-  longitude?: number;
-  advisor_id?: string;
-}
-
-/**
- * Resultado de validación de fila CSV
- */
-export interface CSVValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings: string[];
-  data?: PropertyCSVData;
-}
-
-/**
- * Resultado de importación CSV
- */
-export interface CSVImportResult {
-  success: boolean;
-  totalRows: number;
-  successfulImports: number;
-  failedImports: number;
-  errors: Array<{
-    row: number;
-    errors: string[];
-  }>;
-  createdProperties: Property[];
-}
-
-/**
- * Parsear archivo CSV y convertirlo a datos de propiedades
- */
-export function parseCSVProperties(csvText: string): PropertyCSVData[] {
-  try {
-    console.log('📄 Parseando archivo CSV...');
-
-    const lines = csvText.trim().split('\n');
-    if (lines.length < 2) {
-      throw new Error('El archivo CSV debe tener al menos una fila de encabezados y una fila de datos');
-    }
-
-    // Leer encabezados
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-
-    // Mapear índices de columnas requeridas
-    const columnMap: { [key: string]: number } = {};
-    const requiredColumns = ['title', 'availability_type', 'bedrooms', 'bathrooms', 'area', 'type'];
-
-    headers.forEach((header, index) => {
-      columnMap[header] = index;
-    });
-
-    // Verificar columnas requeridas
-    const missingColumns = requiredColumns.filter(col => columnMap[col] === undefined);
-    if (missingColumns.length > 0) {
-      throw new Error(`Columnas requeridas faltantes: ${missingColumns.join(', ')}`);
-    }
-
-    // Parsear filas de datos
-    const properties: PropertyCSVData[] = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue; // Saltar líneas vacías
-
-      const values = parseCSVLine(line);
-      if (values.length !== headers.length) {
-        console.warn(`⚠️ Línea ${i + 1}: Número de columnas no coincide (${values.length} vs ${headers.length})`);
-        continue;
-      }
-
-      const property: any = {};
-
-      // Mapear valores a campos de propiedad
-      headers.forEach((header, index) => {
-        const value = values[index]?.trim() || '';
-
-        switch (header) {
-          case 'title':
-            property.title = value;
-            break;
-          case 'location':
-            property.location = value || undefined;
-            break;
-          case 'availability_type':
-            property.availability_type = value.toLowerCase();
-            break;
-          case 'sale_price':
-            property.sale_price = value ? parseFloat(value.replace(/[$,]/g, '')) : undefined;
-            break;
-          case 'rent_price':
-            property.rent_price = value ? parseFloat(value.replace(/[$,]/g, '')) : undefined;
-            break;
-          case 'bedrooms':
-            property.bedrooms = parseInt(value) || 0;
-            break;
-          case 'bathrooms':
-            property.bathrooms = parseInt(value) || 0;
-            break;
-          case 'area':
-            property.area = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
-            break;
-          case 'type':
-            property.type = value.toLowerCase();
-            break;
-          case 'status':
-            property.status = value.toLowerCase() || 'available';
-            break;
-          case 'amenities':
-            property.amenities = value ? value.split(';').map(a => a.trim()) : [];
-            break;
-          case 'featured':
-            property.featured = value.toLowerCase() === 'true' || value === '1' || value === 'sí' || value === 'si';
-            break;
-          case 'description':
-            property.description = value || undefined;
-            break;
-          case 'latitude':
-            property.latitude = value ? parseFloat(value) : undefined;
-            break;
-          case 'longitude':
-            property.longitude = value ? parseFloat(value) : undefined;
-            break;
-          case 'advisor_id':
-            property.advisor_id = value || undefined;
-            break;
-        }
-      });
-
-      properties.push(property as PropertyCSVData);
-    }
-
-    console.log(`✅ Parseadas ${properties.length} propiedades desde CSV`);
-    return properties;
-
-  } catch (error) {
-    console.error('❌ Error parseando CSV:', error);
-    throw error;
-  }
-}
-
-/**
- * Parsear una línea CSV manejando comillas correctamente
- */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        // Comilla escapada
-        current += '"';
-        i++; // Saltar la siguiente comilla
-      } else {
-        // Alternar estado de comillas
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      // Fin de campo
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  // Agregar el último campo
-  result.push(current);
-
-  return result;
-}
-
-/**
- * Validar datos de propiedad desde CSV
- */
-export function validatePropertyCSVData(data: PropertyCSVData): CSVValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  // Validar campos requeridos
-  if (!data.title || data.title.trim() === '') {
-    errors.push('El título es obligatorio');
-  }
-
-  if (!data.availability_type || !['sale', 'rent', 'both'].includes(data.availability_type)) {
-    errors.push('Tipo de disponibilidad debe ser: sale, rent o both');
-  }
-
-  if (data.bedrooms === undefined || data.bedrooms < 0) {
-    errors.push('Número de habitaciones debe ser un número positivo');
-  }
-
-  if (data.bathrooms === undefined || data.bathrooms < 0) {
-    errors.push('Número de baños debe ser un número positivo');
-  }
-
-  if (data.area === undefined || data.area <= 0) {
-    errors.push('Área debe ser un número positivo mayor a 0');
-  }
-
-  if (!data.type || !['apartment', 'apartaestudio', 'house', 'office', 'commercial'].includes(data.type)) {
-    errors.push('Tipo de propiedad debe ser: apartment, apartaestudio, house, office o commercial');
-  }
-
-  // Validar precios basados en availability_type
-  if (data.availability_type === 'sale' || data.availability_type === 'both') {
-    if (!data.sale_price || data.sale_price <= 0) {
-      errors.push('Precio de venta es obligatorio para propiedades en venta');
-    }
-  }
-
-  if (data.availability_type === 'rent' || data.availability_type === 'both') {
-    if (!data.rent_price || data.rent_price <= 0) {
-      errors.push('Precio de arriendo es obligatorio para propiedades en arriendo');
-    }
-  }
-
-  // Validar status si está presente
-  if (data.status && !['sale', 'rent', 'both', 'sold', 'rented', 'available', 'reserved', 'maintenance', 'pending'].includes(data.status)) {
-    errors.push('Status inválido');
-  }
-
-  // Validar coordenadas si están presentes
-  if (data.latitude !== undefined && (data.latitude < -90 || data.latitude > 90)) {
-    errors.push('Latitud debe estar entre -90 y 90');
-  }
-
-  if (data.longitude !== undefined && (data.longitude < -180 || data.longitude > 180)) {
-    errors.push('Longitud debe estar entre -180 y 180');
-  }
-
-  // Advertencias
-  if (!data.location) {
-    warnings.push('Ubicación no especificada');
-  }
-
-  if (!data.description) {
-    warnings.push('Descripción no especificada');
-  }
-
-  if (data.amenities && data.amenities.length === 0) {
-    warnings.push('No se especificaron amenidades');
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings,
-    data: errors.length === 0 ? data : undefined
-  };
-}
-
-/**
- * Importar múltiples propiedades desde datos CSV validados
- */
-export async function bulkCreateProperties(
-  csvData: PropertyCSVData[],
-  onProgress?: (current: number, total: number, property?: Property) => void
-): Promise<CSVImportResult> {
-  try {
-    console.log(`📤 Iniciando importación masiva de ${csvData.length} propiedades...`);
-
-    const result: CSVImportResult = {
-      success: true,
-      totalRows: csvData.length,
-      successfulImports: 0,
-      failedImports: 0,
-      errors: [],
-      createdProperties: []
-    };
-
-    // Procesar cada propiedad
-    for (let i = 0; i < csvData.length; i++) {
-      try {
-        onProgress?.(i + 1, csvData.length);
-
-        // Validar datos antes de crear
-        const validation = validatePropertyCSVData(csvData[i]);
-        if (!validation.isValid) {
-          result.failedImports++;
-          result.errors.push({
-            row: i + 1,
-            errors: validation.errors
-          });
-          console.warn(`⚠️ Fila ${i + 1} inválida:`, validation.errors);
-          continue;
-        }
-
-        // Preparar datos para creación
-        const propertyData = {
-          ...validation.data!,
-          status: validation.data!.status || 'available',
-          amenities: Array.isArray(validation.data!.amenities)
-            ? validation.data!.amenities
-            : (validation.data!.amenities ? [validation.data!.amenities] : []),
-          featured: validation.data!.featured || false,
-          images: [], // Las imágenes se pueden agregar después
-          videos: [] // Los videos se pueden agregar después
-        };
-
-        // Crear propiedad
-        const createdProperty = await createProperty(propertyData);
-        result.successfulImports++;
-        result.createdProperties.push(createdProperty);
-
-        console.log(`✅ Propiedad ${i + 1}/${csvData.length} creada: ${createdProperty.title}`);
-
-      } catch (error) {
-        result.failedImports++;
-        result.errors.push({
-          row: i + 1,
-          errors: [error instanceof Error ? error.message : 'Error desconocido']
-        });
-        console.error(`❌ Error creando propiedad ${i + 1}:`, error);
-      }
-    }
-
-    console.log(`✅ Importación completada: ${result.successfulImports}/${result.totalRows} exitosas`);
-
-    // Marcar como fallida si no se importó ninguna propiedad
-    if (result.successfulImports === 0) {
-      result.success = false;
-    }
-
-    return result;
-
-  } catch (error) {
-    console.error('❌ Error en importación masiva:', error);
-    return {
-      success: false,
-      totalRows: csvData.length,
-      successfulImports: 0,
-      failedImports: csvData.length,
-      errors: [{
-        row: 0,
-        errors: [error instanceof Error ? error.message : 'Error desconocido en importación']
-      }],
-      createdProperties: []
-    };
-  }
-}
-
-/**
- * Generar plantilla CSV de ejemplo para propiedades
- */
-export function generatePropertyCSVTemplate(): string {
-  const headers = [
-    'title',
-    'location',
-    'availability_type',
-    'sale_price',
-    'rent_price',
-    'bedrooms',
-    'bathrooms',
-    'area',
-    'type',
-    'status',
-    'amenities',
-    'featured',
-    'description',
-    'latitude',
-    'longitude',
-    'advisor_id'
-  ];
-
-  const exampleData = [
-    'Hermoso Apartamento en Zona Norte',
-    'Zona Norte, Bogotá',
-    'sale',
-    '450000000',
-    '',
-    '3',
-    '2',
-    '85',
-    'apartment',
-    'available',
-    'Gimnasio;Piscina;Parqueadero;Ascensor',
-    'false',
-    'Amplio apartamento de 3 habitaciones con vista panorámica',
-    '4.6500',
-    '-74.1000',
-    ''
-  ];
-
-  return [headers.join(','), exampleData.join(',')].join('\n');
-}
-
-// ==========================================
-// DEBUG FUNCTIONS (solo desarrollo)
-// ==========================================
-
-/**
- * DEBUG: Obtener usuarios sin verificar permisos (solo para diagnóstico)
- */
-export async function getUsersDebug(): Promise<{ data: UserProfile[]; total: number }> {
-  try {
-    console.log('🔍 DEBUG: getUsersDebug called - bypassing permissions');
-
-    // Query directa sin verificar permisos de admin
-    const { data, error, count } = await supabase
-      .from('user_profiles')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false });
-
-    console.log('🔍 DEBUG: Query result:', { data: data?.length || 0, count, error });
-
-    if (error) {
-      console.error('❌ DEBUG: Error obteniendo usuarios:', error);
-      throw error;
-    }
-
-    return {
-      data: data || [],
-      total: count || 0
-    };
-  } catch (error) {
-    console.error('❌ DEBUG: Error en getUsersDebug:', error);
-    throw error;
-  }
-}
-
-/**
- * DEBUG: Verificar si las políticas RLS están funcionando
- */
-export async function debugRLSPolicies(): Promise<{
-  currentUserId: string | null;
-  currentUserRole: string | null;
-  isAdminResult: boolean;
-  directQueryResult: any[];
-  policyTest: any[];
-}> {
-  try {
-    console.log('🔍 DEBUG: Testing RLS policies...');
-
-    // Obtener usuario actual
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('No authenticated user');
-    }
-
-    const currentUserId = user.id;
-    console.log('🔍 DEBUG: Current user ID:', currentUserId);
-
-    // Verificar rol del usuario actual
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('role, is_active')
-      .eq('id', currentUserId)
-      .single();
-
-    if (profileError) {
-      console.error('❌ DEBUG: Error getting profile:', profileError);
-      throw profileError;
-    }
-
-    console.log('🔍 DEBUG: Current user profile:', profile);
-
-    // Probar función is_admin()
-    const { data: isAdminResult, error: adminError } = await supabase.rpc('is_admin');
-    console.log('🔍 DEBUG: is_admin() result:', isAdminResult, 'error:', adminError);
-
-    // Intentar query directa (debería funcionar con RLS)
-    const { data: directQueryResult, error: directError } = await supabase
-      .from('user_profiles')
-      .select('id, email, role')
-      .limit(10);
-
-    console.log('🔍 DEBUG: Direct query result:', directQueryResult, 'error:', directError);
-
-    // Query sin RLS (usando service role si está disponible)
-    let policyTest: any[] = [];
-    try {
-      // Esta query podría fallar si no tenemos permisos de service role
-      const { data: allUsers, error: allError } = await supabase
-        .from('user_profiles')
-        .select('id, email, role')
-        .limit(10);
-
-      policyTest = allUsers || [];
-      console.log('🔍 DEBUG: All users query result:', allUsers, 'error:', allError);
-    } catch (e) {
-      console.log('🔍 DEBUG: Could not query all users (expected with RLS):', e);
-    }
-
-    return {
-      currentUserId,
-      currentUserRole: profile?.role || null,
-      isAdminResult: isAdminResult || false,
-      directQueryResult: directQueryResult || [],
-      policyTest
-    };
-
-  } catch (error) {
-    console.error('❌ DEBUG: Error in debugRLSPolicies:', error);
-    throw error;
-  }
-}
-
-/**
- * DEBUG: Crear usuario manualmente (solo para desarrollo/testing)
- * Versión mejorada que maneja usuarios existentes en auth
- */
-export async function createUserManually(userData: {
-  email: string;
-  password: string;
-  full_name?: string;
-  role?: 'admin' | 'advisor' | 'user';
-}): Promise<any> {
-  try {
-    console.log('🛠️ Creando usuario manualmente:', userData.email);
-
-    // PRIMERO: Verificar si el usuario ya existe en auth.users
-    console.log('🔍 Verificando si usuario ya existe en auth...');
-    const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
-
-    if (listError) {
-      console.error('❌ Error listando usuarios:', listError);
-      throw listError;
-    }
-
-    const existingUser = existingUsers.users.find(u => u.email === userData.email);
-    let userId: string;
-
-    if (existingUser) {
-      console.log('✅ Usuario ya existe en auth:', existingUser.email, 'ID:', existingUser.id);
-      userId = existingUser.id;
-
-      // Actualizar contraseña si se proporcionó una nueva
-      if (userData.password) {
-        console.log('🔄 Actualizando contraseña...');
-        const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
-          password: userData.password
-        });
-        if (updateError) {
-          console.warn('⚠️ No se pudo actualizar contraseña:', updateError);
-        } else {
-          console.log('✅ Contraseña actualizada');
-        }
-      }
-    } else {
-      console.log('🆕 Usuario no existe, creando en auth...');
-      // Crear usuario en Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: userData.full_name || userData.email.split('@')[0]
-        }
-      });
-
-      if (authError) {
-        console.error('❌ Error creando usuario en auth:', authError);
-        throw authError;
-      }
-
-      if (!authData.user) {
-        throw new Error('No se pudo crear el usuario');
-      }
-
-      userId = authData.user.id;
-      console.log('✅ Usuario creado en auth:', authData.user.email);
-    }
-
-    // SEGUNDO: Crear o actualizar perfil usando UPSERT
-    console.log('📝 Creando/actualizando perfil...');
-    const profileData = {
-      id: userId,
-      email: userData.email,
-      full_name: userData.full_name || userData.email.split('@')[0],
-      role: userData.role || 'user',
-      phone: null,
-      department: null,
-      position: null,
-      is_active: true
-    };
-
-    // Usar UPSERT para evitar conflictos si el perfil ya existe
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .upsert(profileData, {
-        onConflict: 'id',
-        ignoreDuplicates: false
-      })
-      .select()
-      .single();
-
-    if (profileError) {
-      console.error('❌ Error creando/actualizando perfil:', profileError);
-      throw profileError;
-    }
-
-    console.log('✅ Perfil creado/actualizado exitosamente:', profile.email, 'Rol:', profile.role);
-    return profile;
-
-  } catch (error: any) {
-    console.error('❌ Error en createUserManually:', error);
-    throw error;
-  }
-}
-
-// Exponer funciones de debug globalmente solo para desarrollo
-if (typeof window !== 'undefined' && import.meta.env.DEV) {
-  (window as any).debugRLSPolicies = debugRLSPolicies;
-  (window as any).getUsersDebug = getUsersDebug;
-  (window as any).createUserManually = createUserManually;
-}
-
-// ==========================================
-// FUNCIONES DE WHATSAPP
-// ==========================================
-
-/**
- * Enviar mensaje de WhatsApp al cliente para confirmar cita
- */
-export async function sendWhatsAppToClient(
-  phoneNumber: string,
-  data: {
-    client_name: string;
-    appointment_date: string;
-    appointment_type: string;
-    property_title: string;
-    advisor_name: string;
-    appointment_id?: string;
-  }
-): Promise<boolean> {
-  try {
-    console.log('📱 Enviando WhatsApp al cliente:', phoneNumber);
-
-    // Formatear fecha para Colombia
-    const appointmentDate = new Date(data.appointment_date);
-    const formattedDate = appointmentDate.toLocaleDateString('es-CO', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    // Crear mensaje de WhatsApp
-    const message = `Hola ${data.client_name}! 👋
-
-Tu cita ha sido agendada exitosamente:
-
-🏠 *Propiedad:* ${data.property_title}
-📅 *Fecha:* ${formattedDate}
-🏷️ *Tipo:* ${data.appointment_type}
-👨‍💼 *Asesor:* ${data.advisor_name}
-
-Te esperamos en nuestras oficinas.
-¿Tienes alguna pregunta?
-
-*Inmobiliaria Coworking*`;
-
-    // Codificar mensaje para URL
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-
-    console.log('✅ WhatsApp URL generado:', whatsappUrl);
-
-    // En un entorno real, aquí se haría la llamada a la API de WhatsApp
-    // Por ahora, solo simulamos el envío
-    console.log('📤 Simulando envío de WhatsApp al cliente');
-
-    // En producción, aquí iría la integración con Twilio, 360Dialog, etc.
-    // Por ejemplo:
-    // const response = await fetch('/api/whatsapp/send', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ phoneNumber, message })
-    // });
-
-    return true;
-
-  } catch (error) {
-    console.error('❌ Error enviando WhatsApp al cliente:', error);
-    return false;
-  }
-}
-
-/**
- * Enviar mensaje de WhatsApp al asesor confirmando cita asignada
- */
-export async function sendWhatsAppConfirmationToAdvisor(
-  phoneNumber: string,
-  data: {
-    client_name: string;
-    appointment_date: string;
-    appointment_type: string;
-    property_title: string;
-    advisor_name: string;
-    client_phone: string;
-    client_email: string;
-  }
-): Promise<boolean> {
-  try {
-    console.log('📱 Enviando WhatsApp al asesor:', phoneNumber);
-
-    // Formatear fecha para Colombia
-    const appointmentDate = new Date(data.appointment_date);
-    const formattedDate = appointmentDate.toLocaleDateString('es-CO', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    // Crear mensaje de WhatsApp para el asesor
-    const message = `Hola ${data.advisor_name}! 👋
-
-Se ha confirmado una nueva cita a tu nombre:
-
-👤 *Cliente:* ${data.client_name}
-📧 *Email:* ${data.client_email}
-📱 *Teléfono:* ${data.client_phone}
-🏠 *Propiedad:* ${data.property_title}
-📅 *Fecha:* ${formattedDate}
-🏷️ *Tipo:* ${data.appointment_type}
-
-Por favor confirma tu disponibilidad.
-
-*Sistema de Citas - Inmobiliaria Coworking*`;
-
-    // Codificar mensaje para URL
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-
-    console.log('✅ WhatsApp URL generado para asesor:', whatsappUrl);
-
-    // En un entorno real, aquí se haría la llamada a la API de WhatsApp
-    console.log('📤 Simulando envío de WhatsApp al asesor');
-
-    // En producción, aquí iría la integración con Twilio, 360Dialog, etc.
-
-    return true;
-
-  } catch (error) {
-    console.error('❌ Error enviando WhatsApp al asesor:', error);
-    return false;
-  }
-}
-
