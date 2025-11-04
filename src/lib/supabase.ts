@@ -1680,7 +1680,6 @@ export function getPublicImageUrl(path: string) {
 // Función principal para obtener propiedades
 export async function getProperties(onlyAvailable: boolean = false): Promise<Property[]> {
   try {
-    console.log('🔍 getProperties called with onlyAvailable:', onlyAvailable);
     let query = supabase
       .from('properties')
       .select('*')
@@ -1705,17 +1704,8 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
     }
     
     if (!data || data.length === 0) {
-      console.log('⚠️ No se encontraron propiedades en la base de datos');
       return [];
     }
-
-    console.log('✅ Propiedades obtenidas de BD:', data.length, 'propiedades');
-    console.log('🔍 Distribución de status:', {
-      available: data.filter(p => p.status === 'available').length,
-      sale: data.filter(p => p.status === 'sale').length,
-      rent: data.filter(p => p.status === 'rent').length,
-      otros: data.filter(p => !['available', 'sale', 'rent'].includes(p.status)).length
-    });
     
     // Transformar datos de Supabase a formato de la aplicación
     const properties: Property[] = data.map(prop => {

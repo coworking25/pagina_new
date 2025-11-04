@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { usePersistedState } from '../hooks/usePersistedState';
@@ -349,20 +349,14 @@ function AdminProperties() {
   const [newCustomAmenity, setNewCustomAmenity] = useState('');
 
   useEffect(() => {
-    console.log('🔍 AdminProperties: useEffect ejecutándose');
-    try {
-      loadProperties();
-      loadAdvisors();
-    } catch (error) {
-      console.error('❌ Error en useEffect:', error);
-    }
+    loadProperties();
+    loadAdvisors();
   }, []);
 
-  // Aplicar filtros localmente cuando cambian los criterios de búsqueda
-  useEffect(() => {
-    if (allProperties.length === 0) return;
+  // Aplicar filtros usando useMemo para evitar re-renderizados innecesarios
+  const filteredProperties = useMemo(() => {
+    if (allProperties.length === 0) return [];
 
-    console.log('🔍 Aplicando filtros locales...');
     let filtered = [...allProperties];
 
     // Filtro por búsqueda
@@ -421,9 +415,13 @@ function AdminProperties() {
       }
     });
 
-    console.log(`✅ Propiedades filtradas: ${filtered.length} de ${allProperties.length} totales`);
-    setProperties(filtered);
-  }, [search, statusFilter, typeFilter, sortBy, sortOrder, allProperties, featuredFilter]);
+    return filtered;
+  }, [allProperties, search, statusFilter, typeFilter, sortBy, sortOrder, featuredFilter]);
+
+  // Sincronizar filteredProperties con properties state
+  useEffect(() => {
+    setProperties(filteredProperties);
+  }, [filteredProperties]);
 
   // Detectar si viene de una alerta y aplicar filtros automáticamente
   useEffect(() => {
@@ -439,10 +437,8 @@ function AdminProperties() {
 
   const loadAdvisors = async () => {
     try {
-      console.log('👨‍💼 Cargando asesores...');
       const advisorsData = await getAdvisors();
       setAdvisors(advisorsData);
-      console.log('✅ Asesores cargados:', advisorsData.length);
     } catch (error) {
       console.error('❌ Error cargando asesores:', error);
       setAdvisors([]);
@@ -450,17 +446,13 @@ function AdminProperties() {
   };
 
   const loadProperties = async () => {
-    console.log('🔄 AdminProperties: Cargando TODAS las propiedades (sin límite)');
     setIsLoading(true);
 
     try {
       // Cargar TODAS las propiedades sin límite de paginación
       const allPropsData = await getProperties(false); // false = traer todas, no solo disponibles
       
-      console.log(`✅ Total de propiedades cargadas: ${allPropsData.length}`);
-      
       setAllProperties(allPropsData);
-      setProperties(allPropsData);
 
       // Cargar inquilinos activos para estas propiedades
       try {
@@ -481,7 +473,6 @@ function AdminProperties() {
   };
 
   const refreshProperties = async () => {
-    console.log('🔄 AdminProperties: Refrescando TODAS las propiedades');
     await loadProperties();
   };
 
@@ -527,17 +518,19 @@ function AdminProperties() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+  const getStatusColor = (property: any) => {
+    // Si está vendido, arrendado, reservado, etc.
+    if (property.status === 'sold') return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    if (property.status === 'rented') return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+    if (property.status === 'reserved') return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+    if (property.status === 'maintenance') return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+    if (property.status === 'pending') return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+    
+    // Si está disponible, color según availability_type
+    switch (property.availability_type) {
       case 'sale': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'rent': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'both': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'sold': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
-      case 'rented': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'reserved': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'maintenance': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-      case 'pending': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
@@ -1712,7 +1705,7 @@ function AdminProperties() {
                 
                 {/* Status Badge */}
                 <div className="absolute top-4 left-4">
-                  <span className={`px-3 py-1 text-xs font-semibold rounded-full backdrop-blur-sm ${getStatusColor(property.status)}`}>
+                  <span className={`px-3 py-1 text-xs font-semibold rounded-full backdrop-blur-sm ${getStatusColor(property)}`}>
                     {(() => {
                       if (property.status === 'both') return 'En Venta y Arriendo';
                       if (property.status === 'available') {
@@ -2752,7 +2745,7 @@ function AdminProperties() {
 
                             {/* Badge de Estado */}
                             <div className="absolute top-4 left-4">
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(selectedProperty.status)}`}>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(selectedProperty)}`}>
                                 {(() => {
                                   if (selectedProperty.status === 'both') return 'En Venta y Arriendo';
                                   if (selectedProperty.status === 'available') {
