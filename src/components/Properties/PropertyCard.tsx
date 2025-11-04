@@ -162,17 +162,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     }).format(price);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+  // Función mejorada para obtener color del badge considerando availability_type
+  const getStatusColor = (property: Property): string => {
+    // Si está vendido, arrendado, reservado, etc.
+    if (property.status === 'sold') return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    if (property.status === 'rented') return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+    if (property.status === 'reserved') return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+    if (property.status === 'maintenance') return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+    if (property.status === 'pending') return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+    
+    // Si está disponible, color según availability_type
+    switch (property.availability_type) {
       case 'sale': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'rent': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'both': return 'bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-400';
-      case 'sold': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
-      case 'rented': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      case 'reserved': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'maintenance': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-      case 'pending': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
@@ -246,7 +249,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Status Badge */}
         <div className={`absolute bottom-3 left-3 ${publicImageUrls.length > 1 ? 'bottom-12' : 'bottom-3'}`}>
-          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(currentStatus)} ${isUpdatingStatus ? 'opacity-50' : ''}`}>
+          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(property)} ${isUpdatingStatus ? 'opacity-50' : ''}`}>
             {isUpdatingStatus ? 'Actualizando...' : getDisplayStatus(property)}
           </span>
         </div>

@@ -295,13 +295,6 @@ const Properties: React.FC = () => {
         });
       }
 
-      // Status filter
-      if (filters.status && filters.status.trim()) {
-        filtered = filtered.filter(property => 
-          property && property.status && property.status === filters.status
-        );
-      }
-
       // Price filters - validar que sean números válidos
       if (filters.minPrice && filters.minPrice.trim()) {
         const minPrice = parseFloat(filters.minPrice);

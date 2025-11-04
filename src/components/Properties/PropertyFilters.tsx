@@ -155,23 +155,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({
               </select>
             </div>
 
-            {/* Estado y Habitaciones */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Estado
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                className="w-full px-3 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="">Todos</option>
-                <option value="available">Disponible</option>
-                <option value="sale">En Venta</option>
-                <option value="rent">En Arriendo</option>
-              </select>
-            </div>
-
+            {/* Habitaciones */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Habitaciones
