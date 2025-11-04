@@ -1768,7 +1768,7 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
         bedrooms: prop.bedrooms,
         bathrooms: prop.bathrooms,
         area: prop.area,
-        estrato: prop.estrato,
+        estrato: prop.estrato, // 🏘️ Estrato socioeconómico (1-6)
         type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
         images: processedImages,
@@ -1786,6 +1786,7 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
       };
     });
     
+    console.log(`✅ ${properties.length} propiedades mapeadas correctamente con estrato`);
     return properties;
     
   } catch (error) {
@@ -1919,7 +1920,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
         bedrooms: prop.bedrooms,
         bathrooms: prop.bathrooms,
         area: prop.area,
-        estrato: prop.estrato,
+        estrato: prop.estrato, // 🏘️ Estrato socioeconómico (1-6) - CRÍTICO
         type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
         images: processedImages,

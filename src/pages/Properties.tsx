@@ -95,19 +95,30 @@ const Properties: React.FC = () => {
       console.log('🔍 Muestra de datos de la primera propiedad:', {
         id: data[0].id,
         title: data[0].title,
-        code: data[0].code, // ← VERIFICAR SI LLEGA EL CÓDIGO
+        code: data[0].code,
+        estrato: data[0].estrato, // ← VERIFICAR SI LLEGA EL ESTRATO
         images: data[0].images,
         price: data[0].price,
         type: data[0].type,
         status: data[0].status
       });
       
-      // Verificar códigos en todas las propiedades
+      // Verificar códigos y estratos en todas las propiedades
       const propertiesWithCode = data.filter(p => p.code).length;
+      const propertiesWithEstrato = data.filter(p => p.estrato).length;
+      
       console.log(`🏷️ Propiedades con código: ${propertiesWithCode}/${data.length}`);
+      console.log(`📊 Propiedades con estrato: ${propertiesWithEstrato}/${data.length}`);
+      
       if (propertiesWithCode < data.length) {
         console.warn('⚠️ Algunas propiedades NO tienen código:', 
           data.filter(p => !p.code).map(p => ({ id: p.id, title: p.title }))
+        );
+      }
+      
+      if (propertiesWithEstrato < data.length) {
+        console.warn('⚠️ Algunas propiedades NO tienen estrato:', 
+          data.filter(p => !p.estrato).map(p => ({ id: p.id, title: p.title, location: p.location }))
         );
       }
 

@@ -478,8 +478,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             <Square className="w-4 h-4" />
             <span>{property.area}m²</span>
           </div>
+          {/* 🏘️ ESTRATO: Mostrar estrato socioeconómico de la propiedad (1-6) */}
           {property.estrato && (
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 font-medium">
               <Hash className="w-4 h-4" />
               <span>Estrato {property.estrato}</span>
             </div>
