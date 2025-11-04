@@ -675,7 +675,7 @@ function AdminProperties() {
 
     setUploadingImages(true);
     try {
-  console.log(`📤 Subiendo ${files.length} nuevas imágenes para ${selectedProperty.code || ''}...`);
+      console.log(`📤 Subiendo ${files.length} nuevas imágenes para ${selectedProperty.code || ''}...`);
 
       const uploadedUrls = await bulkUploadPropertyImages(
         Array.from(files),
@@ -686,14 +686,27 @@ function AdminProperties() {
         useWatermark // Pasar el estado de marca de agua
       );
 
+      console.log(`✅ URLs subidas:`, uploadedUrls);
+
       // Crear nuevo array de imágenes combinando las existentes con las nuevas
       const newImages = [...selectedProperty.images, ...uploadedUrls];
+      console.log(`📷 Total de imágenes después de agregar: ${newImages.length}`);
 
       // Actualizar la propiedad usando updateProperty
       await updateProperty(selectedProperty.id, { images: newImages });
 
-      // Refrescar datos desde el servidor
+      // Refrescar la lista completa de propiedades desde el servidor
       await refreshProperties();
+
+      // Obtener la propiedad actualizada completa
+      const allProperties = await getProperties(false);
+      const updatedProperty = allProperties.find(p => p.id === selectedProperty.id);
+      
+      if (updatedProperty) {
+        console.log(`✅ Propiedad actualizada obtenida: ${updatedProperty.images.length} imágenes`);
+        setSelectedProperty(updatedProperty);
+        setPreviewImages(updatedProperty.images);
+      }
 
       console.log(`✅ ${uploadedUrls.length} imágenes agregadas exitosamente`);
       showNotification(`${uploadedUrls.length} imágenes agregadas exitosamente`, 'success');
@@ -702,6 +715,8 @@ function AdminProperties() {
       showNotification('Error al subir las imágenes', 'error');
     } finally {
       setUploadingImages(false);
+      // Resetear el input para permitir subir los mismos archivos de nuevo si es necesario
+      event.target.value = '';
     }
   };
 
