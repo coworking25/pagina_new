@@ -26,6 +26,7 @@ export interface Property {
   bathrooms: number;
   area: number;
   location?: string;
+  estrato?: number; // Estrato socioeconómico (1-6)
   type: 'apartment' | 'apartaestudio' | 'house' | 'office' | 'commercial';
   // Estados posibles: incluimos tanto los legacy ('sale','rent') como los canónicos
   status: 'sale' | 'rent' | 'both' | 'sold' | 'rented' | 'available' | 'reserved' | 'maintenance' | 'pending';

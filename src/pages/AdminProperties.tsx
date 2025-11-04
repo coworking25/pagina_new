@@ -83,7 +83,9 @@ import {
   Square as CheckboxIcon,
   Minus
 } from 'lucide-react';
-import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, bulkUploadPropertyImages, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties, bulkUploadPropertyVideos, deletePropertyVideo } from '../lib/supabase';
+import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties } from '../lib/supabase';
+import { bulkUploadPropertyImages } from '../lib/supabase-images';
+import { bulkUploadPropertyVideos, deletePropertyVideo } from '../lib/supabase-videos';
 import { Property, Advisor, PropertyVideo } from '../types';
 import Modal from '../components/UI/Modal';
 import FloatingCard from '../components/UI/FloatingCard';
@@ -93,7 +95,6 @@ import { CoverImageSelector } from '../components/CoverImageSelector';
 import VideoPlayer from '../components/VideoPlayer';
 import { useMultiSelect } from '../hooks/useMultiSelect';
 import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
-import CSVImportModal from '../components/Modals/CSVImportModal';
 
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
@@ -171,12 +172,6 @@ function AdminProperties() {
     expirationTime: 30 * 60 * 1000
   });
   
-  const { state: showCSVImportModal, setState: setShowCSVImportModal } = usePersistedState({
-    key: 'admin-properties-show-csv-import-modal',
-    initialValue: false,
-    expirationTime: 30 * 60 * 1000
-  });
-  
   // Estados para formularios con persistencia en localStorage
   const initialFormData = {
     code: '',
@@ -189,6 +184,7 @@ function AdminProperties() {
     bedrooms: '',
     bathrooms: '',
     area: '',
+    estrato: '', // Estrato socioeconómico
     type: 'house',
     status: 'available',
     advisor_id: '',
@@ -980,6 +976,7 @@ function AdminProperties() {
       bedrooms: property.bedrooms?.toString() || '',
       bathrooms: property.bathrooms?.toString() || '',
       area: property.area?.toString() || '',
+      estrato: property.estrato?.toString() || '',
       type: property.type || 'house',
       status: property.status || 'available',
       advisor_id: property.advisor_id || '',
@@ -1079,6 +1076,7 @@ function AdminProperties() {
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
+        estrato: formData.estrato ? Number(formData.estrato) : undefined,
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
@@ -1141,11 +1139,12 @@ function AdminProperties() {
         description: formData.description,
         sale_price: formData.availability_type === 'sale' || formData.availability_type === 'both' ? Number(formData.sale_price) : null,
         rent_price: formData.availability_type === 'rent' || formData.availability_type === 'both' ? Number(formData.rent_price) : null,
-        availability_type: formData.availability_type,
+        availability_type: formData.availability_type as 'sale' | 'rent' | 'both',
         location: formData.location,
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
+        estrato: formData.estrato ? Number(formData.estrato) : undefined,
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
@@ -1375,15 +1374,6 @@ function AdminProperties() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCSVImportModal(true)}
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 shadow-lg hover:shadow-xl"
-          >
-            <Upload className="w-5 h-5 mr-2" />
-            Importar CSV
-          </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -2093,7 +2083,7 @@ function AdminProperties() {
               <Square className="w-5 h-5 mr-2 text-green-600" />
               Características
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
               {/* Habitaciones */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -2144,6 +2134,27 @@ function AdminProperties() {
                   min="0"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
                 />
+              </div>
+
+              {/* Estrato */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  🏘️ Estrato
+                </label>
+                <select
+                  name="estrato"
+                  value={formData.estrato}
+                  onChange={handleFormChange}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="1">1 - Bajo-Bajo</option>
+                  <option value="2">2 - Bajo</option>
+                  <option value="3">3 - Medio-Bajo</option>
+                  <option value="4">4 - Medio</option>
+                  <option value="5">5 - Medio-Alto</option>
+                  <option value="6">6 - Alto</option>
+                </select>
               </div>
 
               {/* Tipo */}
@@ -3782,16 +3793,6 @@ function AdminProperties() {
           property={selectedProperty}
         />
       )}
-
-      {/* Modal para Importar CSV */}
-      <CSVImportModal
-        isOpen={showCSVImportModal}
-        onClose={() => setShowCSVImportModal(false)}
-        onSuccess={() => {
-          refreshProperties();
-          setShowCSVImportModal(false);
-        }}
-      />
 
       {/* Barra de Acciones Masivas */}
       <BulkActionBar
