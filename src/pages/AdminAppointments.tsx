@@ -72,7 +72,7 @@ function AdminAppointments() {
   } = usePagination<PropertyAppointment>({
     initialPage: 1,
     initialLimit: 15,
-    initialSortBy: 'appointment_date',
+    initialSortBy: 'start_time', // 🔥 Cambiado de 'appointment_date' a 'start_time' para tabla appointments
     initialSortOrder: 'desc'
   });
 

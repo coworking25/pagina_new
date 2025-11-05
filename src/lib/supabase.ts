@@ -135,10 +135,10 @@ export async function getPropertyAppointmentsPaginated(
   try {
     console.log('🔍 getPropertyAppointmentsPaginated called:', { options, filters });
 
+    // 🔥 CAMBIO: Cargar desde 'appointments' en lugar de 'property_appointments'
     let query = supabase
-      .from('property_appointments')
-      .select('*')
-      .is('deleted_at', null);
+      .from('appointments')
+      .select('*');
 
     // Aplicar filtros
     if (filters?.status) {
@@ -148,18 +148,43 @@ export async function getPropertyAppointmentsPaginated(
       query = query.eq('advisor_id', filters.advisor_id);
     }
     if (filters?.date_from) {
-      query = query.gte('appointment_date', filters.date_from);
+      query = query.gte('start_time', filters.date_from);
     }
     if (filters?.date_to) {
-      query = query.lte('appointment_date', filters.date_to);
+      query = query.lte('start_time', filters.date_to);
     }
 
     // Aplicar búsqueda si existe
     if (options.search) {
-      query = query.or(`client_name.ilike.%${options.search}%,client_email.ilike.%${options.search}%`);
+      query = query.or(`contact_name.ilike.%${options.search}%,contact_email.ilike.%${options.search}%`);
     }
 
-    return await paginateQuery<PropertyAppointment>(query, options);
+    // 🔥 Convertir el resultado de appointments al formato PropertyAppointment
+    const result = await paginateQuery<any>(query, options);
+    
+    // Mapear campos de appointments a PropertyAppointment
+    const mappedData = result.data.map((appointment: any) => ({
+      id: appointment.id,
+      client_name: appointment.contact_name,
+      client_email: appointment.contact_email,
+      client_phone: appointment.contact_phone,
+      appointment_date: appointment.start_time,
+      appointment_type: appointment.appointment_type || 'visita',
+      visit_type: 'presencial',
+      attendees: 1,
+      special_requests: appointment.notes,
+      status: appointment.status,
+      property_id: appointment.property_id,
+      advisor_id: appointment.advisor_id,
+      created_at: appointment.created_at,
+      updated_at: appointment.updated_at,
+      deleted_at: null
+    }));
+
+    return {
+      ...result,
+      data: mappedData
+    };
   } catch (error) {
     console.error('❌ Error en getPropertyAppointmentsPaginated:', error);
     throw error;
