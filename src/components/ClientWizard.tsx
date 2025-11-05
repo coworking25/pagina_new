@@ -286,40 +286,6 @@ export default function ClientWizard({
     }
   }, [formData, currentStep, isOpen]);
 
-  // Guardar valores comunes para autocompletado
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const saveCommonValue = (key: string, value: string) => {
-    try {
-      const commonValues = JSON.parse(localStorage.getItem(COMMON_VALUES_KEY) || '{}');
-      
-      // Guardar los últimos 5 valores usados por campo
-      if (!commonValues[key]) {
-        commonValues[key] = [];
-      }
-      
-      // Agregar el valor si no existe ya
-      if (!commonValues[key].includes(value) && value.trim()) {
-        commonValues[key].unshift(value);
-        // Mantener solo los últimos 5
-        commonValues[key] = commonValues[key].slice(0, 5);
-        localStorage.setItem(COMMON_VALUES_KEY, JSON.stringify(commonValues));
-      }
-    } catch (error) {
-      console.error('Error guardando valor común:', error);
-    }
-  };
-
-  // Obtener valores comunes guardados
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const getCommonValues = (key: string): string[] => {
-    try {
-      const commonValues = JSON.parse(localStorage.getItem(COMMON_VALUES_KEY) || '{}');
-      return commonValues[key] || [];
-    } catch {
-      return [];
-    }
-  };
-
   // Limpiar borrador después de envío exitoso
   const clearDraft = () => {
     try {
@@ -594,23 +560,6 @@ export default function ClientWizard({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Generar contraseña automática
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setFormData(prev => ({
-      ...prev,
-      portal_credentials: {
-        ...prev.portal_credentials,
-        password
-      }
-    }));
   };
 
   // Actualizar datos del formulario
