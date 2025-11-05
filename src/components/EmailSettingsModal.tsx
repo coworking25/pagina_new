@@ -72,7 +72,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
 
       // Limpiar el mensaje después de 3 segundos
       setTimeout(() => setSaveResult(null), 3000);
-    } catch (error) {
+    } catch {
       setSaveResult({
         success: false,
         message: 'Error interno al guardar la configuración'
@@ -94,7 +94,7 @@ export const EmailSettingsModal: React.FC<EmailSettingsModalProps> = ({
         success: result.success,
         message: result.message
       });
-    } catch (error) {
+    } catch {
       setTestResult({
         success: false,
         message: 'Error al probar la configuración'

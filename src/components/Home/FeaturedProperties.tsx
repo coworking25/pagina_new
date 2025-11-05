@@ -152,7 +152,7 @@ const FeaturedProperties: React.FC = () => {
           // 🎯 PASO 2: Crear mensaje personalizado para WhatsApp
           const message = `Hola, estoy interesado en la propiedad *${property.title}* (${property.code || `ID: ${property.id}`}) ubicada en ${property.location || 'ubicación no especificada'}. ¿Podrías darme más información?`;
           const encodedMessage = encodeURIComponent(message);
-          const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+          const cleanPhone = advisor.whatsapp.replace(/[\s\-+]/g, '');
           const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
           console.log('📱 Abriendo WhatsApp en nueva ventana/app');

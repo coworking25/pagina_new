@@ -287,6 +287,7 @@ export default function ClientWizard({
   }, [formData, currentStep, isOpen]);
 
   // Guardar valores comunes para autocompletado
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const saveCommonValue = (key: string, value: string) => {
     try {
       const commonValues = JSON.parse(localStorage.getItem(COMMON_VALUES_KEY) || '{}');
@@ -309,11 +310,12 @@ export default function ClientWizard({
   };
 
   // Obtener valores comunes guardados
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getCommonValues = (key: string): string[] => {
     try {
       const commonValues = JSON.parse(localStorage.getItem(COMMON_VALUES_KEY) || '{}');
       return commonValues[key] || [];
-    } catch (error) {
+    } catch {
       return [];
     }
   };
@@ -473,7 +475,7 @@ export default function ClientWizard({
         }
         break;
         
-      case 2: // Información Financiera
+      case 2: { // Información Financiera
         // Validar conceptos de pago habilitados
         const { concepts } = formData.payment_config;
         if (concepts.arriendo.enabled && !concepts.arriendo.amount) {
@@ -489,8 +491,9 @@ export default function ClientWizard({
           errors.push('Debes especificar el monto de otros conceptos');
         }
         break;
+      }
         
-      case 3: // Documentos y Contratos
+      case 3: { // Documentos y Contratos
         if (formData.contract_info.start_date && formData.contract_info.end_date) {
           const start = new Date(formData.contract_info.start_date);
           const end = new Date(formData.contract_info.end_date);
@@ -503,8 +506,9 @@ export default function ClientWizard({
           if (!formData.contract_info.guarantor_document) errors.push('El documento del fiador es requerido');
         }
         break;
+      }
         
-      case 4: // Portal
+      case 4: { // Portal
         const email = formData.portal_credentials.email || formData.email;
         if (!email) {
           errors.push('El email es requerido para crear las credenciales');
@@ -517,6 +521,7 @@ export default function ClientWizard({
           errors.push('La contraseña debe tener al menos 8 caracteres');
         }
         break;
+      }
         
       case 5: // Propiedades
         // No hay validaciones obligatorias, las propiedades son opcionales
@@ -592,6 +597,7 @@ export default function ClientWizard({
   };
 
   // Generar contraseña automática
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const generatePassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*';
     let password = '';
