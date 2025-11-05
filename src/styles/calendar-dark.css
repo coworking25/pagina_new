@@ -1,0 +1,603 @@
+/* ========================================
+   CALENDARIO MODO OSCURO - DISEÑO SOFISTICADO
+   ======================================== */
+
+/* ===== Estilos Base del Calendario ===== */
+.dark .rbc-calendar {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
+
+/* ===== Header del Calendario ===== */
+.dark .rbc-header {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-color: #475569;
+  color: #e2e8f0;
+  font-weight: 700;
+  padding: 16px 8px;
+  text-transform: uppercase;
+  font-size: 0.813rem;
+  letter-spacing: 0.1em;
+  border-bottom: 2px solid #3b82f6;
+  text-align: center;
+}
+
+.dark .rbc-header + .rbc-header {
+  border-left-color: #475569;
+}
+
+/* ===== Toolbar (Navegación) ===== */
+.dark .rbc-toolbar {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  padding: 20px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.dark .rbc-toolbar button {
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+  color: #e2e8f0;
+  border: 1px solid #475569;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+}
+
+.dark .rbc-toolbar button:hover {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  border-color: #64748b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.dark .rbc-toolbar button:active,
+.dark .rbc-toolbar button.rbc-active {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+.dark .rbc-toolbar button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.dark .rbc-toolbar-label {
+  color: #f1f5f9;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== Mes View ===== */
+.dark .rbc-month-view {
+  background-color: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 12px;
+  overflow: auto;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+.dark .rbc-month-row {
+  border-color: #334155;
+  min-height: 100px;
+  overflow: visible;
+}
+
+.dark .rbc-row-content {
+  min-height: 80px;
+  overflow: visible;
+  padding-top: 6px;
+}
+
+/* ===== Celdas de Días ===== */
+.dark .rbc-day-bg {
+  background-color: #1e293b;
+  border-color: #334155;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 100px;
+}
+
+.dark .rbc-day-bg:hover {
+  background-color: #334155;
+  box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.15);
+}
+
+.dark .rbc-off-range-bg {
+  background-color: #0f172a;
+  opacity: 0.5;
+}
+
+.dark .rbc-today {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%);
+  border: 2px solid #3b82f6 !important;
+  box-shadow: inset 0 0 30px rgba(59, 130, 246, 0.3);
+}
+
+/* Alineación correcta del contenedor de eventos */
+.dark .rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid #334155;
+}
+
+/* ===== Número de Día ===== */
+.dark .rbc-date-cell {
+  padding: 12px 8px 8px 8px;
+  color: #cbd5e1;
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.dark .rbc-date-cell > a {
+  color: #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.dark .rbc-date-cell > a:hover {
+  color: #3b82f6;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.dark .rbc-off-range .rbc-date-cell {
+  color: #475569;
+}
+
+.dark .rbc-now .rbc-date-cell > a {
+  color: #60a5fa;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+}
+
+/* ===== Eventos ===== */
+.dark .rbc-event {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.813rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 12px rgba(59, 130, 246, 0.4);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: 24px;
+  overflow: visible !important;
+  margin: 2px 0px;
+  line-height: 1.3;
+}
+
+.dark .rbc-event:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 130, 246, 0.6);
+  z-index: 10;
+  overflow: visible !important;
+}
+
+.dark .rbc-event.rbc-selected {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 0 0 3px #60a5fa, 0 0 24px rgba(96, 165, 250, 0.7);
+}
+
+.dark .rbc-event-label {
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dark .rbc-event-content {
+  color: #ffffff;
+  line-height: 1.3;
+  overflow: visible !important;
+}
+
+/* Mejorar visualización de contenido en eventos */
+.dark .event-content-wrapper {
+  min-height: 22px;
+  max-height: none !important;
+}
+
+/* ===== CORRECCIÓN: permitir posicionamiento nativo de react-big-calendar ===== */
+/* Asegurar que cada fila del mes actúe como contenedor para segmentos posicionados */
+.dark .rbc-month-row .rbc-row,
+.dark .rbc-month-row .rbc-row-content {
+  position: relative !important;
+  overflow: visible !important;
+  min-height: 80px;
+}
+
+/* Los segmentos que el JS posiciona deben ser absolute (react-big-calendar aplica left/width inline) */
+.dark .rbc-row-segment {
+  position: absolute !important;
+  top: 2px !important;
+  left: auto !important;
+  right: auto !important;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  overflow: visible !important;
+  z-index: 4 !important;
+  /* dejar que el inline-style que aplica el calendario controle left/width */
+}
+
+/* El evento dentro del segmento se mantiene relativo y ocupa 100% del segmento */
+.dark .rbc-row-segment > .rbc-event {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  left: 0 !important;
+  transform: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 1 !important;
+}
+
+/* Asegurar que los eventos respondan a hover y clicks */
+.dark .rbc-row-segment > .rbc-event:hover {
+  z-index: 10 !important;
+}
+
+/* Mejorar altura de celdas para eventos */
+.dark .rbc-month-row {
+  min-height: 80px;
+  overflow: visible !important;
+}
+
+.dark .rbc-row-content {
+  min-height: 60px;
+  overflow: visible !important;
+  position: relative;
+}
+
+.dark .rbc-row {
+  overflow: visible !important;
+}
+
+/* Asegurar que los eventos se expanden correctamente */
+.dark .rbc-row-bg {
+  overflow: visible !important;
+}
+
+.dark .rbc-events-container {
+  margin: 0 !important;
+  padding: 0px 4px !important;
+  width: 100% !important;
+}
+
+.dark .rbc-addons-dnd-row-body {
+  overflow: visible !important;
+}
+
+.dark .rbc-day-slot .rbc-events-container {
+  overflow: visible !important;
+}
+
+/* Alineación perfecta de eventos con celdas */
+.dark .rbc-row-content-scroll-container {
+  overflow: visible !important;
+}
+
+.dark .rbc-month-row .rbc-row-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+/* ===== Colores de Eventos por Tipo ===== */
+.dark .rbc-event.event-viewing {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.dark .rbc-event.event-viewing:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+.dark .rbc-event.event-consultation {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.dark .rbc-event.event-consultation:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.dark .rbc-event.event-valuation {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(168, 85, 247, 0.3);
+}
+
+.dark .rbc-event.event-valuation:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(168, 85, 247, 0.5);
+}
+
+.dark .rbc-event.event-follow_up {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.dark .rbc-event.event-follow_up:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.5);
+}
+
+.dark .rbc-event.event-meeting {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(107, 114, 128, 0.3);
+}
+
+.dark .rbc-event.event-meeting:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), 0 0 20px rgba(107, 114, 128, 0.5);
+}
+
+.dark .rbc-event.event-cancelled {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(239, 68, 68, 0.3);
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.dark .rbc-event.event-completed {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(34, 197, 94, 0.3);
+}
+
+/* ===== Indicador de "Más Eventos" ===== */
+.dark .rbc-show-more {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin: 2px;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.dark .rbc-show-more:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 0 15px rgba(59, 130, 246, 0.4);
+}
+
+/* ===== Vista de Semana/Día ===== */
+.dark .rbc-time-view {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dark .rbc-time-header {
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+  border-color: #334155;
+}
+
+.dark .rbc-time-content {
+  border-color: #334155;
+}
+
+.dark .rbc-timeslot-group {
+  border-color: #334155;
+}
+
+.dark .rbc-time-slot {
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.dark .rbc-time-header-content {
+  border-color: #334155;
+}
+
+.dark .rbc-current-time-indicator {
+  background-color: #3b82f6;
+  height: 2px;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+}
+
+.dark .rbc-current-time-indicator::before {
+  background-color: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+}
+
+.dark .rbc-day-slot .rbc-time-slot {
+  border-top-color: #334155;
+}
+
+.dark .rbc-label {
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+/* ===== Vista Agenda ===== */
+.dark .rbc-agenda-view {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dark .rbc-agenda-view table {
+  border-color: #334155;
+}
+
+.dark .rbc-agenda-date-cell,
+.dark .rbc-agenda-time-cell {
+  background-color: #334155;
+  color: #e2e8f0;
+  font-weight: 600;
+  padding: 12px;
+}
+
+.dark .rbc-agenda-event-cell {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.dark .rbc-agenda-event-cell:hover {
+  background-color: #334155;
+  box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.1);
+}
+
+.dark .rbc-agenda-table tbody > tr > td {
+  border-color: #334155;
+}
+
+.dark .rbc-agenda-table tbody > tr:hover {
+  background-color: #334155;
+}
+
+/* ===== Overlay (Popup de Eventos) ===== */
+.dark .rbc-overlay {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #475569;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  padding: 12px;
+}
+
+.dark .rbc-overlay-header {
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+  border-bottom: 2px solid #3b82f6;
+  color: #f1f5f9;
+  padding: 12px;
+  border-radius: 8px 8px 0 0;
+  font-weight: 700;
+  margin: -12px -12px 12px;
+}
+
+/* ===== Selección de Slot ===== */
+.dark .rbc-slot-selection {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(37, 99, 235, 0.2) 100%);
+  border: 2px solid #3b82f6;
+  box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+/* ===== Línea de Selección ===== */
+.dark .rbc-addons-dnd .rbc-addons-dnd-resizable {
+  border-color: #3b82f6;
+}
+
+/* ===== Estados de Hover y Focus ===== */
+.dark .rbc-row-segment:hover {
+  z-index: 10;
+}
+
+/* ===== Leyenda del Calendario ===== */
+.dark .calendar-legend {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+.dark .calendar-legend h4 {
+  color: #f1f5f9;
+  font-weight: 700;
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dark .calendar-legend .legend-item {
+  color: #cbd5e1;
+  font-size: 0.813rem;
+  transition: all 0.2s ease;
+}
+
+.dark .calendar-legend .legend-item:hover {
+  color: #f1f5f9;
+  transform: translateX(4px);
+}
+
+.dark .calendar-legend .legend-dot {
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+/* ===== Scrollbar del Calendario ===== */
+.dark .rbc-time-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark .rbc-time-content::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 4px;
+}
+
+.dark .rbc-time-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  border-radius: 4px;
+  border: 2px solid #0f172a;
+}
+
+.dark .rbc-time-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+
+/* ===== Animaciones ===== */
+@keyframes calendar-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dark .rbc-calendar {
+  animation: calendar-fade-in 0.3s ease-out;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+  .dark .rbc-toolbar {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dark .rbc-toolbar-label {
+    font-size: 1rem;
+    margin: 8px 0;
+  }
+
+  .dark .rbc-header {
+    padding: 8px 4px;
+    font-size: 0.688rem;
+  }
+
+  .dark .rbc-event {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+  }
+}
+
+/* ===== Mejoras de Accesibilidad ===== */
+.dark .rbc-event:focus,
+.dark .rbc-day-bg:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  z-index: 20;
+}
+
+.dark .rbc-toolbar button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}

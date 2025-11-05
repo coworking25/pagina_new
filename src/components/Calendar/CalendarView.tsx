@@ -240,38 +240,56 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return (
       <Card className="p-6">
         <div className="flex items-center justify-center" style={{ height }}>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Cargando calendario...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 dark:border-green-400"></div>
+          <span className="ml-2 text-gray-600 dark:text-gray-300">Cargando calendario...</span>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className="p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">
-          📅 Calendario de Citas
-        </h2>
+    <Card className="p-4 bg-white dark:bg-gray-800 shadow-lg">
+      {/* Header del Calendario */}
+      <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-lg flex items-center justify-center shadow-md">
+            <span className="text-2xl">📅</span>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Calendario de Citas
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {appointments.length} cita{appointments.length !== 1 ? 's' : ''} cargada{appointments.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+        
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setCurrentDate(new Date())}
+            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            Hoy
+            📍 Hoy
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={loadAppointments}
+            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
-            Actualizar
+            🔄 Actualizar
           </Button>
         </div>
       </div>
 
-      <div style={{ height }}>
+      {/* Calendario */}
+      <div 
+        style={{ height }}
+        className="calendar-container bg-white dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm"
+      >
         <Calendar
           localizer={localizer}
           events={events}
@@ -298,41 +316,58 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         />
       </div>
 
-      {/* Leyenda de colores */}
-      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">Leyenda:</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span>Visita</span>
+      {/* Leyenda de colores mejorada */}
+      <div className="mt-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <span className="text-lg">🎨</span>
+          Leyenda de Tipos y Estados
+        </h4>
+        
+        <div className="space-y-3">
+          {/* Tipos de Cita */}
+          <div>
+            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Tipos de Cita:</p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+              <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <div className="w-4 h-4 bg-green-500 dark:bg-green-600 rounded shadow-sm"></div>
+                <span className="text-gray-700 dark:text-gray-300">Visita</span>
+              </div>
+              <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <div className="w-4 h-4 bg-blue-500 dark:bg-blue-600 rounded shadow-sm"></div>
+                <span className="text-gray-700 dark:text-gray-300">Consulta</span>
+              </div>
+              <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <div className="w-4 h-4 bg-purple-500 dark:bg-purple-600 rounded shadow-sm"></div>
+                <span className="text-gray-700 dark:text-gray-300">Avalúo</span>
+              </div>
+              <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <div className="w-4 h-4 bg-orange-500 dark:bg-orange-600 rounded shadow-sm"></div>
+                <span className="text-gray-700 dark:text-gray-300">Seguimiento</span>
+              </div>
+              <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <div className="w-4 h-4 bg-gray-500 dark:bg-gray-600 rounded shadow-sm"></div>
+                <span className="text-gray-700 dark:text-gray-300">Reunión</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded"></div>
-            <span>Consulta</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-purple-500 rounded"></div>
-            <span>Avalúo</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-orange-500 rounded"></div>
-            <span>Seguimiento</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-500 rounded"></div>
-            <span>Reunión</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span>Cancelada</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 border-2 border-dashed border-yellow-500 rounded"></div>
-            <span>🌐 Desde Web</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 border-2 border-solid border-blue-500 rounded"></div>
-            <span>Calendario</span>
+
+          {/* Estados */}
+          <div>
+            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Estados Especiales:</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+              <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <div className="w-4 h-4 bg-red-500 dark:bg-red-600 rounded shadow-sm"></div>
+                <span className="text-gray-700 dark:text-gray-300">Cancelada</span>
+              </div>
+              <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <div className="w-4 h-4 bg-green-600 dark:bg-green-700 rounded shadow-sm"></div>
+                <span className="text-gray-700 dark:text-gray-300">Completada</span>
+              </div>
+              <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                <div className="w-4 h-4 border-2 border-dashed border-yellow-500 dark:border-yellow-400 rounded"></div>
+                <span className="text-gray-700 dark:text-gray-300">🌐 Desde Web</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
