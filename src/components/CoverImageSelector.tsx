@@ -3,14 +3,12 @@ import { CheckCircle, Star } from 'lucide-react';
 
 interface CoverImageSelectorProps {
   images: string[];
-  currentCoverImage?: string;
   onSelectCover: (imageUrl: string) => void;
   propertyCode?: string;
 }
 
 export const CoverImageSelector = ({ 
   images, 
-  currentCoverImage, 
   onSelectCover,
   propertyCode 
 }: CoverImageSelectorProps) => {

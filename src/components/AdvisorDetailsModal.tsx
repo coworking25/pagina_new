@@ -45,7 +45,7 @@ function AdvisorDetailsModal({ advisor, isOpen, onClose }: AdvisorDetailsModalPr
     const message = encodeURIComponent(
       `¡Hola ${advisor.name}! Me interesa obtener información sobre propiedades. ¿Podrías ayudarme?`
     );
-    const cleanPhone = advisor.whatsapp.replace(/[\s\-\+]/g, '');
+    const cleanPhone = advisor.whatsapp.replace(/[\s\-+]/g, '');
     const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
     
     // 🎯 iOS/Safari compatible

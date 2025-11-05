@@ -1,7 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-// @ts-ignore
-import GradientText from '../../../@/components/GradientText';
 import AdvancedSearch from './AdvancedSearch';
 import FeaturedPropertiesSlider from './FeaturedPropertiesSlider';
 
