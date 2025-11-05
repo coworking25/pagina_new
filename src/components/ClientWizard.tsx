@@ -286,38 +286,6 @@ export default function ClientWizard({
     }
   }, [formData, currentStep, isOpen]);
 
-  // Guardar valores comunes para autocompletado
-  const saveCommonValue = (key: string, value: string) => {
-    try {
-      const commonValues = JSON.parse(localStorage.getItem(COMMON_VALUES_KEY) || '{}');
-      
-      // Guardar los últimos 5 valores usados por campo
-      if (!commonValues[key]) {
-        commonValues[key] = [];
-      }
-      
-      // Agregar el valor si no existe ya
-      if (!commonValues[key].includes(value) && value.trim()) {
-        commonValues[key].unshift(value);
-        // Mantener solo los últimos 5
-        commonValues[key] = commonValues[key].slice(0, 5);
-        localStorage.setItem(COMMON_VALUES_KEY, JSON.stringify(commonValues));
-      }
-    } catch (error) {
-      console.error('Error guardando valor común:', error);
-    }
-  };
-
-  // Obtener valores comunes guardados
-  const getCommonValues = (key: string): string[] => {
-    try {
-      const commonValues = JSON.parse(localStorage.getItem(COMMON_VALUES_KEY) || '{}');
-      return commonValues[key] || [];
-    } catch (error) {
-      return [];
-    }
-  };
-
   // Limpiar borrador después de envío exitoso
   const clearDraft = () => {
     try {
@@ -473,7 +441,7 @@ export default function ClientWizard({
         }
         break;
         
-      case 2: // Información Financiera
+      case 2: { // Información Financiera
         // Validar conceptos de pago habilitados
         const { concepts } = formData.payment_config;
         if (concepts.arriendo.enabled && !concepts.arriendo.amount) {
@@ -489,8 +457,9 @@ export default function ClientWizard({
           errors.push('Debes especificar el monto de otros conceptos');
         }
         break;
+      }
         
-      case 3: // Documentos y Contratos
+      case 3: { // Documentos y Contratos
         if (formData.contract_info.start_date && formData.contract_info.end_date) {
           const start = new Date(formData.contract_info.start_date);
           const end = new Date(formData.contract_info.end_date);
@@ -503,8 +472,9 @@ export default function ClientWizard({
           if (!formData.contract_info.guarantor_document) errors.push('El documento del fiador es requerido');
         }
         break;
+      }
         
-      case 4: // Portal
+      case 4: { // Portal
         const email = formData.portal_credentials.email || formData.email;
         if (!email) {
           errors.push('El email es requerido para crear las credenciales');
@@ -517,6 +487,7 @@ export default function ClientWizard({
           errors.push('La contraseña debe tener al menos 8 caracteres');
         }
         break;
+      }
         
       case 5: // Propiedades
         // No hay validaciones obligatorias, las propiedades son opcionales
@@ -589,22 +560,6 @@ export default function ClientWizard({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Generar contraseña automática
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setFormData(prev => ({
-      ...prev,
-      portal_credentials: {
-        ...prev.portal_credentials,
-        password
-      }
-    }));
   };
 
   // Actualizar datos del formulario
