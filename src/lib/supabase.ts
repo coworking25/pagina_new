@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Property, Advisor, PropertyAppointment } from '../types';
 import * as XLSX from 'xlsx';
+import { syncPropertyToAppointments, deleteSyncedAppointment } from './appointmentSync';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -261,7 +262,18 @@ export async function savePropertyAppointmentSimple(appointmentData: {
       throw error;
     }
     
-    return data[0];
+    const savedAppointment = data[0];
+    
+    // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Guardar también en tabla appointments
+    try {
+      console.log('🔄 Sincronizando cita web a appointments...');
+      await syncPropertyToAppointments(savedAppointment);
+    } catch (syncError) {
+      console.warn('⚠️ Error en sincronización (no crítico):', syncError);
+      // No lanzamos error para no interrumpir el flujo principal
+    }
+    
+    return savedAppointment;
   } catch (error) {
     console.error('❌ Error en savePropertyAppointmentSimple:', error);
     
@@ -1236,20 +1248,17 @@ export async function updateAppointment(appointmentId: string, appointmentData: 
   }
 }
 
-// Eliminar una cita (soft delete)
+// Eliminar una cita con sincronización automática (soft delete)
 export async function deleteAppointment(appointmentId: string): Promise<void> {
   try {
-    const { error } = await supabase
-      .from('property_appointments')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', appointmentId);
-
-    if (error) {
-      console.error('❌ Error eliminando cita:', error);
-      throw error;
+    // 🗑️ ELIMINACIÓN SINCRONIZADA: Eliminar de ambas tablas
+    const success = await deleteSyncedAppointment(appointmentId, 'property_appointments');
+    
+    if (!success) {
+      throw new Error('Error en eliminación sincronizada');
     }
 
-    console.log('✅ Cita eliminada exitosamente (soft delete)');
+    console.log('✅ Cita eliminada exitosamente de ambas tablas (soft delete)');
   } catch (error) {
     console.error('❌ Error en deleteAppointment:', error);
     throw error;

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { GoogleCalendarService } from '../services/googleCalendarService';
+import { syncAppointmentToProperty, deleteSyncedAppointment } from './appointmentSync';
 
 export interface Appointment {
   id: string;
@@ -135,14 +136,11 @@ export class CalendarService {
    */
   public async getAppointments(filters?: AppointmentFilters): Promise<Appointment[]> {
     try {
+      // 🔧 Consulta simple sin joins para evitar error 406
       let query = supabase
         .from('appointments')
-        .select(`
-          *,
-          client:clients(full_name, email, phone),
-          advisor:advisors(name, email, phone),
-          property:properties(title, code, location)
-        `)
+        .select('*')
+        .is('deleted_at', null) // ✅ Filtrar citas eliminadas
         .order('start_time', { ascending: true });
 
       if (filters) {
@@ -188,15 +186,12 @@ export class CalendarService {
    */
   public async getAppointmentById(id: string): Promise<Appointment | null> {
     try {
+      // 🔧 Consulta simple sin joins para evitar error 406
       const { data, error } = await supabase
         .from('appointments')
-        .select(`
-          *,
-          client:clients(full_name, email, phone),
-          advisor:advisors(name, email, phone),
-          property:properties(title, code, location)
-        `)
+        .select('*')
         .eq('id', id)
+        .is('deleted_at', null) // ✅ Solo citas no eliminadas
         .single();
 
       if (error) {
@@ -254,6 +249,15 @@ export class CalendarService {
       }
 
       console.log('✅ Cita creada exitosamente:', data.id);
+
+      // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Guardar también en property_appointments
+      try {
+        console.log('🔄 Sincronizando cita calendario a property_appointments...');
+        await syncAppointmentToProperty(data);
+      } catch (syncError) {
+        console.warn('⚠️ Error en sincronización (no crítico):', syncError);
+        // No lanzamos error para no interrumpir el flujo principal
+      }
 
       // Sincronizar con Google Calendar si está habilitado
       if (this.isGoogleConfigured && data.advisor_id) {
@@ -327,24 +331,21 @@ export class CalendarService {
   }
 
   /**
-   * Eliminar cita
+   * Eliminar cita con sincronización automática
    */
   public async deleteAppointment(id: string): Promise<boolean> {
     try {
       // Obtener la cita antes de eliminarla para limpiar Google Calendar
       const appointment = await this.getAppointmentById(id);
 
-      const { error } = await supabase
-        .from('appointments')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('❌ Error eliminando cita:', error);
-        throw error;
+      // 🗑️ ELIMINACIÓN SINCRONIZADA: Eliminar de ambas tablas
+      const success = await deleteSyncedAppointment(id, 'appointments');
+      
+      if (!success) {
+        throw new Error('Error en eliminación sincronizada');
       }
 
-      console.log('✅ Cita eliminada exitosamente:', id);
+      console.log('✅ Cita eliminada exitosamente de ambas tablas:', id);
 
       // Eliminar de Google Calendar si existe
       if (this.isGoogleConfigured && appointment?.google_event_id && appointment?.advisor_id) {

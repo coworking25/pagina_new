@@ -6,7 +6,7 @@ import { AvailabilityManager } from '../components/Calendar/AvailabilityManager'
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
 import { Calendar, Settings, Plus, Users, Clock, UserCheck } from 'lucide-react';
-import { deleteAppointment } from '../lib/supabase';
+import { calendarService } from '../lib/calendarService';
 
 interface AdminCalendarPageProps {
   userId?: string;
@@ -48,7 +48,8 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
 
     try {
       console.log('🗑️ Eliminando cita:', selectedAppointment.id);
-      await deleteAppointment(selectedAppointment.id);
+      // Usar calendarService que maneja soft delete
+      await calendarService.deleteAppointment(selectedAppointment.id);
       
       setShowDetailsModal(false);
       setSelectedAppointment(null);

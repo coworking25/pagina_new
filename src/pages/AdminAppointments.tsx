@@ -21,7 +21,9 @@ import {
   Minus,
   Download
 } from 'lucide-react';
-import { updateAppointmentStatus, deleteAppointment, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple, sendWhatsAppToClient, getPropertyAppointmentsPaginated } from '../lib/supabase';
+import { updateAppointmentStatus, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple, sendWhatsAppToClient } from '../lib/supabase';
+import { calendarService } from '../lib/calendarService';
+import { getAppointmentsPaginated } from '../lib/appointmentsPaginated';
 import { appointmentSyncService } from '../services/appointmentSyncService';
 import AppointmentDetailsModal from '../components/Modals/AppointmentDetailsModal';
 import EditAppointmentModal from '../components/Modals/EditAppointmentModal';
@@ -114,7 +116,7 @@ function AdminAppointments() {
     console.log('📅 AdminAppointments: Cargando citas con paginación');
 
     await loadData(async (options) => {
-      const response = await getPropertyAppointmentsPaginated(options);
+      const response = await getAppointmentsPaginated(options);
       return response;
     });
   };
@@ -123,7 +125,7 @@ function AdminAppointments() {
     console.log('🔄 AdminAppointments: Refrescando citas con paginación');
 
     await loadData(async (options) => {
-      const response = await getPropertyAppointmentsPaginated(options);
+      const response = await getAppointmentsPaginated(options);
       return response;
     });
   };
@@ -148,10 +150,12 @@ function AdminAppointments() {
       // Obtener la cita antes de eliminarla para la notificación
       const appointment = appointments.find(a => a.id === appointmentId);
       
-      await deleteAppointment(appointmentId);
+      // Usar calendarService que maneja soft delete
+      await calendarService.deleteAppointment(appointmentId);
       
       // 🔄 Sincronizar eliminación con el calendario
-      await appointmentSyncService.onPropertyAppointmentDeleted(appointmentId);
+      // TEMPORAL: Comentado para evitar error 406 porque property_appointment_id es NULL
+      // await appointmentSyncService.onPropertyAppointmentDeleted(appointmentId);
       
       alert('Cita eliminada exitosamente');
       
@@ -553,7 +557,7 @@ function AdminAppointments() {
         
         // Eliminar usando los IDs capturados
         const deletePromises = idsToDelete.map(id => 
-          deleteAppointment(String(id))
+          calendarService.deleteAppointment(String(id))
         );
         
         await Promise.all(deletePromises);
