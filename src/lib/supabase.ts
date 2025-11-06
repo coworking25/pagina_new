@@ -454,7 +454,33 @@ export async function savePropertyAppointment(appointmentData: {
       throw error;
     }
     
-    return data[0];
+    const savedAppointment = data[0];
+    
+    // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Guardar también en tabla appointments
+    try {
+      console.log('🔄 [SYNC WEB→APPOINTMENTS] Iniciando sincronización...');
+      console.log('   📋 Property Appointment ID:', savedAppointment.id);
+      console.log('   👤 Cliente:', savedAppointment.client_name);
+      
+      const syncResult = await syncPropertyToAppointments(savedAppointment);
+      
+      if (syncResult) {
+        console.log('✅ [SYNC WEB→APPOINTMENTS] Cita sincronizada exitosamente');
+        console.log('   🆔 Appointment ID creado:', syncResult);
+      } else {
+        console.warn('⚠️ [SYNC WEB→APPOINTMENTS] Sincronización retornó null');
+      }
+    } catch (syncError: any) {
+      console.error('❌ [SYNC WEB→APPOINTMENTS] ERROR CRÍTICO EN SINCRONIZACIÓN');
+      console.error('   📝 Mensaje:', syncError.message);
+      console.error('   🔍 Detalles:', syncError);
+      console.error('   🆔 Property Appointment ID:', savedAppointment.id);
+      
+      // 🚨 IMPORTANTE: Lanzar el error para que el usuario sepa que falló
+      throw new Error(`La cita se guardó pero no se pudo sincronizar: ${syncError.message}`);
+    }
+    
+    return savedAppointment;
   } catch (error) {
     console.error('❌ Error en savePropertyAppointment:', error);
     throw error;
