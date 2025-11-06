@@ -1,5 +1,5 @@
 // Paso 1: Información Básica del Cliente
-import { User, Phone, Mail, MapPin, FileText, AlertTriangle } from 'lucide-react';
+import { User, Phone, Mail, MapPin, FileText, AlertTriangle, Home, ShoppingCart, Eye } from 'lucide-react';
 import type { ClientWizardData } from '../ClientWizard';
 
 interface Step1Props {
@@ -24,12 +24,43 @@ export default function Step1BasicInfo({ formData, onChange }: Step1Props) {
         </p>
       </div>
 
-      {/* Tipo de Cliente */}
+      {/* Tipo de Cliente - Todos los tipos disponibles */}
       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
           Tipo de Cliente *
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          <strong>Propietario:</strong> Tendrá acceso al portal/dashboard. <strong>Otros tipos:</strong> Solo registro CRM interno.
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {/* PROPIETARIO - CON ACCESO AL PORTAL */}
+          <button
+            type="button"
+            onClick={() => handleChange('client_type', 'landlord')}
+            className={`p-4 rounded-lg border-2 transition-all ${
+              formData.client_type === 'landlord'
+                ? 'border-green-600 bg-green-50 dark:bg-green-900/30 ring-2 ring-green-400'
+                : 'border-gray-200 dark:border-gray-700 hover:border-green-400'
+            }`}
+          >
+            <div className="flex items-center justify-center mb-2">
+              <Home className={`w-8 h-8 ${
+                formData.client_type === 'landlord' ? 'text-green-600' : 'text-gray-400'
+              }`} />
+            </div>
+            <div className="text-center">
+              <div className={`font-medium ${
+                formData.client_type === 'landlord' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'
+              }`}>
+                Propietario
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Con portal 🔑
+              </div>
+            </div>
+          </button>
+
+          {/* INQUILINO - SIN ACCESO */}
           <button
             type="button"
             onClick={() => handleChange('client_type', 'tenant')}
@@ -51,37 +82,102 @@ export default function Step1BasicInfo({ formData, onChange }: Step1Props) {
                 Inquilino
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Arrienda o usa espacios
+                Busca rentar
               </div>
             </div>
           </button>
 
+          {/* COMPRADOR - SIN ACCESO */}
           <button
             type="button"
-            onClick={() => handleChange('client_type', 'landlord')}
+            onClick={() => handleChange('client_type', 'buyer')}
             className={`p-4 rounded-lg border-2 transition-all ${
-              formData.client_type === 'landlord'
-                ? 'border-green-600 bg-green-50 dark:bg-green-900/30'
-                : 'border-gray-200 dark:border-gray-700 hover:border-green-400'
+              formData.client_type === 'buyer'
+                ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30'
+                : 'border-gray-200 dark:border-gray-700 hover:border-purple-400'
             }`}
           >
             <div className="flex items-center justify-center mb-2">
-              <FileText className={`w-8 h-8 ${
-                formData.client_type === 'landlord' ? 'text-green-600' : 'text-gray-400'
+              <ShoppingCart className={`w-8 h-8 ${
+                formData.client_type === 'buyer' ? 'text-purple-600' : 'text-gray-400'
               }`} />
             </div>
             <div className="text-center">
               <div className={`font-medium ${
-                formData.client_type === 'landlord' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'
+                formData.client_type === 'buyer' ? 'text-purple-600' : 'text-gray-700 dark:text-gray-300'
               }`}>
-                Propietario
+                Comprador
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Dueño de propiedades
+                Potencial
+              </div>
+            </div>
+          </button>
+
+          {/* VENDEDOR - SIN ACCESO */}
+          <button
+            type="button"
+            onClick={() => handleChange('client_type', 'seller')}
+            className={`p-4 rounded-lg border-2 transition-all ${
+              formData.client_type === 'seller'
+                ? 'border-orange-600 bg-orange-50 dark:bg-orange-900/30'
+                : 'border-gray-200 dark:border-gray-700 hover:border-orange-400'
+            }`}
+          >
+            <div className="flex items-center justify-center mb-2">
+              <FileText className={`w-8 h-8 ${
+                formData.client_type === 'seller' ? 'text-orange-600' : 'text-gray-400'
+              }`} />
+            </div>
+            <div className="text-center">
+              <div className={`font-medium ${
+                formData.client_type === 'seller' ? 'text-orange-600' : 'text-gray-700 dark:text-gray-300'
+              }`}>
+                Vendedor
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                De propiedad
+              </div>
+            </div>
+          </button>
+
+          {/* INTERESADO - SIN ACCESO */}
+          <button
+            type="button"
+            onClick={() => handleChange('client_type', 'interested')}
+            className={`p-4 rounded-lg border-2 transition-all ${
+              formData.client_type === 'interested'
+                ? 'border-yellow-600 bg-yellow-50 dark:bg-yellow-900/30'
+                : 'border-gray-200 dark:border-gray-700 hover:border-yellow-400'
+            }`}
+          >
+            <div className="flex items-center justify-center mb-2">
+              <Eye className={`w-8 h-8 ${
+                formData.client_type === 'interested' ? 'text-yellow-600' : 'text-gray-400'
+              }`} />
+            </div>
+            <div className="text-center">
+              <div className={`font-medium ${
+                formData.client_type === 'interested' ? 'text-yellow-600' : 'text-gray-700 dark:text-gray-300'
+              }`}>
+                Interesado
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Evaluando
               </div>
             </div>
           </button>
         </div>
+
+        {/* Alerta para propietarios */}
+        {formData.client_type === 'landlord' && (
+          <div className="mt-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+            <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Este cliente tendrá acceso al portal/dashboard de propietarios. Se crearán credenciales automáticamente.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Grid de 2 columnas */}

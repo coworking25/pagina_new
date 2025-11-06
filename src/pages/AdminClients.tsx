@@ -409,10 +409,11 @@ function AdminClients() {
   // EstadÃ­sticas
   const stats = {
     total: clients.length,
-    renters: clients.filter(c => c.client_type === 'renter' || c.client_type === 'tenant').length,
-    owners: clients.filter(c => c.client_type === 'owner' || c.client_type === 'landlord').length,
+    landlords: clients.filter(c => c.client_type === 'landlord').length,
+    tenants: clients.filter(c => c.client_type === 'tenant').length,
     buyers: clients.filter(c => c.client_type === 'buyer').length,
     sellers: clients.filter(c => c.client_type === 'seller').length,
+    interested: clients.filter(c => c.client_type === 'interested').length,
     active: clients.filter(c => c.status === 'active').length,
     inactive: clients.filter(c => c.status === 'inactive').length
   };
@@ -953,7 +954,7 @@ const handleWizardSubmit = async (wizardData: any) => {
   
   // Objeto para rastrear qué se guardó exitosamente
   const saveResults = {
-    client: { saved: false, id: null as number | null, error: null as any },
+    client: { saved: false, id: null as string | null, error: null as any }, // UUID string
     credentials: { saved: false, email: null as string | null, error: null as any },
     documents: { saved: 0, total: 0, errors: [] as string[] },
     payment: { saved: false, error: null as any },
@@ -986,66 +987,73 @@ const handleWizardSubmit = async (wizardData: any) => {
     console.log('   → Datos a guardar:', clientData);
     const newClient = await createClient(clientData);
     saveResults.client.saved = true;
-    saveResults.client.id = Number(newClient.id);
+    // Marcar cliente como guardado exitosamente
+    saveResults.client.saved = true;
+    saveResults.client.id = newClient.id; // UUID, no convertir a Number
     console.log('   ✅ Cliente creado exitosamente ID:', newClient.id);
 
-    // 2. Crear credenciales del portal
+    // 2. Crear credenciales del portal (SOLO para landlord)
     console.log('\n🔑 PASO 2: Verificando credenciales del portal...');
-    const email = wizardData.email || wizardData.portal_email || wizardData.portal_credentials?.email;
-    const password = wizardData.password || wizardData.portal_credentials?.password;
+    console.log('   → Tipo de cliente:', wizardData.client_type);
     
-    console.log('   → wizardData completo:', JSON.stringify(wizardData, null, 2));
-    console.log('   → Email:', email);
-    console.log('   → Password:', password ? '****** (existe)' : '❌ NO PROPORCIONADA');
-    console.log('   → Send welcome email:', wizardData.send_welcome_email || wizardData.portal_credentials?.send_welcome_email);
-    console.log('   → Portal access enabled:', wizardData.portal_access_enabled ?? wizardData.portal_credentials?.portal_access_enabled);
+    if (wizardData.client_type === 'landlord') {
+      const email = wizardData.email || wizardData.portal_email || wizardData.portal_credentials?.email;
+      const password = wizardData.password || wizardData.portal_credentials?.password;
+      
+      console.log('   → Email:', email);
+      console.log('   → Password:', password ? '****** (existe)' : '❌ NO PROPORCIONADA');
+      console.log('   → Send welcome email:', wizardData.send_welcome_email || wizardData.portal_credentials?.send_welcome_email);
+      console.log('   → Portal access enabled:', wizardData.portal_access_enabled ?? wizardData.portal_credentials?.portal_access_enabled);
 
-    if (password && email) {
-      try {
-        await createPortalCredentials(
-          newClient.id,
-          email,
-          password,
-          wizardData.send_welcome_email || wizardData.portal_credentials?.send_welcome_email || false,
-          wizardData.portal_access_enabled ?? wizardData.portal_credentials?.portal_access_enabled ?? true
-        );
-        saveResults.credentials.saved = true;
-        saveResults.credentials.email = email;
-        console.log('   ✅ Credenciales del portal creadas');
-      } catch (credError: any) {
-        saveResults.credentials.error = credError.message;
-        console.error('   ❌ Error creando credenciales:', credError);
+      if (password && email) {
+        try {
+          await createPortalCredentials(
+            newClient.id,
+            email,
+            password,
+            wizardData.send_welcome_email || wizardData.portal_credentials?.send_welcome_email || false,
+            wizardData.portal_access_enabled ?? wizardData.portal_credentials?.portal_access_enabled ?? true
+          );
+          saveResults.credentials.saved = true;
+          saveResults.credentials.email = email;
+          console.log('   ✅ Credenciales del portal creadas');
+        } catch (credError: any) {
+          saveResults.credentials.error = credError.message;
+          console.error('   ❌ Error creando credenciales:', credError);
+        }
+      } else {
+        console.warn('   ⚠️ CREDENCIALES NO CREADAS - Falta email o password');
+        if (!email) console.warn('      → Email faltante');
+        if (!password) console.warn('      → Password faltante');
       }
     } else {
-      console.warn('   ⚠️ CREDENCIALES NO CREADAS - Falta email o password');
-      if (!email) console.warn('      → Email faltante');
-      if (!password) console.warn('      → Password faltante');
-      console.warn('      → wizardData.portal_credentials:', wizardData.portal_credentials);
+      console.log('   ℹ️ Cliente tipo:', wizardData.client_type, '- NO requiere credenciales de portal');
+      console.log('   ✅ Paso omitido correctamente');
     }
 
     // 3. Subir documentos
     console.log('\n📄 PASO 3: Verificando documentos...');
-    // Los documentos vienen en wizardData.documents como objeto, no array
+    // Los documentos vienen en wizardData.documents como objeto con Files directos
     const documentsObj = wizardData.documents || {};
     const documents = [];
     
     // Convertir el objeto de documentos a array
-    if (documentsObj.cedula_frente && documentsObj.cedula_frente.file) {
-      documents.push({ type: 'cedula_frente', file: documentsObj.cedula_frente.file });
+    // Step3Documents guarda los archivos directamente como File, no como { file: File }
+    if (documentsObj.cedula_frente instanceof File) {
+      documents.push({ type: 'cedula_frente', file: documentsObj.cedula_frente });
+      console.log('   → Cédula frente encontrada:', documentsObj.cedula_frente.name);
     }
-    if (documentsObj.cedula_reverso && documentsObj.cedula_reverso.file) {
-      documents.push({ type: 'cedula_reverso', file: documentsObj.cedula_reverso.file });
+    if (documentsObj.cedula_reverso instanceof File) {
+      documents.push({ type: 'cedula_reverso', file: documentsObj.cedula_reverso });
+      console.log('   → Cédula reverso encontrada:', documentsObj.cedula_reverso.name);
     }
-    if (documentsObj.certificado_laboral) {
+    if (documentsObj.certificado_laboral instanceof File) {
       documents.push({ type: 'certificado_laboral', file: documentsObj.certificado_laboral });
+      console.log('   → Certificado laboral encontrado:', documentsObj.certificado_laboral.name);
     }
-    if (documentsObj.contrato_firmado) {
+    if (documentsObj.contrato_firmado instanceof File) {
       documents.push({ type: 'contrato_firmado', file: documentsObj.contrato_firmado });
-    }
-    if (documentsObj.otros && Array.isArray(documentsObj.otros)) {
-      documentsObj.otros.forEach((doc: any) => {
-        if (doc.file) documents.push({ type: 'otros', file: doc.file });
-      });
+      console.log('   → Contrato firmado encontrado:', documentsObj.contrato_firmado.name);
     }
     
     saveResults.documents.total = documents.length;
@@ -1323,20 +1331,20 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <Home className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Inquilinos</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.renters}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Propietarios</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.landlords}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-              <User className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+              <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Propietarios</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.owners}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Inquilinos</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.tenants}</p>
             </div>
           </div>
         </div>
@@ -1349,6 +1357,30 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Compradores</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.buyers}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Vendedores</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.sellers}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+              <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Interesados</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.interested}</p>
             </div>
           </div>
         </div>
@@ -1398,10 +1430,11 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
             className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
             <option value="all">Todos los tipos</option>
-            <option value="renter">Inquilinos</option>
-            <option value="owner">Propietarios</option>
+            <option value="landlord">Propietarios</option>
+            <option value="tenant">Inquilinos</option>
             <option value="buyer">Compradores</option>
             <option value="seller">Vendedores</option>
+            <option value="interested">Interesados</option>
           </select>
 
           <select

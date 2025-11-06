@@ -57,7 +57,30 @@ export interface ClientPropertySummary {
 // TIPOS BÁSICOS Y ENUMS
 // =====================================================
 
-export type ClientType = 'buyer' | 'seller' | 'renter' | 'owner' | 'tenant' | 'landlord';
+/**
+ * PROPIETARIOS - Con acceso al Portal/Dashboard
+ * Sistema de propietarios que pueden ingresar al portal para ver sus propiedades,
+ * contratos, pagos, etc.
+ */
+export type LandlordClientType = 'landlord';
+
+/**
+ * CLIENTES CRM - SIN acceso al Portal
+ * Sistema de gestión de clientes para uso interno del equipo.
+ * Estos clientes NO tienen acceso al dashboard.
+ * - tenant: Inquilino/Arrendatario (busca rentar)
+ * - buyer: Comprador potencial
+ * - seller: Vendedor de propiedad
+ * - interested: Interesado (aún evaluando)
+ */
+export type CRMClientType = 'tenant' | 'buyer' | 'seller' | 'interested';
+
+/**
+ * Tipo General de Cliente
+ * Unión de propietarios con portal y clientes CRM
+ */
+export type ClientType = LandlordClientType | CRMClientType;
+
 export type ClientStatus = 'active' | 'inactive' | 'suspended' | 'pending' | 'blocked';
 export type ContractType = 'rental' | 'sale' | 'management';
 export type ContractStatus = 'draft' | 'active' | 'expired' | 'terminated' | 'pending_renewal';

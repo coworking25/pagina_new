@@ -34,7 +34,7 @@ export interface ClientWizardData {
   email: string;
   address: string;
   city: string;
-  client_type: 'tenant' | 'landlord';
+  client_type: 'tenant' | 'landlord' | 'buyer' | 'seller' | 'interested';
   status: 'active' | 'inactive' | 'suspended';
   client_status?: 'active' | 'inactive' | 'suspended'; // Alias para compatibilidad
   emergency_contact_name: string;
@@ -387,8 +387,13 @@ export default function ClientWizard({
     }
   };
 
-  // Definición de pasos
-  const steps: WizardStep[] = [
+  // Determinar si debe mostrar el paso de credenciales
+  const shouldShowCredentials = () => {
+    return formData.client_type === 'landlord';
+  };
+
+  // Definición de pasos (dinámico según tipo de cliente)
+  const allSteps: WizardStep[] = [
     {
       id: 1,
       title: 'Información Básica',
@@ -426,6 +431,11 @@ export default function ClientWizard({
       description: 'Revisar y confirmar toda la información'
     }
   ];
+
+  // Filtrar pasos según tipo de cliente
+  const steps = shouldShowCredentials() 
+    ? allSteps // Mostrar todos los pasos para landlord
+    : allSteps.filter(step => step.id !== 4); // Omitir paso 4 para otros tipos
 
   // Validación por paso
   const validateStep = (step: number): { valid: boolean; errors: string[] } => {
@@ -474,7 +484,13 @@ export default function ClientWizard({
         break;
       }
         
-      case 4: { // Portal
+      case 4: { // Portal - SOLO para landlord
+        // Solo validar credenciales si es propietario
+        if (!shouldShowCredentials()) {
+          // Si NO es landlord, este paso no aplica, no validar nada
+          break;
+        }
+        
         const email = formData.portal_credentials.email || formData.email;
         if (!email) {
           errors.push('El email es requerido para crear las credenciales');
@@ -512,8 +528,8 @@ export default function ClientWizard({
       return;
     }
     
-    // Auto-llenar email del portal si está vacío
-    if (currentStep === 3 && formData.email && !formData.portal_credentials.email) {
+    // Auto-llenar email del portal si está vacío (solo para landlord)
+    if (currentStep === 3 && formData.email && !formData.portal_credentials.email && shouldShowCredentials()) {
       setFormData(prev => ({
         ...prev,
         portal_credentials: {
@@ -523,20 +539,32 @@ export default function ClientWizard({
       }));
     }
     
-    if (currentStep < 6) {
+    // Saltar el paso 4 si NO es landlord
+    if (currentStep === 3 && !shouldShowCredentials()) {
+      setCurrentStep(5); // Ir directamente a propiedades
+    } else if (currentStep < 6) {
       setCurrentStep(prev => prev + 1);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      // Saltar el paso 4 hacia atrás si NO es landlord
+      if (currentStep === 5 && !shouldShowCredentials()) {
+        setCurrentStep(3); // Volver a documentos
+      } else {
+        setCurrentStep(prev => prev - 1);
+      }
     }
   };
 
   const handleSubmit = async () => {
-    // Validar todos los pasos
-    for (let step = 1; step <= 5; step++) {
+    // Validar todos los pasos (excepto paso 4 si NO es landlord)
+    const stepsToValidate = shouldShowCredentials() 
+      ? [1, 2, 3, 4, 5] // Validar todos los pasos para landlord
+      : [1, 2, 3, 5]; // Omitir paso 4 para otros tipos
+    
+    for (const step of stepsToValidate) {
       const validation = validateStep(step);
       if (!validation.valid) {
         alert(`⚠️ Errores en el paso ${step}:\n\n${validation.errors.join('\n')}`);
@@ -580,6 +608,10 @@ export default function ClientWizard({
         return <Step3Documents formData={formData} onChange={updateFormData} />;
       
       case 4:
+        // Solo mostrar credenciales si es landlord
+        if (!shouldShowCredentials()) {
+          return null; // No debería llegar aquí por la navegación, pero por seguridad
+        }
         return <Step4Credentials formData={formData} onChange={updateFormData} />;
       
       case 5:
