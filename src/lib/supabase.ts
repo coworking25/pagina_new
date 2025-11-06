@@ -266,10 +266,26 @@ export async function savePropertyAppointmentSimple(appointmentData: {
     
     // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Guardar también en tabla appointments
     try {
-      console.log('🔄 Sincronizando cita web a appointments...');
-      await syncPropertyToAppointments(savedAppointment);
-    } catch (syncError) {
-      console.warn('⚠️ Error en sincronización (no crítico):', syncError);
+      console.log('🔄 [SYNC WEB→APPOINTMENTS] Iniciando sincronización...');
+      console.log('   📋 Property Appointment ID:', savedAppointment.id);
+      console.log('   👤 Cliente:', savedAppointment.client_name);
+      
+      const syncResult = await syncPropertyToAppointments(savedAppointment);
+      
+      if (syncResult) {
+        console.log('✅ [SYNC WEB→APPOINTMENTS] Cita sincronizada exitosamente');
+        console.log('   🆔 Appointment ID creado:', syncResult);
+      } else {
+        console.error('❌ [SYNC WEB→APPOINTMENTS] Sincronización falló - syncResult es null');
+        console.error('   ⚠️ La cita se guardó en property_appointments pero NO en appointments');
+        console.error('   💡 Ejecuta: node sync_existing_appointments.cjs');
+      }
+    } catch (syncError: any) {
+      console.error('❌ [SYNC WEB→APPOINTMENTS] ERROR CRÍTICO EN SINCRONIZACIÓN');
+      console.error('   📝 Mensaje:', syncError.message);
+      console.error('   🔍 Detalles:', syncError);
+      console.error('   🆔 Property Appointment ID:', savedAppointment.id);
+      console.error('   💡 La cita está en property_appointments, ejecuta sync_existing_appointments.cjs');
       // No lanzamos error para no interrumpir el flujo principal
     }
     

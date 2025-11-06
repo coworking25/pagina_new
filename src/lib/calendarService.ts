@@ -252,10 +252,24 @@ export class CalendarService {
 
       // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Guardar también en property_appointments
       try {
-        console.log('🔄 Sincronizando cita calendario a property_appointments...');
-        await syncAppointmentToProperty(data);
-      } catch (syncError) {
-        console.warn('⚠️ Error en sincronización (no crítico):', syncError);
+        console.log('🔄 [SYNC CALENDAR→PROPERTY] Iniciando sincronización...');
+        console.log('   📋 Appointment ID:', data.id);
+        console.log('   📅 Título:', data.title);
+        
+        const syncResult = await syncAppointmentToProperty(data);
+        
+        if (syncResult) {
+          console.log('✅ [SYNC CALENDAR→PROPERTY] Cita sincronizada exitosamente');
+          console.log('   🆔 Property Appointment ID creado:', syncResult);
+        } else {
+          console.error('❌ [SYNC CALENDAR→PROPERTY] Sincronización falló - syncResult es null');
+          console.error('   ⚠️ La cita se guardó en appointments pero NO en property_appointments');
+        }
+      } catch (syncError: any) {
+        console.error('❌ [SYNC CALENDAR→PROPERTY] ERROR CRÍTICO EN SINCRONIZACIÓN');
+        console.error('   📝 Mensaje:', syncError.message);
+        console.error('   🔍 Detalles:', syncError);
+        console.error('   🆔 Appointment ID:', data.id);
         // No lanzamos error para no interrumpir el flujo principal
       }
 
