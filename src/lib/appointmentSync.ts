@@ -36,17 +36,28 @@ export interface AppointmentData {
  */
 export async function syncPropertyToAppointments(propertyAppointment: PropertyAppointmentData): Promise<string | null> {
   try {
-    console.log('🔄 Sincronizando property_appointment → appointments:', propertyAppointment.id);
+    console.log('🔄 [SYNC] Sincronizando property_appointment → appointments:', propertyAppointment.id);
+    console.log('   📋 Datos:', {
+      id: propertyAppointment.id,
+      cliente: propertyAppointment.client_name,
+      email: propertyAppointment.client_email,
+      fecha: propertyAppointment.appointment_date
+    });
 
     // Verificar si ya existe una cita sincronizada
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('appointments')
       .select('id')
       .eq('property_appointment_id', propertyAppointment.id)
-      .single();
+      .maybeSingle(); // Usar maybeSingle en vez de single para evitar error si no existe
+
+    if (existingError) {
+      console.error('❌ [SYNC] Error verificando cita existente:', existingError);
+      throw existingError;
+    }
 
     if (existing) {
-      console.log('✅ Cita ya sincronizada en appointments');
+      console.log('✅ [SYNC] Cita ya sincronizada en appointments:', existing.id);
       return existing.id;
     }
 
@@ -71,6 +82,8 @@ export async function syncPropertyToAppointments(propertyAppointment: PropertyAp
       notes: propertyAppointment.special_requests,
     };
 
+    console.log('   💾 Insertando en appointments...');
+
     const { data, error } = await supabase
       .from('appointments')
       .insert([appointmentData])
@@ -78,16 +91,24 @@ export async function syncPropertyToAppointments(propertyAppointment: PropertyAp
       .single();
 
     if (error) {
-      console.error('❌ Error sincronizando a appointments:', error);
+      console.error('❌ [SYNC] Error insertando en appointments:', error);
+      console.error('   📝 Código:', error.code);
+      console.error('   💬 Mensaje:', error.message);
+      console.error('   🔍 Detalles:', error.details);
+      console.error('   💡 Hint:', error.hint);
       throw error;
     }
 
-    console.log('✅ Cita sincronizada a appointments:', data.id);
+    console.log('✅ [SYNC] Cita sincronizada exitosamente a appointments:', data.id);
     return data.id;
 
-  } catch (error) {
-    console.error('❌ Error en syncPropertyToAppointments:', error);
-    return null;
+  } catch (error: any) {
+    console.error('❌ [SYNC] ERROR CRÍTICO en syncPropertyToAppointments');
+    console.error('   📝 Mensaje:', error?.message);
+    console.error('   🔍 Error completo:', error);
+    
+    // Lanzar el error para que el llamador lo maneje
+    throw error;
   }
 }
 
@@ -96,30 +117,47 @@ export async function syncPropertyToAppointments(propertyAppointment: PropertyAp
  */
 export async function syncAppointmentToProperty(appointment: AppointmentData): Promise<string | null> {
   try {
-    console.log('🔄 Sincronizando appointment → property_appointments:', appointment.id);
+    console.log('🔄 [SYNC] Sincronizando appointment → property_appointments:', appointment.id);
+    console.log('   📋 Datos:', {
+      id: appointment.id,
+      titulo: appointment.title,
+      contacto: appointment.contact_name,
+      email: appointment.contact_email,
+      fecha: appointment.start_time
+    });
 
     // Verificar si ya está vinculada
     if (appointment.property_appointment_id) {
-      console.log('✅ Appointment ya tiene property_appointment_id');
+      console.log('✅ [SYNC] Appointment ya tiene property_appointment_id:', appointment.property_appointment_id);
       return appointment.property_appointment_id;
     }
 
     // Verificar si ya existe una cita sincronizada buscando por datos similares
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('property_appointments')
       .select('id')
-      .eq('client_email', appointment.contact_email)
+      .eq('client_email', appointment.contact_email || '')
       .eq('appointment_date', appointment.start_time)
-      .single();
+      .maybeSingle(); // Usar maybeSingle para evitar error si no existe
+
+    if (existingError) {
+      console.error('❌ [SYNC] Error verificando cita existente:', existingError);
+      throw existingError;
+    }
 
     if (existing) {
-      console.log('✅ Cita similar encontrada en property_appointments');
+      console.log('✅ [SYNC] Cita similar encontrada en property_appointments:', existing.id);
       
       // Actualizar el appointment para vincular
-      await supabase
+      const { error: updateError } = await supabase
         .from('appointments')
         .update({ property_appointment_id: existing.id })
         .eq('id', appointment.id);
+      
+      if (updateError) {
+        console.error('❌ [SYNC] Error actualizando vínculo:', updateError);
+        throw updateError;
+      }
         
       return existing.id;
     }
@@ -141,6 +179,8 @@ export async function syncAppointmentToProperty(appointment: AppointmentData): P
       status: mapCalendarStatus(appointment.status || 'scheduled'),
     };
 
+    console.log('   💾 Insertando en property_appointments...');
+
     const { data, error } = await supabase
       .from('property_appointments')
       .insert([propertyAppointmentData])
@@ -148,22 +188,36 @@ export async function syncAppointmentToProperty(appointment: AppointmentData): P
       .single();
 
     if (error) {
-      console.error('❌ Error sincronizando a property_appointments:', error);
+      console.error('❌ [SYNC] Error insertando en property_appointments:', error);
+      console.error('   📝 Código:', error.code);
+      console.error('   💬 Mensaje:', error.message);
+      console.error('   🔍 Detalles:', error.details);
+      console.error('   💡 Hint:', error.hint);
       throw error;
     }
 
     // Actualizar appointment con el vínculo
-    await supabase
+    console.log('   🔗 Actualizando vínculo en appointment...');
+    const { error: updateError } = await supabase
       .from('appointments')
       .update({ property_appointment_id: data.id })
       .eq('id', appointment.id);
 
-    console.log('✅ Cita sincronizada a property_appointments:', data.id);
+    if (updateError) {
+      console.error('❌ [SYNC] Error actualizando vínculo:', updateError);
+      // No lanzamos error porque la cita ya se creó
+    }
+
+    console.log('✅ [SYNC] Cita sincronizada exitosamente a property_appointments:', data.id);
     return data.id;
 
-  } catch (error) {
-    console.error('❌ Error en syncAppointmentToProperty:', error);
-    return null;
+  } catch (error: any) {
+    console.error('❌ [SYNC] ERROR CRÍTICO en syncAppointmentToProperty');
+    console.error('   📝 Mensaje:', error?.message);
+    console.error('   🔍 Error completo:', error);
+    
+    // Lanzar el error para que el llamador lo maneje
+    throw error;
   }
 }
 

@@ -276,17 +276,16 @@ export async function savePropertyAppointmentSimple(appointmentData: {
         console.log('✅ [SYNC WEB→APPOINTMENTS] Cita sincronizada exitosamente');
         console.log('   🆔 Appointment ID creado:', syncResult);
       } else {
-        console.error('❌ [SYNC WEB→APPOINTMENTS] Sincronización falló - syncResult es null');
-        console.error('   ⚠️ La cita se guardó en property_appointments pero NO en appointments');
-        console.error('   💡 Ejecuta: node sync_existing_appointments.cjs');
+        console.warn('⚠️ [SYNC WEB→APPOINTMENTS] Sincronización retornó null');
       }
     } catch (syncError: any) {
       console.error('❌ [SYNC WEB→APPOINTMENTS] ERROR CRÍTICO EN SINCRONIZACIÓN');
       console.error('   📝 Mensaje:', syncError.message);
       console.error('   🔍 Detalles:', syncError);
       console.error('   🆔 Property Appointment ID:', savedAppointment.id);
-      console.error('   💡 La cita está en property_appointments, ejecuta sync_existing_appointments.cjs');
-      // No lanzamos error para no interrumpir el flujo principal
+      
+      // � IMPORTANTE: Lanzar el error para que el usuario sepa que falló
+      throw new Error(`La cita se guardó pero no se pudo sincronizar: ${syncError.message}`);
     }
     
     return savedAppointment;

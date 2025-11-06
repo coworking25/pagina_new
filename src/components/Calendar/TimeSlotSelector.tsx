@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Clock, CheckCircle, XCircle, AlertTriangle, Sun, Moon, Zap } from 'lucide-react';
 import { format, addMinutes, isBefore, isAfter, parseISO, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -37,25 +37,9 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   const [loading, setLoading] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
 
-  // Generate time slots from 9:00 AM to 5:00 PM in 30-minute intervals (Lunes a Viernes)
-  const timeSlots = useMemo(() => {
-    const slots: string[] = [];
-    const startHour = 9;   // 🔧 9:00 AM (horario laboral)
-    const endHour = 17;    // 🔧 5:00 PM (17:00 en formato 24h)
-    const interval = 30;   // 30 minutos
-
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let minute = 0; minute < 60; minute += interval) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(timeString);
-      }
-    }
-
-    return slots;
-  }, []);
-
+  // 🔧 FIX: loadAvailability ahora genera los slots internamente para evitar dependencias circulares
   const loadAvailability = useCallback(async () => {
-    // 🔧 FIX: Validar DESPUÉS de declarar el useCallback, no dentro
+    // 🔧 FIX: Validar ANTES de ejecutar la función
     if (!advisorId || !selectedDate) {
       setAvailableSlots([]);
       return;
@@ -63,6 +47,19 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
 
     setLoading(true);
     try {
+      // Generate time slots here to avoid dependency issues
+      const slots: string[] = [];
+      const startHour = 9;
+      const endHour = 17;
+      const interval = 30;
+
+      for (let hour = startHour; hour < endHour; hour++) {
+        for (let minute = 0; minute < 60; minute += interval) {
+          const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          slots.push(timeString);
+        }
+      }
+
       // Get advisor weekly availability
       const weeklyAvailability: AdvisorAvailability[] = await calendarService.getAdvisorAvailability(advisorId);
 
@@ -84,7 +81,7 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
       const exceptionForDate = exceptions.find(exc => exc.exception_date === dateString);
 
       // Create slots with availability and conflicts
-      const slotsWithAvailability = timeSlots.map(timeString => {
+      const slotsWithAvailability = slots.map(timeString => {
         const [hours, minutes] = timeString.split(':').map(Number);
         const slotStart = new Date(selectedDate);
         slotStart.setHours(hours, minutes, 0, 0);
@@ -149,8 +146,20 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
       setAvailableSlots(slotsWithAvailability);
     } catch (error) {
       console.error('Error loading availability:', error);
-      // Fallback: mark all slots as available if there's an error
-      const fallbackSlots = timeSlots.map(time => ({
+      // Fallback: generate default slots
+      const slots: string[] = [];
+      const startHour = 9;
+      const endHour = 17;
+      const interval = 30;
+
+      for (let hour = startHour; hour < endHour; hour++) {
+        for (let minute = 0; minute < 60; minute += interval) {
+          const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          slots.push(timeString);
+        }
+      }
+      
+      const fallbackSlots = slots.map(time => ({
         time,
         available: true,
         conflict: false,
@@ -159,30 +168,46 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [advisorId, selectedDate, timeSlots, duration]);
+  }, [advisorId, selectedDate, duration]); // 🔧 FIX: Solo dependencias primitivas
 
   // Load availability and conflicts for the selected date
   useEffect(() => {
     if (selectedDate && advisorId) {
       loadAvailability();
     }
-  }, [selectedDate, advisorId, loadAvailability]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, advisorId, duration]); // 🔧 FIX: Usar solo las dependencias primitivas, no loadAvailability
+  // Ref para rastrear la última validación y evitar llamadas innecesarias
+  const lastValidationRef = useRef<{ time: string | null; isValid: boolean; message?: string } | null>(null);
 
   // Validate selected time when it changes
   useEffect(() => {
     if (selectedTime && onValidationChange) {
       const selectedSlot = availableSlots.find(slot => slot.time === selectedTime);
       if (selectedSlot) {
+        let isValid = false;
+        let message: string | undefined = undefined;
+
         if (selectedSlot.conflict) {
-          onValidationChange(false, selectedSlot.reason || 'Horario no disponible');
+          isValid = false;
+          message = selectedSlot.reason || 'Horario no disponible';
         } else if (!selectedSlot.available) {
-          onValidationChange(false, 'Horario fuera del horario de atención');
+          isValid = false;
+          message = 'Horario fuera del horario de atención';
         } else {
-          onValidationChange(true);
+          isValid = true;
+        }
+
+        // Solo llamar a onValidationChange si el resultado cambió
+        const last = lastValidationRef.current;
+        if (!last || last.time !== selectedTime || last.isValid !== isValid || last.message !== message) {
+          lastValidationRef.current = { time: selectedTime, isValid, message };
+          onValidationChange(isValid, message);
         }
       }
     }
-  }, [selectedTime, availableSlots, onValidationChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTime, availableSlots]);
 
   const formatTime12Hour = (timeString: string): string => {
     const [hours, minutes] = timeString.split(':').map(Number);

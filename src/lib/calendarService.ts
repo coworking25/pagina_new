@@ -262,15 +262,16 @@ export class CalendarService {
           console.log('✅ [SYNC CALENDAR→PROPERTY] Cita sincronizada exitosamente');
           console.log('   🆔 Property Appointment ID creado:', syncResult);
         } else {
-          console.error('❌ [SYNC CALENDAR→PROPERTY] Sincronización falló - syncResult es null');
-          console.error('   ⚠️ La cita se guardó en appointments pero NO en property_appointments');
+          console.warn('⚠️ [SYNC CALENDAR→PROPERTY] Sincronización retornó null');
         }
       } catch (syncError: any) {
         console.error('❌ [SYNC CALENDAR→PROPERTY] ERROR CRÍTICO EN SINCRONIZACIÓN');
         console.error('   📝 Mensaje:', syncError.message);
         console.error('   🔍 Detalles:', syncError);
         console.error('   🆔 Appointment ID:', data.id);
-        // No lanzamos error para no interrumpir el flujo principal
+        
+        // 🚨 IMPORTANTE: Lanzar el error para que el usuario sepa que falló
+        throw new Error(`La cita se guardó en el calendario pero no se pudo sincronizar: ${syncError.message}`);
       }
 
       // Sincronizar con Google Calendar si está habilitado
