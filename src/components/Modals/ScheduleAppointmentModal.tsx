@@ -336,6 +336,24 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
         return `${hour12}:${minutes} ${period}`;
       };
 
+      // 🎯 FIX: Formatear precio según availability_type
+      const formatPropertyPrice = (prop: typeof property): string => {
+        const formatCurrency = (amount: number) => 
+          amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+
+        if (prop.availability_type === 'both') {
+          return `💰 Venta: ${formatCurrency(prop.sale_price || prop.price || 0)}
+💰 Arriendo: ${formatCurrency(prop.rent_price || 0)}/mes`;
+        } else if (prop.availability_type === 'sale') {
+          return `💰 ${formatCurrency(prop.sale_price || prop.price || 0)}`;
+        } else if (prop.availability_type === 'rent') {
+          return `💰 ${formatCurrency(prop.rent_price || prop.price || 0)}/mes`;
+        } else {
+          // Fallback: usar price genérico
+          return `💰 ${formatCurrency(prop.price || 0)}`;
+        }
+      };
+
       const appointmentTypeLabel = appointmentTypes.find(t => t.id === formData.appointmentType)?.label || formData.appointmentType;
       const visitTypeLabel = visitTypes.find(t => t.id === formData.visitType)?.label || formData.visitType;
 
@@ -346,7 +364,7 @@ Me interesa agendar una cita para la siguiente propiedad:
 
 🏠 *${property.title}*
 📍 ${property.location}
-💰 ${property.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}
+${formatPropertyPrice(property)}
 
 📋 *Datos del contacto:*
 • Nombre: ${formData.name}

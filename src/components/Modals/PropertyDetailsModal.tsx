@@ -7,7 +7,7 @@ import { trackPropertyView } from '../../lib/analytics';
 import Button from '../UI/Button';
 import ImageGallery from '../UI/ImageGallery';
 import ContactFormModal from './ContactFormModal';
-import ScheduleAppointmentModal from './ScheduleAppointmentModal';
+import ScheduleAppointmentModalEnhanced from './ScheduleAppointmentModalEnhanced';
 import VideoPlayer from '../VideoPlayer';
 import { getPublicImageUrl } from '../../lib/supabase';
 
@@ -545,9 +545,9 @@ const PropertyDetailsModal: React.FC<PropertyDetailsModalProps> = ({
         />
       )}
 
-      {/* Schedule Appointment Modal */}
+      {/* Schedule Appointment Modal - UNIFICADO: Usando el mismo modal que la card principal */}
       {currentAdvisor && (
-        <ScheduleAppointmentModal
+        <ScheduleAppointmentModalEnhanced
           property={property}
           advisor={currentAdvisor}
           isOpen={isScheduleModalOpen}
