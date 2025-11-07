@@ -164,22 +164,23 @@ export async function getPropertyAppointmentsPaginated(
     const result = await paginateQuery<any>(query, options);
     
     // Mapear campos de appointments a PropertyAppointment
-    const mappedData = result.data.map((appointment: any) => ({
+    const mappedData: PropertyAppointment[] = result.data.map((appointment: any) => ({
       id: appointment.id,
       client_name: appointment.contact_name,
       client_email: appointment.contact_email,
       client_phone: appointment.contact_phone,
       appointment_date: appointment.start_time,
       appointment_type: appointment.appointment_type || 'visita',
-      visit_type: 'presencial',
+      visit_type: 'presencial' as const,
       attendees: 1,
       special_requests: appointment.notes,
       status: appointment.status,
       property_id: appointment.property_id,
       advisor_id: appointment.advisor_id,
+      contact_method: (appointment.contact_method || 'whatsapp') as 'whatsapp' | 'phone' | 'email',
+      marketing_consent: appointment.marketing_consent || false,
       created_at: appointment.created_at,
-      updated_at: appointment.updated_at,
-      deleted_at: null
+      updated_at: appointment.updated_at
     }));
 
     return {
@@ -3759,7 +3760,6 @@ export async function exportProperties(options: ExportOptions = { format: 'xlsx'
     }));
 
     // Generar archivo según formato
-    const filename = `propiedades_${new Date().toISOString().split('T')[0]}`;
     return generateExportFile(exportData, options.format);
 
   } catch (error) {
@@ -3825,7 +3825,6 @@ export async function exportClients(options: ExportOptions = { format: 'xlsx' })
     }));
 
     // Generar archivo según formato
-    const filename = `clientes_${new Date().toISOString().split('T')[0]}`;
     return generateExportFile(exportData, options.format);
 
   } catch (error) {
@@ -3914,7 +3913,6 @@ export async function exportContracts(options: ExportOptions = { format: 'xlsx' 
     }));
 
     // Generar archivo según formato
-    const filename = `contratos_${new Date().toISOString().split('T')[0]}`;
     return generateExportFile(exportData, options.format);
 
   } catch (error) {
@@ -4037,7 +4035,6 @@ export async function exportAllData(options: ExportOptions = { format: 'xlsx' })
 
     // Generar archivo Excel
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const filename = `datos_completos_${new Date().toISOString().split('T')[0]}.xlsx`;
 
     return excelBuffer;
 
