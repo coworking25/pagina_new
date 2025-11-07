@@ -5,11 +5,9 @@ import {
   Home,
   DollarSign,
   FileText,
-  Calculator,
   Hammer,
   Wrench,
   Building,
-  CreditCard,
   Scissors,
   ArrowLeft,
   Check,
@@ -18,12 +16,12 @@ import {
   MessageCircle,
   Phone,
   Mail,
-  Calendar
+  Calendar,
+  FileSpreadsheet
 } from 'lucide-react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import ServiceInquiryModal from '../components/Modals/ServiceInquiryModal';
-import MortgageCalculator from '../components/UI/MortgageCalculator';
 
 interface Service {
   id: string;
@@ -153,42 +151,6 @@ const ServiceDetail: React.FC = () => {
         '¿Tienes escrituras de la propiedad?',
         '¿Hay urgencia en la entrega del avalúo?',
         '¿Necesitas el avalúo para una entidad específica?'
-      ]
-    },
-    {
-      id: 'hipotecas',
-      icon: CreditCard,
-      title: 'Hipotecas',
-      description: 'Es un préstamo para comprar, mejorar o construir vivienda, dejando el inmueble como garantía. Se paga en cuotas mensuales durante un plazo acordado.',
-      detailedDescription: 'Te ayudamos a obtener el mejor crédito hipotecario comparando opciones de diferentes entidades financieras. Incluye pre-aprobación, análisis de capacidad de pago, y acompañamiento en todo el proceso de financiación.',
-      color: 'from-indigo-500 to-indigo-600',
-      features: ['Pre-aprobación rápida', 'Comparación de tasas', 'Acompañamiento completo', 'Sin costos adicionales', 'Mejora de score'],
-      benefits: [
-        'Permite adquirir vivienda sin pagar todo de contado',
-        'Ayuda a construir patrimonio',
-        'Ofrece plazos y condiciones flexibles',
-        'Es una inversión segura',
-        'Mejora tu perfil crediticio'
-      ],
-      process: [
-        'Análisis de perfil crediticio',
-        'Evaluación de capacidad de pago',
-        'Comparación de opciones bancarias',
-        'Solicitud y radicación de crédito',
-        'Gestión de aprobación',
-        'Desembolso y cierre del crédito'
-      ],
-      estimatedTime: '7-15 días hábiles',
-      priceRange: 'Sin costo adicional',
-      whatsappQuestions: [
-        '¿Cuál es el valor de la propiedad que quieres comprar?',
-        '¿Cuánto tienes ahorrado para la cuota inicial?',
-        '¿Cuál es tu ingreso mensual?',
-        '¿Tienes codeudor o aval?',
-        '¿Has revisado tu historial crediticio?',
-        '¿Qué plazo de financiación prefieres?',
-        '¿Necesitas asesoría para mejorar tu score crediticio?',
-        '¿Quieres comparar opciones de diferentes bancos?'
       ]
     },
     {
@@ -337,7 +299,7 @@ const ServiceDetail: React.FC = () => {
     },
     {
       id: 'asesorias-contables',
-      icon: Calculator,
+      icon: FileSpreadsheet,
       title: 'Asesorías Contables',
       description: 'Servicios contables y tributarios especializados para el sector inmobiliario.',
       detailedDescription: 'Asesoría contable y tributaria especializada en el sector inmobiliario. Incluye declaración de renta, optimización tributaria, y consultoría legal para personas naturales y jurídicas con inversiones en finca raíz.',
@@ -484,30 +446,6 @@ const ServiceDetail: React.FC = () => {
             </p>
           </div>
         </motion.div>
-
-        {/* Calculator for Hipotecas */}
-        {selectedService.id === 'hipotecas' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-12"
-          >
-            <Card className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                    Calculadora de Hipoteca
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Calcula tu cuota mensual aproximada
-                  </p>
-                </div>
-              </div>
-              <MortgageCalculator />
-            </Card>
-          </motion.div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Features & Benefits */}

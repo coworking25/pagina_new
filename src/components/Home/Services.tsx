@@ -4,29 +4,24 @@ import {
   Home, 
   DollarSign, 
   FileText, 
-  Calculator, 
   Hammer, 
   Wrench, 
   Building,
   ArrowRight,
-  CreditCard,
   Scissors,
   ChevronDown,
   ChevronUp,
-  Calendar,
-  Percent
+  FileSpreadsheet
 } from 'lucide-react';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
 import ServiceInquiryModal from '../Modals/ServiceInquiryModal';
 import TestimonialsCarousel from './TestimonialsCarousel';
-import MortgageCalculator from '../UI/MortgageCalculator';
 
 const Services: React.FC = () => {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedServiceIndex, setExpandedServiceIndex] = useState<number | null>(null);
-  const [showMortgageCalculator, setShowMortgageCalculator] = useState(false);
 
   const services = [
     {
@@ -84,25 +79,6 @@ const Services: React.FC = () => {
         '¿Tienes escrituras de la propiedad?',
         '¿Hay urgencia en la entrega del avalúo?',
         '¿Necesitas el avalúo para una entidad específica?'
-      ]
-    },
-    {
-      icon: CreditCard,
-      title: 'Hipotecas',
-      description: 'Es un préstamo para comprar, mejorar o construir vivienda, dejando el inmueble como garantía. Se paga en cuotas mensuales durante un plazo acordado.',
-      color: 'from-indigo-500 to-indigo-600',
-      features: ['Pre-aprobación rápida', 'Comparación de tasas', 'Acompañamiento completo'],
-      estimatedTime: '7-15 días hábiles',
-      priceRange: 'Sin costo adicional',
-      whatsappQuestions: [
-        '¿Cuál es el valor de la propiedad que quieres comprar?',
-        '¿Cuánto tienes ahorrado para la cuota inicial?',
-        '¿Cuál es tu ingreso mensual?',
-        '¿Tienes codeudor o aval?',
-        '¿Has revisado tu historial crediticio?',
-        '¿Qué plazo de financiación prefieres?',
-        '¿Necesitas asesoría para mejorar tu score crediticio?',
-        '¿Quieres comparar opciones de diferentes bancos?'
       ]
     },
     {
@@ -182,7 +158,7 @@ const Services: React.FC = () => {
       ]
     },
     {
-      icon: Calculator,
+      icon: FileSpreadsheet,
       title: 'Asesorías Contables',
       description: 'Servicios contables y tributarios especializados para el sector inmobiliario.',
       color: 'from-purple-500 to-purple-600',
@@ -388,95 +364,6 @@ const Services: React.FC = () => {
             );
           })}
         </div>
-
-        {/* Sección especial: Calculadora de Hipoteca */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="mb-12"
-        >
-          <Card className="overflow-hidden border-0 shadow-xl">
-            {/* Header con gradiente verde */}
-            <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 md:p-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-4 mb-4 md:mb-0">
-                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                    <Calculator className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-1">
-                      Calculadora de Hipoteca
-                    </h3>
-                    <p className="text-green-50 text-sm md:text-base">
-                      Simula el financiamiento de tu próxima propiedad
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant={showMortgageCalculator ? 'secondary' : 'outline'}
-                  icon={showMortgageCalculator ? ChevronUp : ChevronDown}
-                  iconPosition="right"
-                  onClick={() => setShowMortgageCalculator(!showMortgageCalculator)}
-                  className={`w-full md:w-auto ${
-                    showMortgageCalculator 
-                      ? 'bg-white text-green-600 hover:bg-green-50' 
-                      : '!text-white !border-white/30 hover:!bg-white/10'
-                  }`}
-                >
-                  {showMortgageCalculator ? 'Ocultar Calculadora' : 'Calcular Ahora'}
-                </Button>
-              </div>
-            </div>
-
-            {/* Calculadora expandible */}
-            <AnimatePresence>
-              {showMortgageCalculator && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden bg-white dark:bg-gray-800"
-                >
-                  <div className="p-6 md:p-8">
-                    <MortgageCalculator />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Información adicional cuando está colapsada */}
-            {!showMortgageCalculator && (
-              <div className="bg-gray-50 dark:bg-gray-800/50">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 p-6 md:p-8">
-                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-lg flex items-center justify-center mx-auto mb-3">
-                      <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Pre-aprobación</p>
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400">7-15 días</p>
-                  </div>
-                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-lg flex items-center justify-center mx-auto mb-3">
-                      <Percent className="w-6 h-6 text-green-600 dark:text-green-400" />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Tasa promedio</p>
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400">12.5% EA</p>
-                  </div>
-                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-lg flex items-center justify-center mx-auto mb-3">
-                      <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Costo del servicio</p>
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400">Gratis</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </Card>
-        </motion.div>
 
         {/* Testimonials Carousel */}
         <motion.div
