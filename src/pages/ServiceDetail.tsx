@@ -548,7 +548,7 @@ const ServiceDetail: React.FC = () => {
 
                   <Button
                     variant="outline"
-                    onClick={() => navigate('/contact')}
+                    onClick={handleContactClick}
                     className="w-full border-white text-white hover:bg-white/10"
                   >
                     <Mail className="w-5 h-5 mr-2" />
@@ -557,7 +557,7 @@ const ServiceDetail: React.FC = () => {
 
                   <Button
                     variant="outline"
-                    onClick={() => navigate('/advisors')}
+                    onClick={handleContactClick}
                     className="w-full border-white text-white hover:bg-white/10"
                   >
                     <Calendar className="w-5 h-5 mr-2" />
@@ -571,8 +571,8 @@ const ServiceDetail: React.FC = () => {
                   </p>
                   <div className="flex items-center justify-center gap-2 mt-3">
                     <Phone className="w-4 h-4" />
-                    <a href="tel:+573028108090" className="text-sm font-medium hover:underline">
-                      +57 302 810 80 90
+                    <a href="tel:+573148860404" className="text-sm font-medium hover:underline">
+                      +57 314 886 0404
                     </a>
                   </div>
                 </div>
