@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Clock, CheckCircle, XCircle, AlertTriangle, Sun, Moon, Zap } from 'lucide-react';
-import { format, addMinutes, isBefore, isAfter, parseISO, getDay } from 'date-fns';
+import { format, addMinutes, isBefore, isAfter, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -47,24 +47,74 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
 
     setLoading(true);
     try {
-      // Generate time slots here to avoid dependency issues
+      // 🎯 FIX CRÍTICO: Manejar fecha correctamente
+      // Crear una fecha local limpia sin problemas de zona horaria
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const day = selectedDate.getDate();
+      const localDate = new Date(year, month, day, 0, 0, 0, 0);
+      
+      // Determinar día de la semana (0 = Domingo, 6 = Sábado)
+      const dayOfWeek = localDate.getDay();
+      
+      // Obtener fecha de "hoy" en hora local (sin componente de tiempo)
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const isToday = localDate.getTime() === today.getTime();
+      
+      console.log('🗓️ DEBUG TimeSlotSelector:', {
+        selectedDateInput: selectedDate,
+        year, month, day,
+        localDate: localDate.toISOString(),
+        localDateString: localDate.toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        dayOfWeek: dayOfWeek,
+        dayName: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][dayOfWeek],
+        today: today.toLocaleDateString('es-CO'),
+        isToday: isToday,
+        currentTime: `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`
+      });
+      
+      // 🎯 FIX: Generar slots considerando día de la semana y hora actual
       const slots: string[] = [];
       const startHour = 9;
-      const endHour = 17;
       const interval = 30;
+      
+      // 🎯 CAMBIO 1: Sábados solo hasta 12:00 PM (mediodía)
+      const endHour = dayOfWeek === 6 ? 12 : 17; // Sábado = 6
+      
+      console.log(`📅 Horario para ${['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][dayOfWeek]}: ${startHour}:00 - ${endHour}:00`);
+
+      // 🎯 CAMBIO 2: Si es hoy, obtener hora actual
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
 
       for (let hour = startHour; hour < endHour; hour++) {
         for (let minute = 0; minute < 60; minute += interval) {
           const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          
+          // 🎯 FILTRO: Si es hoy, solo mostrar horas futuras (con margen de 1 hora)
+          if (isToday) {
+            const slotMinutesFromMidnight = hour * 60 + minute;
+            const currentMinutesFromMidnight = currentHour * 60 + currentMinute;
+            const marginMinutes = 60; // Margen de 1 hora después de la hora actual
+            
+            if (slotMinutesFromMidnight < currentMinutesFromMidnight + marginMinutes) {
+              console.log(`⏭️ Saltando slot ${timeString} (ya pasó o muy cercano)`);
+              continue;
+            }
+          }
+          
           slots.push(timeString);
         }
       }
+      
+      console.log(`✅ Generados ${slots.length} slots de tiempo para ${isToday ? 'HOY' : localDate.toLocaleDateString('es-CO')}`);
 
       // Get advisor weekly availability
       const weeklyAvailability: AdvisorAvailability[] = await calendarService.getAdvisorAvailability(advisorId);
 
       // Get exceptions for this specific date
-      const dateString = format(selectedDate, 'yyyy-MM-dd');
+      const dateString = format(localDate, 'yyyy-MM-dd');
       const exceptions: AvailabilityException[] = await calendarService.getAvailabilityExceptions(advisorId, dateString, dateString);
 
       // Get existing appointments for this date to check conflicts
@@ -74,8 +124,8 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
         end_date: dateString,
       });
 
-      // Determine day of week (0 = Sunday, 1 = Monday, etc.)
-      const dayOfWeek = getDay(selectedDate);
+      // 🎯 dayOfWeek ya fue declarado arriba para determinar endHour
+      // No redeclarar aquí
 
       // Check if there's an exception for this date
       const exceptionForDate = exceptions.find(exc => exc.exception_date === dateString);
@@ -83,7 +133,8 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
       // Create slots with availability and conflicts
       const slotsWithAvailability = slots.map(timeString => {
         const [hours, minutes] = timeString.split(':').map(Number);
-        const slotStart = new Date(selectedDate);
+        // 🎯 FIX: Usar localDate para evitar problemas de zona horaria
+        const slotStart = new Date(localDate);
         slotStart.setHours(hours, minutes, 0, 0);
 
         const slotEnd = addMinutes(slotStart, duration);

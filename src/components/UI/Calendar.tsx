@@ -50,9 +50,16 @@ const Calendar: React.FC<CalendarProps> = ({
     // Días del mes actual
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
+      
+      // 🎯 FIX: Comparar solo fechas, no horas
+      // Resetear la hora a medianoche para ambas fechas antes de comparar
+      const dateAtMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const minDateAtMidnight = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+      const maxDateAtMidnight = maxDate ? new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()) : null;
+      
       const isDisabled =
-        date < minDate ||
-        (maxDate && date > maxDate) ||
+        dateAtMidnight < minDateAtMidnight ||
+        (maxDateAtMidnight && dateAtMidnight > maxDateAtMidnight) ||
         (excludeSundays && date.getDay() === 0);
 
       days.push({
@@ -92,6 +99,11 @@ const Calendar: React.FC<CalendarProps> = ({
     if (isDisabled) return;
 
     const dateString = date.toISOString().split('T')[0];
+    console.log('📅 Calendar: Día clickeado:', {
+      date: date.toLocaleDateString('es-CO'),
+      dateString,
+      isDisabled
+    });
     onDateSelect(dateString);
   };
 
@@ -291,29 +303,6 @@ const Calendar: React.FC<CalendarProps> = ({
           <div className="w-3 h-3 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-full"></div>
           <span className="text-gray-600 dark:text-gray-400 font-medium">Otro mes</span>
         </div>
-      </motion.div>
-
-      {/* Quick actions */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="mt-4 flex justify-center gap-2"
-      >
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => {
-            const today = new Date();
-            const todayString = formatDateForComparison(today);
-            if (today >= minDate && (!maxDate || today <= maxDate) && (!excludeSundays || today.getDay() !== 0)) {
-              onDateSelect(todayString);
-            }
-          }}
-          className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
-        >
-          Hoy
-        </motion.button>
       </motion.div>
     </motion.div>
   );

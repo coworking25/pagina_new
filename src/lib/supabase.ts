@@ -438,6 +438,34 @@ export async function savePropertyAppointment(appointmentData: {
   marketing_consent: boolean;
 }) {
   try {
+    // 🎯 VALIDACIÓN: Verificar horario permitido
+    const appointmentDateTime = new Date(appointmentData.appointment_date);
+    const dayOfWeek = appointmentDateTime.getDay(); // 0 = Domingo, 6 = Sábado
+    const hours = appointmentDateTime.getHours();
+    
+    // Validación 1: No permitir domingos
+    if (dayOfWeek === 0) {
+      throw new Error('No se permiten citas los domingos');
+    }
+    
+    // Validación 2: Sábados solo hasta 12:00 PM
+    if (dayOfWeek === 6 && (hours >= 12)) {
+      throw new Error('Los sábados solo se permiten citas hasta las 12:00 PM (mediodía)');
+    }
+    
+    // Validación 3: Horario general de 9:00 AM a 5:00 PM (lunes a viernes)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      if (hours < 9 || hours >= 17) {
+        throw new Error('El horario de atención es de 9:00 AM a 5:00 PM');
+      }
+    }
+    
+    // Validación 4: No permitir citas en el pasado
+    const now = new Date();
+    if (appointmentDateTime < now) {
+      throw new Error('No se pueden agendar citas en fechas u horas ya pasadas');
+    }
+    
     const { data, error } = await supabase
       .from('property_appointments')
       .insert([appointmentData])

@@ -176,7 +176,14 @@ const ScheduleAppointmentModalEnhanced: React.FC<ScheduleAppointmentModalProps> 
     email: '',
     phone: '',
     appointmentType: '',
-    preferredDate: '',
+    preferredDate: (() => {
+      // 🎯 Inicializar con la fecha de hoy en formato YYYY-MM-DD
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    })(),
     preferredTime: '',
     visitType: '',
     specialRequests: '',
@@ -941,7 +948,13 @@ ${formData.specialRequests ? `💭 *Solicitudes especiales:*\n${formData.special
                       </h3>
                       {formData.preferredDate ? (
                         <TimeSlotSelector
-                          selectedDate={new Date(formData.preferredDate)}
+                          key={formData.preferredDate} // 🎯 Forzar re-render cuando cambia la fecha
+                          selectedDate={(() => {
+                            // 🎯 FIX: Parsear fecha correctamente como fecha local
+                            // new Date('YYYY-MM-DD') se interpreta como UTC, causando desfase de 1 día
+                            const [year, month, day] = formData.preferredDate.split('-').map(Number);
+                            return new Date(year, month - 1, day);
+                          })()}
                           advisorId={advisor.id}
                           selectedTime={formData.preferredTime}
                           onTimeSelect={(time: string) => updateFormData('preferredTime', time)}
