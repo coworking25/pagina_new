@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, 
@@ -19,12 +20,14 @@ import ServiceInquiryModal from '../Modals/ServiceInquiryModal';
 import TestimonialsCarousel from './TestimonialsCarousel';
 
 const Services: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedServiceIndex, setExpandedServiceIndex] = useState<number | null>(null);
 
   const services = [
     {
+      id: 'arrendamientos',
       icon: Home,
       title: 'Arrendamientos',
       description: 'Encuentra el hogar perfecto para ti con nuestro amplio portafolio de propiedades en arriendo.',
@@ -44,6 +47,7 @@ const Services: React.FC = () => {
       ]
     },
     {
+      id: 'ventas',
       icon: DollarSign,
       title: 'Ventas',
       description: 'Compra o vende tu propiedad con la asesoría de nuestros expertos en el mercado inmobiliario.',
@@ -63,6 +67,7 @@ const Services: React.FC = () => {
       ]
     },
     {
+      id: 'avaluos',
       icon: FileText,
       title: 'Avalúos',
       description: 'Obtén el valor real de tu propiedad con nuestros avalúos técnicos certificados.',
@@ -82,6 +87,7 @@ const Services: React.FC = () => {
       ]
     },
     {
+      id: 'desenglobes',
       icon: Scissors,
       title: 'Desenglobes',
       description: 'Servicios de subdivisión y desenglobe de propiedades para optimizar tu inversión inmobiliaria.',
@@ -101,6 +107,7 @@ const Services: React.FC = () => {
       ]
     },
     {
+      id: 'remodelacion',
       icon: Hammer,
       title: 'Remodelación',
       description: 'Transforma tu espacio con nuestros servicios de remodelación y diseño interior.',
@@ -120,6 +127,7 @@ const Services: React.FC = () => {
       ]
     },
     {
+      id: 'reparacion',
       icon: Wrench,
       title: 'Reparación',
       description: 'Mantenimiento y reparaciones para mantener tu propiedad en perfecto estado.',
@@ -139,6 +147,7 @@ const Services: React.FC = () => {
       ]
     },
     {
+      id: 'construccion',
       icon: Building,
       title: 'Construcción',
       description: 'Proyectos de construcción desde cero con los más altos estándares de calidad.',
@@ -158,6 +167,7 @@ const Services: React.FC = () => {
       ]
     },
     {
+      id: 'asesorias-contables',
       icon: FileSpreadsheet,
       title: 'Asesorías Contables',
       description: 'Servicios contables y tributarios especializados para el sector inmobiliario.',
@@ -178,6 +188,12 @@ const Services: React.FC = () => {
     },
   ];
 
+  // Navegar a la página de detalles del servicio (para título/ícono/card)
+  const openServiceDetail = (serviceId: string) => {
+    navigate(`/services/${serviceId}`);
+  };
+
+  // Abrir modal de formulario (para botón "Más Información")
   const openServiceModal = (service: any) => {
     setSelectedService(service);
     setIsModalOpen(true);
@@ -236,16 +252,19 @@ const Services: React.FC = () => {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="p-6 h-full group cursor-pointer" hover>
-                  {/* Icon and Title */}
-                  <div className="flex items-center gap-4 mb-4">
+                <Card className="p-6 h-full group" hover>
+                  {/* Icon and Title - Clickeable para ir a la página de detalles */}
+                  <div 
+                    className="flex items-center gap-4 mb-4 cursor-pointer"
+                    onClick={() => openServiceDetail(service.id)}
+                  >
                     <div className="relative">
                       <div className={`w-12 h-12 bg-gradient-to-r ${service.color} rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300`}>
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <div className={`absolute inset-0 bg-gradient-to-r ${service.color} rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-300`}></div>
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                       {service.title}
                     </h3>
                   </div>
@@ -263,8 +282,13 @@ const Services: React.FC = () => {
                     ))}
                   </ul>
 
-                  {/* CTA */}
-                  <div className="mt-auto">
+                  {/* CTA - Abre el modal de formulario */}
+                  <div 
+                    className="mt-auto"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
                     <Button
                       variant="ghost"
                       icon={ArrowRight}
@@ -272,7 +296,7 @@ const Services: React.FC = () => {
                       className="w-full group-hover:text-green-700 dark:group-hover:text-green-500"
                       onClick={() => openServiceModal(service)}
                     >
-                      Más Información
+                      Solicitar Información
                     </Button>
                   </div>
                 </Card>
@@ -296,27 +320,33 @@ const Services: React.FC = () => {
                 viewport={{ once: true }}
               >
                 <Card className="overflow-hidden">
-                  {/* Header - Siempre visible */}
-                  <button
-                    onClick={() => toggleService(index)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200"
-                  >
-                    <div className="flex items-center gap-3">
+                  {/* Header - Click para ir a detalles */}
+                  <div className="flex">
+                    {/* Área del título/ícono - Navega a la página de detalles */}
+                    <div
+                      onClick={() => openServiceDetail(service.id)}
+                      className="flex-1 p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200"
+                    >
                       <div className={`w-10 h-10 bg-gradient-to-r ${service.color} rounded-lg flex items-center justify-center shadow-md`}>
                         <Icon className="w-5 h-5 text-white" />
                       </div>
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white text-left">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition-colors text-left">
                         {service.title}
                       </h3>
                     </div>
-                    <div className="flex-shrink-0">
+                    
+                    {/* Botón de expandir/colapsar */}
+                    <button
+                      onClick={() => toggleService(index)}
+                      className="px-4 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 flex-shrink-0"
+                    >
                       {isExpanded ? (
                         <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                       ) : (
                         <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                       )}
-                    </div>
-                  </button>
+                    </button>
+                  </div>
 
                   {/* Content - Expandible */}
                   <AnimatePresence>
@@ -344,7 +374,7 @@ const Services: React.FC = () => {
                             ))}
                           </ul>
 
-                          {/* CTA Button */}
+                          {/* CTA Button - Abre el modal */}
                           <Button
                             variant="ghost"
                             icon={ArrowRight}
@@ -353,7 +383,7 @@ const Services: React.FC = () => {
                             className="w-full mt-2"
                             onClick={() => openServiceModal(service)}
                           >
-                            Más Información
+                            Solicitar Información
                           </Button>
                         </div>
                       </motion.div>
