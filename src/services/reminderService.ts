@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { format, addMinutes, parseISO, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { getAppointmentTypeText } from '../utils/translations';
 
 export class ReminderService {
   private notificationService: NotificationService;
@@ -371,13 +372,16 @@ Equipo de CoWorking`;
     }
 
     // Replace template variables
+    // 🌐 Traducir appointment_type a español antes de reemplazar
+    const appointmentTypeSpanish = getAppointmentTypeText(appointment.appointment_type);
+    
     return message
       .replace(/{{client_name}}/g, client.full_name)
       .replace(/{{appointment_date}}/g, formattedDate)
       .replace(/{{appointment_time}}/g, formattedTime)
       .replace(/{{property_title}}/g, property.title || property.code || 'N/A')
       .replace(/{{advisor_name}}/g, advisor.name)
-      .replace(/{{appointment_type}}/g, appointment.appointment_type);
+      .replace(/{{appointment_type}}/g, appointmentTypeSpanish);
   }
 
   /**

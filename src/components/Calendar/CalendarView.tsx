@@ -7,6 +7,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { appointmentSyncService } from '../../services/appointmentSyncService';
 import Button from '../UI/Button';
 import Card from '../UI/Card';
+import { getAppointmentTypeText } from '../../utils/translations';
 
 const locales = {
   es: es,
@@ -211,8 +212,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         )}
         {appointment.appointment_type && (
-          <div className="text-xs opacity-75 capitalize">
-            📋 {appointment.appointment_type}
+          <div className="text-xs opacity-75">
+            📋 {getAppointmentTypeText(appointment.appointment_type)}
           </div>
         )}
       </div>

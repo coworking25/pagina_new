@@ -35,6 +35,7 @@ interface FormData {
   special_requests: string;
   contact_method: 'whatsapp' | 'phone' | 'email';
   marketing_consent: boolean;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled';
 }
 
 const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
@@ -56,7 +57,8 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     visit_type: 'presencial',
     special_requests: '',
     contact_method: 'whatsapp',
-    marketing_consent: false
+    marketing_consent: false,
+    status: 'pending'
   });
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
@@ -84,7 +86,7 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
       const availability = await checkAdvisorAvailability(
         advisorId,
         appointmentDate,
-        appointment?.id ? parseInt(appointment.id) : undefined // Excluir la cita actual al verificar
+        appointment?.id // Excluir la cita actual al verificar (mantener como string UUID)
       );
 
       if (availability.available) {
@@ -123,17 +125,35 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   useEffect(() => {
     if (appointment && isOpen) {
       setFormData({
-        client_name: appointment.client_name,
-        client_email: appointment.client_email,
+        client_name: appointment.client_name || '',
+        client_email: appointment.client_email || '',
         client_phone: appointment.client_phone || '',
-        property_id: appointment.property_id,
-        advisor_id: appointment.advisor_id,
-        appointment_date: appointment.appointment_date,
-        appointment_type: appointment.appointment_type,
-        visit_type: appointment.visit_type,
+        property_id: appointment.property_id || 0,
+        advisor_id: appointment.advisor_id || '',
+        appointment_date: appointment.appointment_date || '',
+        appointment_type: appointment.appointment_type || 'visita',
+        visit_type: appointment.visit_type || 'presencial',
         special_requests: appointment.special_requests || '',
-        contact_method: appointment.contact_method,
-        marketing_consent: appointment.marketing_consent
+        contact_method: appointment.contact_method || 'whatsapp',
+        marketing_consent: appointment.marketing_consent || false,
+        status: appointment.status || 'pending'
+      });
+      setErrors({});
+    } else if (!isOpen) {
+      // Reset form cuando se cierra el modal
+      setFormData({
+        client_name: '',
+        client_email: '',
+        client_phone: '',
+        property_id: 0,
+        advisor_id: '',
+        appointment_date: '',
+        appointment_type: 'visita',
+        visit_type: 'presencial',
+        special_requests: '',
+        contact_method: 'whatsapp',
+        marketing_consent: false,
+        status: 'pending'
       });
       setErrors({});
     }
@@ -320,6 +340,24 @@ const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
                 <option value="presencial">Presencial</option>
                 <option value="virtual">Virtual</option>
                 <option value="mixta">Mixta</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Estado de la Cita
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => handleInputChange('status', e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="pending">Pendiente</option>
+                <option value="confirmed">Confirmado</option>
+                <option value="completed">Completado</option>
+                <option value="cancelled">Cancelado</option>
+                <option value="no_show">No Asistió</option>
+                <option value="rescheduled">Reprogramado</option>
               </select>
             </div>
           </div>

@@ -34,6 +34,7 @@ import { usePagination } from '../hooks/usePagination';
 import Pagination from '../components/UI/Pagination';
 import { useMultiSelect } from '../hooks/useMultiSelect';
 import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
+import { getAppointmentTypeText, getVisitTypeText } from '../utils/translations';
 
 function AdminAppointments() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -442,9 +443,9 @@ function AdminAppointments() {
       if (selectedAppointment?.id) {
         await updateAppointment(selectedAppointment.id, appointmentData);
         
-        // 🔄 Sincronizar actualización con el calendario
-        const updatedAppointment = { ...selectedAppointment, ...appointmentData };
-        await appointmentSyncService.onPropertyAppointmentUpdated(updatedAppointment as PropertyAppointment);
+        // ⚠️ NO sincronizar hacia calendario porque ya estamos editando directamente en appointments
+        // La sincronización solo debe ir de property_appointments → appointments, no al revés
+        // Si necesitas sincronizar al property_appointment vinculado, usa otro enfoque
         
         alert('Cita actualizada exitosamente');
       }
@@ -1123,11 +1124,11 @@ function AdminAppointments() {
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <span className="font-medium text-gray-900 dark:text-white capitalize">
-                        {appointment.appointment_type}
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {getAppointmentTypeText(appointment.appointment_type)}
                       </span>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
-                        {appointment.visit_type}
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {getVisitTypeText(appointment.visit_type)}
                       </p>
                     </div>
                   </td>
@@ -1243,6 +1244,11 @@ function AdminAppointments() {
         onStatusChange={(status) => {
           if (selectedAppointment?.id) {
             handleStatusChange(selectedAppointment.id, status);
+          }
+        }}
+        onSendConfirmation={() => {
+          if (selectedAppointment) {
+            handleSendConfirmation(selectedAppointment);
           }
         }}
         advisors={advisors}

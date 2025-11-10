@@ -18,6 +18,7 @@ import {
 import Modal from '../UI/Modal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { getAppointmentTypeText } from '../../utils/translations';
 
 interface CalendarAppointmentDetailsModalProps {
   appointment: any | null;
@@ -92,7 +93,7 @@ const CalendarAppointmentDetailsModal: React.FC<CalendarAppointmentDetailsModalP
     if (!appointment.contact_email) return;
 
     const subject = `Confirmación de cita - ${appointment.title}`;
-    const body = `Hola ${appointment.contact_name || 'Cliente'},\n\nTu cita está programada para:\n\nFecha: ${formatDateTime(appointment.start)}\nTipo: ${appointment.appointment_type}\n\nSaludos,\nEquipo de Inmobiliaria`;
+    const body = `Hola ${appointment.contact_name || 'Cliente'},\n\nTu cita está programada para:\n\nFecha: ${formatDateTime(appointment.start)}\nTipo: ${getAppointmentTypeText(appointment.appointment_type)}\n\nSaludos,\nEquipo de Inmobiliaria`;
 
     const mailtoLink = `mailto:${appointment.contact_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoLink, '_blank');
@@ -100,31 +101,36 @@ const CalendarAppointmentDetailsModal: React.FC<CalendarAppointmentDetailsModalP
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'pending': return <AlertCircle className="w-6 h-6 text-yellow-500" />;
       case 'confirmed': return <CheckCircle className="w-6 h-6 text-green-500" />;
       case 'completed': return <CheckCircle className="w-6 h-6 text-blue-500" />;
       case 'cancelled': return <XCircle className="w-6 h-6 text-red-500" />;
       case 'no_show': return <AlertCircle className="w-6 h-6 text-orange-500" />;
-      default: return <AlertCircle className="w-6 h-6 text-yellow-500" />;
+      case 'rescheduled': return <AlertCircle className="w-6 h-6 text-purple-500" />;
+      default: return <AlertCircle className="w-6 h-6 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'confirmed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'completed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       case 'no_show': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
-      default: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'rescheduled': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'Programado';
+      case 'pending': return 'Pendiente';
       case 'confirmed': return 'Confirmado';
       case 'completed': return 'Completado';
       case 'cancelled': return 'Cancelado';
       case 'no_show': return 'No Asistió';
+      case 'rescheduled': return 'Reagendado';
       default: return status;
     }
   };
@@ -162,9 +168,9 @@ const CalendarAppointmentDetailsModal: React.FC<CalendarAppointmentDetailsModalP
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              {getStatusIcon(appointment.status || 'scheduled')}
-              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(appointment.status || 'scheduled')}`}>
-                {getStatusLabel(appointment.status || 'scheduled')}
+              {getStatusIcon(appointment.status || 'pending')}
+              <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(appointment.status || 'pending')}`}>
+                {getStatusLabel(appointment.status || 'pending')}
               </span>
             </div>
           </div>
@@ -174,8 +180,8 @@ const CalendarAppointmentDetailsModal: React.FC<CalendarAppointmentDetailsModalP
               {appointment.title}
             </h2>
             {appointment.appointment_type && (
-              <p className="text-gray-600 dark:text-gray-400 capitalize">
-                {appointment.appointment_type}
+              <p className="text-gray-600 dark:text-gray-400">
+                {getAppointmentTypeText(appointment.appointment_type)}
               </p>
             )}
           </div>

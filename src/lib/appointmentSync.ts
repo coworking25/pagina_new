@@ -176,7 +176,7 @@ export async function syncAppointmentToProperty(appointment: AppointmentData): P
       special_requests: appointment.notes || appointment.description || '',
       contact_method: 'whatsapp',
       marketing_consent: false,
-      status: mapCalendarStatus(appointment.status || 'scheduled'),
+      status: mapCalendarStatus(appointment.status || 'pending'),
     };
 
     console.log('   💾 Insertando en property_appointments...');
@@ -234,7 +234,7 @@ export async function deleteSyncedAppointment(appointmentId: string, source: 'ap
         .from('appointments')
         .select('property_appointment_id')
         .eq('id', appointmentId)
-        .single();
+        .maybeSingle();
 
       // Soft delete en appointments
       await supabase
@@ -297,22 +297,24 @@ function mapCalendarAppointmentType(calendarType: string): string {
 
 function mapStatus(propertyStatus: string): string {
   const mapping: Record<string, string> = {
-    'pending': 'scheduled',
+    'pending': 'pending',
     'confirmed': 'confirmed',
     'completed': 'completed',
     'cancelled': 'cancelled',
     'no_show': 'no_show',
+    'rescheduled': 'rescheduled',
   };
-  return mapping[propertyStatus] || 'scheduled';
+  return mapping[propertyStatus] || 'pending';
 }
 
 function mapCalendarStatus(calendarStatus: string): string {
   const mapping: Record<string, string> = {
-    'scheduled': 'pending',
+    'pending': 'pending',
     'confirmed': 'confirmed',
     'completed': 'completed',
     'cancelled': 'cancelled',
     'no_show': 'no_show',
+    'rescheduled': 'rescheduled',
   };
   return mapping[calendarStatus] || 'pending';
 }

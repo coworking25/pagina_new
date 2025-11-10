@@ -14,7 +14,7 @@ export interface Appointment {
   property_id?: string;
   location?: string;
   appointment_type: 'meeting' | 'viewing' | 'consultation' | 'valuation' | 'follow_up' | 'other';
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled';
   contact_name?: string;
   contact_email?: string;
   contact_phone?: string;
@@ -236,7 +236,7 @@ export class CalendarService {
         .insert([{
           ...appointmentData,
           created_by: user.id,
-          status: 'scheduled',
+          status: 'pending',
           reminder_sent: false,
           follow_up_required: appointmentData.follow_up_required || false,
         }])

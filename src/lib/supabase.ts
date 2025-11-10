@@ -310,13 +310,13 @@ export async function savePropertyAppointmentSimple(appointmentData: {
  * Verifica si un asesor está disponible en una fecha y hora específica
  * @param advisorId ID del asesor
  * @param appointmentDate Fecha y hora de la cita propuesta
- * @param excludeAppointmentId ID de cita a excluir (para ediciones)
+ * @param excludeAppointmentId ID de cita a excluir (para ediciones) - UUID string
  * @returns true si está disponible, false si ya tiene una cita
  */
 export async function checkAdvisorAvailability(
   advisorId: string,
   appointmentDate: string,
-  excludeAppointmentId?: number
+  excludeAppointmentId?: string
 ): Promise<{ available: boolean; conflictingAppointment?: any }> {
   try {
     console.log('🔍 Verificando disponibilidad del asesor:', advisorId, 'para:', appointmentDate);
@@ -1295,12 +1295,37 @@ export async function getAppointmentsByAdvisorId(advisorId: string) {
 // Actualizar una cita existente
 export async function updateAppointment(appointmentId: string, appointmentData: Partial<PropertyAppointment>): Promise<PropertyAppointment> {
   try {
+    console.log('📝 Actualizando cita:', appointmentId, 'con datos:', appointmentData);
+    
+    // Mapear campos de PropertyAppointment a campos de appointments
+    const mappedData: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (appointmentData.client_name) mappedData.contact_name = appointmentData.client_name;
+    if (appointmentData.client_email) mappedData.contact_email = appointmentData.client_email;
+    if (appointmentData.client_phone) mappedData.contact_phone = appointmentData.client_phone;
+    
+    // Si se actualiza la fecha/hora, calcular end_time (1 hora después por defecto)
+    if (appointmentData.appointment_date) {
+      mappedData.start_time = appointmentData.appointment_date;
+      const startTime = new Date(appointmentData.appointment_date);
+      const endTime = new Date(startTime);
+      endTime.setHours(endTime.getHours() + 1);
+      mappedData.end_time = endTime.toISOString();
+    }
+    
+    if (appointmentData.appointment_type) mappedData.appointment_type = appointmentData.appointment_type;
+    if (appointmentData.status) mappedData.status = appointmentData.status;
+    if (appointmentData.advisor_id) mappedData.advisor_id = appointmentData.advisor_id;
+    if (appointmentData.property_id) mappedData.property_id = String(appointmentData.property_id);
+    if (appointmentData.special_requests) mappedData.notes = appointmentData.special_requests;
+    if (appointmentData.follow_up_notes) mappedData.follow_up_notes = appointmentData.follow_up_notes;
+    if (appointmentData.rescheduled_date) mappedData.rescheduled_date = appointmentData.rescheduled_date;
+
     const { data, error } = await supabase
-      .from('property_appointments')
-      .update({
-        ...appointmentData,
-        updated_at: new Date().toISOString()
-      })
+      .from('appointments')
+      .update(mappedData)
       .eq('id', appointmentId)
       .select()
       .single();
@@ -1311,7 +1336,26 @@ export async function updateAppointment(appointmentId: string, appointmentData: 
     }
 
     console.log('✅ Cita actualizada exitosamente:', data);
-    return data;
+    
+    // Retornar en formato PropertyAppointment
+    return {
+      id: data.id,
+      client_name: data.contact_name,
+      client_email: data.contact_email,
+      client_phone: data.contact_phone,
+      appointment_date: data.start_time,
+      appointment_type: data.appointment_type,
+      visit_type: 'presencial' as const,
+      attendees: 1,
+      contact_method: 'whatsapp' as const,
+      marketing_consent: false,
+      status: data.status,
+      advisor_id: data.advisor_id,
+      property_id: parseInt(data.property_id) || 0,
+      special_requests: data.notes,
+      follow_up_notes: data.follow_up_notes,
+      rescheduled_date: data.rescheduled_date
+    };
   } catch (error) {
     console.error('❌ Error en updateAppointment:', error);
     throw error;
@@ -1362,8 +1406,9 @@ export async function updateAppointmentStatus(appointmentId: string, status: 'pe
         break;
     }
 
+    // 🔥 Actualizar en la tabla appointments (no property_appointments)
     const { data, error } = await supabase
-      .from('property_appointments')
+      .from('appointments')
       .update(updateData)
       .eq('id', appointmentId)
       .select()
@@ -1375,7 +1420,23 @@ export async function updateAppointmentStatus(appointmentId: string, status: 'pe
     }
 
     console.log('✅ Estado de cita actualizado exitosamente:', data);
-    return data;
+    
+    // Retornar en formato PropertyAppointment
+    return {
+      id: data.id,
+      client_name: data.contact_name,
+      client_email: data.contact_email,
+      client_phone: data.contact_phone,
+      appointment_date: data.start_time,
+      appointment_type: data.appointment_type,
+      visit_type: 'presencial' as const,
+      attendees: 1,
+      contact_method: 'whatsapp' as const,
+      marketing_consent: false,
+      status: data.status,
+      advisor_id: data.advisor_id,
+      property_id: parseInt(data.property_id) || 0
+    };
   } catch (error) {
     console.error('❌ Error en updateAppointmentStatus:', error);
     throw error;
@@ -4170,13 +4231,38 @@ export function sendWhatsAppConfirmationToAdvisor(
       minute: '2-digit'
     });
 
+    // 🌐 Traducir tipo de cita a español
+    const getAppointmentTypeText = (type: string): string => {
+      switch (type.toLowerCase()) {
+        case 'visita':
+        case 'viewing':
+          return 'Visita';
+        case 'consulta':
+        case 'consultation':
+          return 'Consulta';
+        case 'avaluo':
+        case 'valuation':
+        case 'appraisal':
+          return 'Avalúo';
+        case 'asesoria':
+        case 'follow_up':
+          return 'Asesoría';
+        case 'meeting':
+          return 'Reunión';
+        default:
+          return type.charAt(0).toUpperCase() + type.slice(1);
+      }
+    };
+
+    const appointmentTypeSpanish = getAppointmentTypeText(appointmentData.appointment_type);
+
     const message = `🎉 *Nueva Cita Confirmada*\n\n` +
       `Hola ${appointmentData.advisor_name || 'Asesor'},\n\n` +
       `Se ha confirmado una nueva cita:\n\n` +
       `👤 *Cliente:* ${appointmentData.client_name}\n` +
       `📅 *Fecha:* ${formattedDate}\n` +
       `🏠 *Propiedad:* ${appointmentData.property_title || 'No especificada'}\n` +
-      `📋 *Tipo:* ${appointmentData.appointment_type}\n` +
+      `📋 *Tipo:* ${appointmentTypeSpanish}\n` +
       `📞 *Teléfono:* ${appointmentData.client_phone || 'No disponible'}\n` +
       `📧 *Email:* ${appointmentData.client_email || 'No disponible'}\n\n` +
       `Por favor, prepárate para atender a este cliente.\n\n` +
@@ -4221,12 +4307,37 @@ export function sendWhatsAppToClient(
       minute: '2-digit'
     });
 
+    // 🌐 Traducir tipo de cita a español
+    const getAppointmentTypeText = (type: string): string => {
+      switch (type.toLowerCase()) {
+        case 'visita':
+        case 'viewing':
+          return 'Visita';
+        case 'consulta':
+        case 'consultation':
+          return 'Consulta';
+        case 'avaluo':
+        case 'valuation':
+        case 'appraisal':
+          return 'Avalúo';
+        case 'asesoria':
+        case 'follow_up':
+          return 'Asesoría';
+        case 'meeting':
+          return 'Reunión';
+        default:
+          return type.charAt(0).toUpperCase() + type.slice(1);
+      }
+    };
+
+    const appointmentTypeSpanish = getAppointmentTypeText(appointmentData.appointment_type);
+
     const message = `✅ *Cita Confirmada*\n\n` +
       `Hola ${appointmentData.client_name},\n\n` +
       `Tu cita ha sido confirmada con los siguientes detalles:\n\n` +
       `📅 *Fecha:* ${formattedDate}\n` +
       `🏠 *Propiedad:* ${appointmentData.property_title || 'No especificada'}\n` +
-      `📋 *Tipo:* ${appointmentData.appointment_type}\n` +
+      `📋 *Tipo:* ${appointmentTypeSpanish}\n` +
       `👨‍💼 *Asesor:* ${appointmentData.advisor_name || 'Por asignar'}\n\n` +
       `Te esperamos. Si necesitas hacer cambios, no dudes en contactarnos.\n\n` +
       `ID de cita: ${appointmentData.appointment_id}\n\n` +

@@ -32,7 +32,7 @@ export async function syncPropertyAppointmentToCalendar(
       .from('appointments')
       .select('id')
       .eq('property_appointment_id', propertyAppointment.id)
-      .single();
+      .maybeSingle();
 
     // 2️⃣ Obtener información de la propiedad
     let propertyTitle = 'Propiedad';
@@ -117,28 +117,33 @@ export async function syncPropertyAppointmentStatus(
     console.log('🔄 Sincronizando estado:', propertyAppointmentId, newStatus);
 
     // Buscar la cita en appointments
-    const { data: calendarAppointment } = await supabase
+    const { data: calendarAppointment, error: fetchError } = await supabase
       .from('appointments')
       .select('id')
       .eq('property_appointment_id', propertyAppointmentId)
-      .single();
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('❌ Error buscando cita en calendario:', fetchError);
+      return { success: false, error: fetchError.message };
+    }
 
     if (!calendarAppointment) {
       console.warn('⚠️ No se encontró cita sincronizada en calendario');
       return { success: false, error: 'No encontrada en calendario' };
     }
 
-    // Mapear estados
+    // Mapear estados (ahora sin conversión a 'scheduled')
     const statusMap: Record<string, any> = {
-      'pending': 'scheduled',
+      'pending': 'pending',
       'confirmed': 'confirmed',
       'completed': 'completed',
       'cancelled': 'cancelled',
       'no_show': 'no_show',
-      'rescheduled': 'scheduled',
+      'rescheduled': 'rescheduled',
     };
 
-    const calendarStatus = statusMap[newStatus || 'pending'] || 'scheduled';
+    const calendarStatus = statusMap[newStatus || 'pending'] || 'pending';
 
     // Actualizar en appointments
     await calendarService.updateAppointment(calendarAppointment.id, {
@@ -164,11 +169,16 @@ export async function syncPropertyAppointmentDeletion(
     console.log('🗑️ Sincronizando eliminación:', propertyAppointmentId);
 
     // Buscar la cita en appointments
-    const { data: calendarAppointment } = await supabase
+    const { data: calendarAppointment, error: fetchError } = await supabase
       .from('appointments')
       .select('id')
       .eq('property_appointment_id', propertyAppointmentId)
-      .single();
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('❌ Error buscando cita para eliminar:', fetchError);
+      return { success: false, error: fetchError.message };
+    }
 
     if (!calendarAppointment) {
       console.warn('⚠️ No se encontró cita sincronizada en calendario');

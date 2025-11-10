@@ -16,6 +16,7 @@ import {
 import Modal from '../UI/Modal';
 import { PropertyAppointment, Advisor, Property } from '../../types';
 import { getProperties, getAdvisors } from '../../lib/supabase';
+import { getAppointmentTypeText, getVisitTypeText, getContactMethodText } from '../../utils/translations';
 
 interface AppointmentDetailsModalProps {
   appointment: PropertyAppointment | null;
@@ -24,6 +25,7 @@ interface AppointmentDetailsModalProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onStatusChange?: (status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'rescheduled') => void;
+  onSendConfirmation?: () => void;
   advisors?: Advisor[];
   properties?: Property[];
   isLoadingAdditionalData?: boolean;
@@ -36,6 +38,7 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
   onEdit,
   onDelete,
   onStatusChange,
+  onSendConfirmation,
   advisors: initialAdvisors = [],
   properties: initialProperties = [],
   isLoadingAdditionalData = false
@@ -108,13 +111,13 @@ const AppointmentDetailsModal: React.FC<AppointmentDetailsModalProps> = ({
   });
 
   const handleEmailContact = () => {
-    const subject = `Cita programada - ${appointment.appointment_type}`;
+    const subject = `Cita programada - ${getAppointmentTypeText(appointment.appointment_type)}`;
     const body = `Hola ${appointment.client_name},
 
 Tu cita está programada para el ${formatDate(appointment.appointment_date)}.
 
-Tipo de cita: ${appointment.appointment_type}
-Tipo de visita: ${appointment.visit_type}
+Tipo de cita: ${getAppointmentTypeText(appointment.appointment_type)}
+Tipo de visita: ${getVisitTypeText(appointment.visit_type)}
 Número de asistentes: ${appointment.attendees}
 
 Saludos,
@@ -127,7 +130,7 @@ Equipo de Inmobiliaria`;
   const handleWhatsAppContact = () => {
     if (!appointment.client_phone) return;
 
-    const message = `Hola ${appointment.client_name}, tu cita está confirmada para el ${formatDate(appointment.appointment_date)}. Tipo: ${appointment.appointment_type} - ${appointment.visit_type}.`;
+    const message = `Hola ${appointment.client_name}, tu cita está confirmada para el ${formatDate(appointment.appointment_date)}. Tipo: ${getAppointmentTypeText(appointment.appointment_type)} - ${getVisitTypeText(appointment.visit_type)}.`;
     const cleanPhone = appointment.client_phone.replace(/\D/g, '');
     const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
     
@@ -283,8 +286,8 @@ Equipo de Inmobiliaria`;
               {getVisitTypeIcon(appointment.visit_type)}
               <h3 className="font-semibold text-gray-900 dark:text-white">Tipo de Cita</h3>
             </div>
-            <p className="text-gray-700 dark:text-gray-300 capitalize">
-              {appointment.appointment_type} - {appointment.visit_type}
+            <p className="text-gray-700 dark:text-gray-300">
+              {getAppointmentTypeText(appointment.appointment_type)} - {getVisitTypeText(appointment.visit_type)}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {appointment.attendees} {appointment.attendees === 1 ? 'persona' : 'personas'}
@@ -351,8 +354,8 @@ Equipo de Inmobiliaria`;
             <div>
               <div className="flex items-center space-x-2">
                 <MessageSquare className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600 dark:text-gray-400 capitalize">
-                  Contacto: {appointment.contact_method}
+                <span className="text-gray-600 dark:text-gray-400">
+                  Contacto: {getContactMethodText(appointment.contact_method)}
                 </span>
               </div>
               {appointment.marketing_consent && (
@@ -508,7 +511,19 @@ Equipo de Inmobiliaria`;
         )}
 
         {/* Acciones */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          {/* Botón de enviar confirmación por WhatsApp */}
+          {onSendConfirmation && appointment.client_phone && (
+            <button
+              onClick={onSendConfirmation}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              title="Enviar confirmación por WhatsApp al cliente"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Enviar Confirmación</span>
+            </button>
+          )}
+
           {onEdit && (
             <button
               onClick={onEdit}
