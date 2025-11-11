@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText,
-  CreditCard,
   AlertCircle,
   Calendar,
   TrendingUp,
@@ -13,13 +12,20 @@ import {
   Clock,
   XCircle
 } from 'lucide-react';
-import { getClientDashboardSummary } from '../../lib/client-portal/clientPortalApi';
-import type { ClientDashboardSummary } from '../../types/clientPortal';
+import { 
+  getClientDashboardSummary, 
+  getClientAlerts,
+  markAlertAsRead,
+  dismissAlert
+} from '../../lib/client-portal/clientPortalApi';
+import type { ClientDashboardSummary, ClientAlert } from '../../types/clientPortal';
 import Card from '../../components/UI/Card';
+import AlertsSection from '../../components/client-portal/AlertsSection';
 
 const ClientDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<ClientDashboardSummary | null>(null);
+  const [alerts, setAlerts] = useState<ClientAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -30,18 +36,48 @@ const ClientDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
-      const response = await getClientDashboardSummary();
       
-      if (response.success && response.data) {
-        setSummary(response.data);
+      // Cargar dashboard summary y alertas en paralelo
+      const [summaryResponse, alertsResponse] = await Promise.all([
+        getClientDashboardSummary(),
+        getClientAlerts()
+      ]);
+      
+      if (summaryResponse.success && summaryResponse.data) {
+        setSummary(summaryResponse.data);
       } else {
-        setError(response.error || 'Error al cargar datos');
+        setError(summaryResponse.error || 'Error al cargar datos');
       }
+
+      if (alertsResponse.success && alertsResponse.data) {
+        setAlerts(alertsResponse.data);
+      }
+      
     } catch (err) {
       console.error('Error cargando dashboard:', err);
       setError('Error al cargar el dashboard');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (alertId: string) => {
+    const response = await markAlertAsRead(alertId);
+    if (response.success) {
+      // Actualizar estado local
+      setAlerts(prev => prev.map(alert => 
+        alert.id === alertId 
+          ? { ...alert, status: 'read', read_at: new Date().toISOString() }
+          : alert
+      ));
+    }
+  };
+
+  const handleDismissAlert = async (alertId: string) => {
+    const response = await dismissAlert(alertId);
+    if (response.success) {
+      // Remover del estado local
+      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
     }
   };
 
@@ -133,6 +169,15 @@ const ClientDashboard: React.FC = () => {
           Aquí puedes ver un resumen de tu actividad
         </p>
       </div>
+
+      {/* Alertas */}
+      {alerts.length > 0 && (
+        <AlertsSection
+          alerts={alerts}
+          onMarkAsRead={handleMarkAsRead}
+          onDismiss={handleDismissAlert}
+        />
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

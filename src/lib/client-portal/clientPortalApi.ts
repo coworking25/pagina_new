@@ -14,7 +14,8 @@ import type {
   ClientProperty,
   PaymentFilters,
   DocumentFilters,
-  ApiResponse
+  ApiResponse,
+  ClientAlert
 } from '../../types/clientPortal';
 
 // ============================================
@@ -922,5 +923,137 @@ export async function getClientDocuments(): Promise<ClientDocument[]> {
   } catch (error) {
     console.error('Error en getClientDocuments:', error);
     throw error;
+  }
+}
+
+// ============================================
+// ALERTAS DEL CLIENTE
+// ============================================
+
+/**
+ * Obtener alertas activas del cliente autenticado
+ * Solo retorna alertas no leídas y no expiradas
+ */
+export async function getClientAlerts(): Promise<ApiResponse<ClientAlert[]>> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      return {
+        success: false,
+        error: 'No estás autenticado'
+      };
+    }
+
+    const now = new Date().toISOString();
+
+    const { data: alerts, error } = await supabase
+      .from('client_alerts')
+      .select('*')
+      .eq('client_id', clientId)
+      .or(`expires_at.is.null,expires_at.gt.${now}`) // No expiradas
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return handleSupabaseError<ClientAlert[]>(error, 'Error al obtener alertas');
+    }
+
+    return {
+      success: true,
+      data: (alerts || []) as ClientAlert[]
+    };
+
+  } catch (error) {
+    console.error('Error en getClientAlerts:', error);
+    return {
+      success: false,
+      error: 'Error al obtener alertas'
+    };
+  }
+}
+
+/**
+ * Marcar una alerta como leída
+ */
+export async function markAlertAsRead(alertId: string): Promise<ApiResponse<void>> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      return {
+        success: false,
+        error: 'No estás autenticado'
+      };
+    }
+
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('client_alerts')
+      .update({
+        status: 'read',
+        read_at: now,
+        updated_at: now
+      })
+      .eq('id', alertId)
+      .eq('client_id', clientId); // Seguridad: solo puede actualizar sus propias alertas
+
+    if (error) {
+      return handleSupabaseError<void>(error, 'Error al marcar alerta como leída');
+    }
+
+    return {
+      success: true
+    };
+
+  } catch (error) {
+    console.error('Error en markAlertAsRead:', error);
+    return {
+      success: false,
+      error: 'Error al marcar alerta como leída'
+    };
+  }
+}
+
+/**
+ * Descartar/eliminar una alerta
+ * Realiza soft delete actualizando is_read y ocultando la alerta
+ */
+export async function dismissAlert(alertId: string): Promise<ApiResponse<void>> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      return {
+        success: false,
+        error: 'No estás autenticado'
+      };
+    }
+
+    const now = new Date().toISOString();
+
+    // Soft delete: marcamos como resolved y expirada inmediatamente
+    const { error } = await supabase
+      .from('client_alerts')
+      .update({
+        status: 'resolved',
+        read_at: now,
+        expires_at: now, // Expiramos inmediatamente para ocultar
+        updated_at: now
+      })
+      .eq('id', alertId)
+      .eq('client_id', clientId); // Seguridad: solo puede eliminar sus propias alertas
+
+    if (error) {
+      return handleSupabaseError<void>(error, 'Error al descartar alerta');
+    }
+
+    return {
+      success: true
+    };
+
+  } catch (error) {
+    console.error('Error en dismissAlert:', error);
+    return {
+      success: false,
+      error: 'Error al descartar alerta'
+    };
   }
 }

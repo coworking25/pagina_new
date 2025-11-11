@@ -172,6 +172,22 @@ export interface ClientDocument {
   updated_at: string;
 }
 
+// Alerta (vista cliente)
+export interface ClientAlert {
+  id: string;
+  client_id: string;
+  alert_type: string; // Flexible para aceptar cualquier valor de la BD
+  severity: 'low' | 'medium' | 'high';
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  read_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Extracto Mensual
 export interface MonthlyExtract {
   contract_id: string;
