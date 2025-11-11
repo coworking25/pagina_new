@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { DollarSign, Filter, Download, Search, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { DollarSign, Filter, Download, Search, CheckCircle, Clock, XCircle, AlertCircle, Calendar, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getClientPayments } from '../../lib/client-portal/clientPortalApi';
 import type { ClientPayment } from '../../types/clientPortal';
+import PaymentCalendar from '../../components/client-portal/PaymentCalendar';
 
 type PaymentStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type TimeFilter = 'all' | 'month' | 'quarter' | 'year';
@@ -14,6 +15,7 @@ const ClientPayments: React.FC = () => {
   const [filteredPayments, setFilteredPayments] = useState<ClientPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
   
   // Filtros
   const [statusFilter, setStatusFilter] = useState<PaymentStatus>('all');
@@ -224,13 +226,22 @@ const ClientPayments: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Historial de Pagos</h1>
           <p className="text-gray-600 mt-1">Gestiona y revisa todos los pagos recibidos</p>
         </div>
-        <button
-          onClick={exportToCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          Exportar CSV
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowCalendar(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Calendar className="w-4 h-4" />
+            Ver Calendario
+          </button>
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Exportar CSV
+          </button>
+        </div>
       </div>
 
       {/* Estadísticas */}
@@ -455,6 +466,43 @@ const ClientPayments: React.FC = () => {
           Mostrando {filteredPayments.length} de {payments.length} pagos
         </div>
       )}
+
+      {/* Modal de Calendario */}
+      <AnimatePresence>
+        {showCalendar && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowCalendar(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header del modal */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Calendario de Pagos
+                </h2>
+                <button
+                  onClick={() => setShowCalendar(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Calendario */}
+              <PaymentCalendar payments={payments} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

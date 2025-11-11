@@ -759,11 +759,11 @@ export async function getClientPayments(): Promise<ClientPayment[]> {
       throw new Error('No autenticado');
     }
 
-    // Obtener contratos donde el cliente es landlord
+    // Obtener contratos donde el cliente es inquilino (client_id)
     const { data: contracts, error: contractsError } = await supabase
       .from('contracts')
       .select('id, contract_number, client_id')
-      .eq('landlord_id', clientId);
+      .eq('client_id', clientId);
 
     if (contractsError) {
       console.error('Error obteniendo contratos:', contractsError);
