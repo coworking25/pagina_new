@@ -16,16 +16,22 @@ import {
   getClientDashboardSummary, 
   getClientAlerts,
   markAlertAsRead,
-  dismissAlert
+  dismissAlert,
+  getClientCommunications,
+  markCommunicationAsRead,
+  archiveCommunication,
+  sendClientMessage
 } from '../../lib/client-portal/clientPortalApi';
-import type { ClientDashboardSummary, ClientAlert } from '../../types/clientPortal';
+import type { ClientDashboardSummary, ClientAlert, ClientCommunication } from '../../types/clientPortal';
 import Card from '../../components/UI/Card';
 import AlertsSection from '../../components/client-portal/AlertsSection';
+import CommunicationsSection from '../../components/client-portal/CommunicationsSection';
 
 const ClientDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<ClientDashboardSummary | null>(null);
   const [alerts, setAlerts] = useState<ClientAlert[]>([]);
+  const [communications, setCommunications] = useState<ClientCommunication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -37,10 +43,11 @@ const ClientDashboard: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Cargar dashboard summary y alertas en paralelo
-      const [summaryResponse, alertsResponse] = await Promise.all([
+      // Cargar dashboard summary, alertas y comunicaciones en paralelo
+      const [summaryResponse, alertsResponse, communicationsResponse] = await Promise.all([
         getClientDashboardSummary(),
-        getClientAlerts()
+        getClientAlerts(),
+        getClientCommunications()
       ]);
       
       if (summaryResponse.success && summaryResponse.data) {
@@ -51,6 +58,10 @@ const ClientDashboard: React.FC = () => {
 
       if (alertsResponse.success && alertsResponse.data) {
         setAlerts(alertsResponse.data);
+      }
+
+      if (communicationsResponse.success && communicationsResponse.data) {
+        setCommunications(communicationsResponse.data);
       }
       
     } catch (err) {
@@ -78,6 +89,37 @@ const ClientDashboard: React.FC = () => {
     if (response.success) {
       // Remover del estado local
       setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+    }
+  };
+
+  const handleMarkCommunicationAsRead = async (communicationId: string) => {
+    const response = await markCommunicationAsRead(communicationId);
+    if (response.success) {
+      // Actualizar estado local
+      setCommunications(prev => prev.map(comm => 
+        comm.id === communicationId 
+          ? { ...comm, read_at: new Date().toISOString() }
+          : comm
+      ));
+    }
+  };
+
+  const handleArchiveCommunication = async (communicationId: string) => {
+    const response = await archiveCommunication(communicationId);
+    if (response.success) {
+      // Remover del estado local
+      setCommunications(prev => prev.filter(comm => comm.id !== communicationId));
+    }
+  };
+
+  const handleSendMessage = async (subject: string, message: string, category: string) => {
+    const response = await sendClientMessage(subject, message, category);
+    if (response.success) {
+      // Recargar comunicaciones
+      const communicationsResponse = await getClientCommunications();
+      if (communicationsResponse.success && communicationsResponse.data) {
+        setCommunications(communicationsResponse.data);
+      }
     }
   };
 
@@ -176,6 +218,16 @@ const ClientDashboard: React.FC = () => {
           alerts={alerts}
           onMarkAsRead={handleMarkAsRead}
           onDismiss={handleDismissAlert}
+        />
+      )}
+
+      {/* Comunicaciones */}
+      {communications.length > 0 && (
+        <CommunicationsSection
+          communications={communications}
+          onMarkAsRead={handleMarkCommunicationAsRead}
+          onArchive={handleArchiveCommunication}
+          onSendMessage={handleSendMessage}
         />
       )}
 

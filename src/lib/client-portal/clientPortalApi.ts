@@ -15,7 +15,8 @@ import type {
   PaymentFilters,
   DocumentFilters,
   ApiResponse,
-  ClientAlert
+  ClientAlert,
+  ClientCommunication
 } from '../../types/clientPortal';
 
 // ============================================
@@ -1054,6 +1055,183 @@ export async function dismissAlert(alertId: string): Promise<ApiResponse<void>> 
     return {
       success: false,
       error: 'Error al descartar alerta'
+    };
+  }
+}
+
+// ============================================
+// COMUNICACIONES DEL CLIENTE
+// ============================================
+
+/**
+ * Obtener comunicaciones/mensajes del cliente autenticado
+ * Ordena por fecha más reciente primero
+ */
+export async function getClientCommunications(): Promise<ApiResponse<ClientCommunication[]>> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      return {
+        success: false,
+        error: 'No estás autenticado'
+      };
+    }
+
+    const { data: communications, error } = await supabase
+      .from('client_communications')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('communication_date', { ascending: false });
+
+    if (error) {
+      return handleSupabaseError<ClientCommunication[]>(error, 'Error al obtener mensajes');
+    }
+
+    return {
+      success: true,
+      data: (communications || []) as ClientCommunication[]
+    };
+
+  } catch (error) {
+    console.error('Error en getClientCommunications:', error);
+    return {
+      success: false,
+      error: 'Error al obtener mensajes'
+    };
+  }
+}
+
+/**
+ * Marcar una comunicación como leída
+ */
+export async function markCommunicationAsRead(communicationId: string): Promise<ApiResponse<void>> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      return {
+        success: false,
+        error: 'No estás autenticado'
+      };
+    }
+
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('client_communications')
+      .update({
+        read_at: now,
+        updated_at: now
+      })
+      .eq('id', communicationId)
+      .eq('client_id', clientId); // Seguridad: solo puede actualizar sus propios mensajes
+
+    if (error) {
+      return handleSupabaseError<void>(error, 'Error al marcar mensaje como leído');
+    }
+
+    return {
+      success: true
+    };
+
+  } catch (error) {
+    console.error('Error en markCommunicationAsRead:', error);
+    return {
+      success: false,
+      error: 'Error al marcar mensaje como leído'
+    };
+  }
+}
+
+/**
+ * Archivar una comunicación
+ */
+export async function archiveCommunication(communicationId: string): Promise<ApiResponse<void>> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      return {
+        success: false,
+        error: 'No estás autenticado'
+      };
+    }
+
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('client_communications')
+      .update({
+        status: 'cancelled',
+        updated_at: now
+      })
+      .eq('id', communicationId)
+      .eq('client_id', clientId); // Seguridad: solo puede archivar sus propios mensajes
+
+    if (error) {
+      return handleSupabaseError<void>(error, 'Error al archivar mensaje');
+    }
+
+    return {
+      success: true
+    };
+
+  } catch (error) {
+    console.error('Error en archiveCommunication:', error);
+    return {
+      success: false,
+      error: 'Error al archivar mensaje'
+    };
+  }
+}
+
+/**
+ * Enviar un nuevo mensaje (cliente → admin)
+ */
+export async function sendClientMessage(
+  subject: string,
+  message: string,
+  category: string
+): Promise<ApiResponse<void>> {
+  try {
+    const clientId = getAuthenticatedClientId();
+    if (!clientId) {
+      return {
+        success: false,
+        error: 'No estás autenticado'
+      };
+    }
+
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('client_communications')
+      .insert({
+        client_id: clientId,
+        sender_type: 'client',
+        sender_id: clientId,
+        subject: subject,
+        description: message,
+        communication_type: 'message',
+        priority: 'normal',
+        status: 'unread', // Para el admin
+        category: category,
+        communication_date: now,
+        created_at: now,
+        updated_at: now
+      });
+
+    if (error) {
+      return handleSupabaseError<void>(error, 'Error al enviar mensaje');
+    }
+
+    return {
+      success: true
+    };
+
+  } catch (error) {
+    console.error('Error en sendClientMessage:', error);
+    return {
+      success: false,
+      error: 'Error al enviar mensaje'
     };
   }
 }

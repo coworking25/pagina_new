@@ -188,6 +188,24 @@ export interface ClientAlert {
   updated_at: string;
 }
 
+// Comunicación/Mensaje
+export interface ClientCommunication {
+  id: string;
+  client_id: string;
+  sender_type: 'admin' | 'client' | 'system';
+  sender_id: string | null;
+  subject: string;
+  description: string; // Columna en BD
+  communication_type: string;
+  priority: 'low' | 'normal' | 'high';
+  status: string;
+  read_at: string | null;
+  category: 'general' | 'payment' | 'contract' | 'maintenance' | 'document' | 'other';
+  communication_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Extracto Mensual
 export interface MonthlyExtract {
   contract_id: string;
