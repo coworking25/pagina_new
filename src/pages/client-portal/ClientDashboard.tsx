@@ -20,18 +20,21 @@ import {
   getClientCommunications,
   markCommunicationAsRead,
   archiveCommunication,
-  sendClientMessage
+  sendClientMessage,
+  getClientPayments
 } from '../../lib/client-portal/clientPortalApi';
-import type { ClientDashboardSummary, ClientAlert, ClientCommunication } from '../../types/clientPortal';
+import type { ClientDashboardSummary, ClientAlert, ClientCommunication, ClientPayment } from '../../types/clientPortal';
 import Card from '../../components/UI/Card';
 import AlertsSection from '../../components/client-portal/AlertsSection';
 import CommunicationsSection from '../../components/client-portal/CommunicationsSection';
+import AnalyticsSection from '../../components/client-portal/AnalyticsSection';
 
 const ClientDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [summary, setSummary] = useState<ClientDashboardSummary | null>(null);
   const [alerts, setAlerts] = useState<ClientAlert[]>([]);
   const [communications, setCommunications] = useState<ClientCommunication[]>([]);
+  const [payments, setPayments] = useState<ClientPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -43,11 +46,12 @@ const ClientDashboard: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Cargar dashboard summary, alertas y comunicaciones en paralelo
-      const [summaryResponse, alertsResponse, communicationsResponse] = await Promise.all([
+      // Cargar dashboard summary, alertas, comunicaciones y pagos en paralelo
+      const [summaryResponse, alertsResponse, communicationsResponse, paymentsData] = await Promise.all([
         getClientDashboardSummary(),
         getClientAlerts(),
-        getClientCommunications()
+        getClientCommunications(),
+        getClientPayments()
       ]);
       
       if (summaryResponse.success && summaryResponse.data) {
@@ -62,6 +66,11 @@ const ClientDashboard: React.FC = () => {
 
       if (communicationsResponse.success && communicationsResponse.data) {
         setCommunications(communicationsResponse.data);
+      }
+
+      // Los pagos vienen directamente como array
+      if (paymentsData && Array.isArray(paymentsData)) {
+        setPayments(paymentsData);
       }
       
     } catch (err) {
@@ -229,6 +238,11 @@ const ClientDashboard: React.FC = () => {
           onArchive={handleArchiveCommunication}
           onSendMessage={handleSendMessage}
         />
+      )}
+
+      {/* Analytics */}
+      {payments.length > 0 && (
+        <AnalyticsSection payments={payments} />
       )}
 
       {/* Stats Grid */}
