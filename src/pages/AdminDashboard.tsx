@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -9,22 +9,13 @@ import {
   MessageSquare, 
   BarChart3, 
   Settings,
-  TrendingUp,
-  TrendingDown,
-  Eye,
-  Phone,
-  Mail,
-  MapPin,
   Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
-  Star,
   ArrowUpRight,
   Activity,
-  DollarSign,
   ExternalLink,
-  Check,
   X,
   Shield
 } from 'lucide-react';
@@ -32,8 +23,6 @@ import { useNotificationContext } from '../contexts/NotificationContext';
 import { 
   getDashboardStats, 
   getAllPropertyAppointments,
-  getServiceInquiries,
-  getRevenueTrends,
   getSmartAlerts
 } from '../lib/supabase';
 import FloatingCard from '../components/UI/FloatingCard';
@@ -43,48 +32,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { usePersistedState } from '../hooks/usePersistedState';
 import { useAppState } from '../contexts/AppStateContext';
 
-interface DashboardStats {
-  properties: {
-    total: number;
-    forSale: number;
-    forRent: number;
-    sold: number;
-    rented: number;
-    featured: number;
-  };
-  appointments: {
-    total: number;
-    pending: number;
-    confirmed: number;
-    completed: number;
-  };
-  inquiries: {
-    total: number;
-    pending: number;
-    thisMonth: number;
-    byService: Record<string, number>;
-  };
-  advisors: {
-    total: number;
-    active: number;
-  };
-  clients: {
-    unique: number;
-    thisMonth: number;
-  };
-  financial: {
-    monthlyRevenue: number;
-    annualRevenue: number;
-    commissionsThisMonth: number;
-    commissionsThisYear: number;
-    pendingPayments: number;
-    overduePayments: number;
-    averagePropertyROI: number;
-    salesPipeline: number;
-    leadConversionRate: number;
-  };
-}
-
 interface RecentActivity {
   id: string;
   type: 'appointment' | 'inquiry' | 'property' | 'advisor';
@@ -92,12 +39,6 @@ interface RecentActivity {
   description: string;
   time: string;
   status: 'pending' | 'completed' | 'cancelled';
-}
-
-interface RevenueTrend {
-  month: string;
-  revenue: number;
-  commissions: number;
 }
 
 interface SmartAlert {
@@ -117,22 +58,12 @@ interface SmartAlertsData {
 }
 
 function AdminDashboard() {
-  const { state: stats, setState: setStats } = usePersistedState({
-    key: 'dashboard-stats',
-    initialValue: null as DashboardStats | null,
-    expirationTime: 60 * 60 * 1000 // 1 hora
-  });
   const { state: recentActivity, setState: setRecentActivity } = usePersistedState({
     key: 'dashboard-recent-activity',
     initialValue: [] as RecentActivity[],
     expirationTime: 60 * 60 * 1000
   });
   const [loading, setLoading] = useState(true);
-  const { state: revenueTrends, setState: setRevenueTrends } = usePersistedState({
-    key: 'dashboard-revenue-trends',
-    initialValue: [] as RevenueTrend[],
-    expirationTime: 60 * 60 * 1000
-  });
   const { state: smartAlerts, setState: setSmartAlerts } = usePersistedState({
     key: 'dashboard-smart-alerts',
     initialValue: null as SmartAlertsData | null,
@@ -171,19 +102,15 @@ function AdminDashboard() {
       console.log('📊 Cargando datos del dashboard...');
       
       // Cargar datos en paralelo
-      const [dashboardStats, recentAppointments, trends, alerts] = await Promise.all([
+      const [dashboardStats, recentAppointments, alerts] = await Promise.all([
         getDashboardStats(),
         getAllPropertyAppointments(),
-        getRevenueTrends(),
         getSmartAlerts()
       ]);
       
       console.log('📈 Estadísticas obtenidas:', dashboardStats);
-      console.log('📊 Tendencias de ingresos:', trends);
       console.log('🚨 Alertas inteligentes:', alerts);
       
-      setStats(dashboardStats);
-      setRevenueTrends(trends);
       setSmartAlerts(alerts);
       
       // Convertir alertas en notificaciones para el sistema de notificaciones
@@ -232,25 +159,7 @@ function AdminDashboard() {
     } catch (error) {
       console.error('❌ Error cargando datos del dashboard:', error);
       
-      // Fallback con datos básicos
-      setStats({
-        properties: { total: 0, forSale: 0, forRent: 0, sold: 0, rented: 0, featured: 0 },
-        appointments: { total: 0, pending: 0, confirmed: 0, completed: 0 },
-        inquiries: { total: 0, pending: 0, thisMonth: 0, byService: {} },
-        advisors: { total: 0, active: 0 },
-        clients: { unique: 0, thisMonth: 0 },
-        financial: {
-          monthlyRevenue: 0,
-          annualRevenue: 0,
-          commissionsThisMonth: 0,
-          commissionsThisYear: 0,
-          pendingPayments: 0,
-          overduePayments: 0,
-          averagePropertyROI: 0,
-          salesPipeline: 0,
-          leadConversionRate: 0
-        }
-      });
+      // Fallback con actividades vacías
       setRecentActivity([]);
       setLoading(false);
     }
@@ -319,44 +228,7 @@ function AdminDashboard() {
       };
       setSmartAlerts(updatedAlerts);
     }
-  };
-
-
-
-  const StatCard = ({ icon: Icon, title, value, subtitle, trend, color }: {
-    icon: any;
-    title: string;
-    value: string | number;
-    subtitle: string;
-    trend?: number;
-    color: string;
-  }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <FloatingCard hover glowEffect elevation="high" className="p-6">
-        <div className="flex items-center justify-between">
-          <div className={`p-3 rounded-xl ${color} shadow-lg`}>
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-          {trend && (
-            <div className={`flex items-center ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {trend > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-              <span className="text-sm font-medium ml-1">{Math.abs(trend)}%</span>
-            </div>
-          )}
-        </div>
-        <div className="mt-4">
-          <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{value}</h3>
-        <p className="text-gray-600 dark:text-gray-400 text-sm">{title}</p>
-        <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">{subtitle}</p>
-      </div>
-      </FloatingCard>
-    </motion.div>
-  );
-
-  const ActivityItem = ({ activity }: { activity: RecentActivity }) => {
+  };  const ActivityItem = ({ activity }: { activity: RecentActivity }) => {
     const getIcon = () => {
       switch (activity.type) {
         case 'appointment': return Calendar;
@@ -440,134 +312,6 @@ function AdminDashboard() {
             >
               <Settings className="w-6 h-6" />
             </motion.button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Financial Stats Grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 text-white"
-      >
-        <div className="flex items-center mb-4">
-          <TrendingUp className="w-6 h-6 mr-3" />
-          <h2 className="text-xl font-bold">Métricas Financieras</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white/10 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Ingresos Mensuales</p>
-                <p className="text-2xl font-bold">${(stats?.financial.monthlyRevenue || 0).toLocaleString()}</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-green-200" />
-            </div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Comisiones del Mes</p>
-                <p className="text-2xl font-bold">${(stats?.financial.commissionsThisMonth || 0).toLocaleString()}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-200" />
-            </div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Pipeline de Ventas</p>
-                <p className="text-2xl font-bold">${(stats?.financial.salesPipeline || 0).toLocaleString()}</p>
-              </div>
-              <BarChart3 className="w-8 h-8 text-green-200" />
-            </div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Pagos Pendientes</p>
-                <p className="text-2xl font-bold text-yellow-300">${(stats?.financial.pendingPayments || 0).toLocaleString()}</p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-200" />
-            </div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Pagos Vencidos</p>
-                <p className="text-2xl font-bold text-red-300">${(stats?.financial.overduePayments || 0).toLocaleString()}</p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-red-200" />
-            </div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm">Conversión de Leads</p>
-                <p className="text-2xl font-bold">{(stats?.financial.leadConversionRate || 0).toFixed(1)}%</p>
-              </div>
-              <Activity className="w-8 h-8 text-green-200" />
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Revenue Trends Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg"
-      >
-        <div className="flex items-center mb-4">
-          <BarChart3 className="w-6 h-6 mr-3 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tendencias de Ingresos (12 meses)</h2>
-        </div>
-        <div className="h-64">
-          <div className="flex items-end justify-between h-full space-x-2">
-            {revenueTrends.map((trend, index) => {
-              const maxRevenue = Math.max(...revenueTrends.map(t => t.revenue));
-              const revenueHeight = maxRevenue > 0 ? (trend.revenue / maxRevenue) * 100 : 0;
-              const maxCommission = Math.max(...revenueTrends.map(t => t.commissions));
-              const commissionHeight = maxCommission > 0 ? (trend.commissions / maxCommission) * 100 : 0;
-
-              return (
-                <div key={index} className="flex-1 flex flex-col items-center">
-                  <div className="relative w-full flex items-end justify-center space-x-1 mb-2">
-                    {/* Barra de ingresos */}
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${revenueHeight}%` }}
-                      transition={{ delay: index * 0.1, duration: 0.5 }}
-                      className="w-3 bg-blue-500 rounded-t"
-                      title={`Ingresos: $${trend.revenue.toLocaleString()}`}
-                    />
-                    {/* Barra de comisiones */}
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${commissionHeight}%` }}
-                      transition={{ delay: index * 0.1 + 0.2, duration: 0.5 }}
-                      className="w-3 bg-green-500 rounded-t"
-                      title={`Comisiones: $${trend.commissions.toLocaleString()}`}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400 transform -rotate-45 origin-top">
-                    {trend.month}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="flex justify-center space-x-6 mt-4">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Ingresos</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Comisiones</span>
           </div>
         </div>
       </motion.div>
