@@ -4,7 +4,7 @@
 // ============================================
 
 import { supabase } from '../supabase';
-import { getAuthenticatedClientId } from './clientAuth';
+import { getAuthenticatedClientId, clearSession } from './clientAuth';
 import type {
   ClientProfile,
   ClientContract,
@@ -16,6 +16,72 @@ import type {
   DocumentFilters,
   ApiResponse
 } from '../../types/clientPortal';
+
+// ============================================
+// HELPER: MANEJO DE ERRORES Y SESIÓN
+// ============================================
+
+/**
+ * Verificar si un error es de autenticación (sesión expirada o no autorizado)
+ */
+function isAuthError(error: any): boolean {
+  if (!error) return false;
+  
+  // Errores de PostgreSQL relacionados con autenticación
+  const authErrorCodes = ['PGRST301', 'PGRST302', '42501'];
+  
+  // Verificar código de error
+  if (error.code && authErrorCodes.includes(error.code)) {
+    return true;
+  }
+  
+  // Verificar mensaje de error
+  const authErrorMessages = [
+    'JWT expired',
+    'invalid JWT',
+    'not authenticated',
+    'permission denied',
+    'no rows returned',
+    'session expired'
+  ];
+  
+  const errorMessage = (error.message || '').toLowerCase();
+  return authErrorMessages.some(msg => errorMessage.includes(msg));
+}
+
+/**
+ * Manejar error de autenticación (limpiar sesión y redirigir)
+ */
+function handleAuthError(): void {
+  console.warn('🔒 Sesión expirada o no autorizada. Redirigiendo al login...');
+  clearSession();
+  
+  // Redirigir al login del portal de clientes
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login?expired=true&type=client';
+  }
+}
+
+/**
+ * Wrapper para manejar errores de Supabase
+ */
+function handleSupabaseError<T>(error: any, defaultMessage: string): ApiResponse<T> {
+  // Si es error de autenticación, manejar especialmente
+  if (isAuthError(error)) {
+    handleAuthError();
+    return {
+      success: false,
+      error: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+    };
+  }
+  
+  // Error genérico
+  console.error('Error en Supabase:', error);
+  return {
+    success: false,
+    error: error.message || defaultMessage
+  };
+}
 
 // ============================================
 // PERFIL DE CLIENTE
@@ -503,35 +569,40 @@ export async function getClientDashboardSummary(): Promise<ApiResponse<ClientDas
   try {
     const clientId = getAuthenticatedClientId();
     if (!clientId) {
+      handleAuthError();
       return {
         success: false,
         error: 'No estás autenticado'
       };
     }
 
-    // Usar la función SQL creada en el script 04
+    // Usar la función SQL actualizada que devuelve JSON
     const { data, error } = await supabase.rpc('get_client_dashboard_summary', {
       p_client_id: clientId
     });
 
     if (error) {
       console.error('Error llamando a función SQL:', error);
+      
+      // Verificar si es error de autenticación
+      if (isAuthError(error)) {
+        return handleSupabaseError(error, 'Error al obtener resumen del dashboard');
+      }
+      
       return {
         success: false,
         error: 'Error al obtener resumen del dashboard'
       };
     }
 
+    // La función SQL ahora devuelve JSON, no necesita casting
     return {
       success: true,
       data: data as ClientDashboardSummary
     };
   } catch (error) {
     console.error('Error en getClientDashboardSummary:', error);
-    return {
-      success: false,
-      error: 'Error al obtener resumen del dashboard'
-    };
+    return handleSupabaseError(error, 'Error al obtener resumen del dashboard');
   }
 }
 

@@ -3,6 +3,7 @@
 // ============================================
 
 import { supabase } from '../supabase';
+import bcrypt from 'bcryptjs';
 import type {
   ClientLoginRequest,
   ClientLoginResponse,
@@ -121,8 +122,12 @@ export async function clientLogin(
     }
 
     // 4. Verificar contraseña con bcrypt
-    const bcrypt = await import('bcryptjs');
+    console.log('🔐 Verificando contraseña...');
+    console.log('Password ingresado:', password);
+    console.log('Hash en BD:', credential.password_hash);
+    
     const passwordMatch = await bcrypt.compare(password, credential.password_hash);
+    console.log('¿Contraseña coincide?:', passwordMatch);
 
     if (!passwordMatch) {
       // Incrementar intentos fallidos
@@ -236,7 +241,6 @@ export async function changePassword(
     }
 
     // 2. Verificar contraseña actual
-    const bcrypt = await import('bcryptjs');
     const passwordMatch = await bcrypt.compare(old_password, credential.password_hash);
 
     if (!passwordMatch) {
@@ -399,7 +403,6 @@ export async function resetPasswordWithToken(
     }
 
     // 4. Hashear nueva contraseña
-    const bcrypt = await import('bcryptjs');
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(newPassword, salt);
 
