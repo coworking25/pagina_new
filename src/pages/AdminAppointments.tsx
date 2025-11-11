@@ -18,8 +18,7 @@ import {
   MessageCircle,
   CheckSquare,
   Square as CheckboxIcon,
-  Minus,
-  Download
+  Minus
 } from 'lucide-react';
 import { updateAppointmentStatus, updateAppointment, getAdvisors, getProperties, sendWhatsAppConfirmationToAdvisor, savePropertyAppointmentSimple, sendWhatsAppToClient } from '../lib/supabase';
 import { calendarService } from '../lib/calendarService';
@@ -53,6 +52,14 @@ function AdminAppointments() {
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [additionalDataLoading, setAdditionalDataLoading] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    confirmed: 0,
+    completed: 0,
+    cancelled: 0,
+    today: 0,
+  });
 
   const { addNotification } = useNotificationContext();
 
@@ -65,12 +72,9 @@ function AdminAppointments() {
     total,
     limit,
     search,
-    sortBy,
-    sortOrder,
     loadData,
     setPage,
     setLimit,
-    setSort,
     setSearch
   } = usePagination<PropertyAppointment>({
     initialPage: 1,
@@ -88,7 +92,55 @@ function AdminAppointments() {
   useEffect(() => {
     loadAppointments();
     loadAdditionalData();
+    loadStats();
   }, []);
+
+  // Recargar datos cuando cambien los filtros
+  useEffect(() => {
+    console.log('🔄 Filtros cambiados, recargando datos...', { statusFilter, dateFilter });
+    loadAppointments();
+  }, [statusFilter, dateFilter]);
+
+  // Cargar estadísticas generales (sin filtros)
+  const loadStats = async () => {
+    try {
+      console.log('📊 Cargando estadísticas generales...');
+      
+      // Obtener todos los appointments sin filtros para las estadísticas
+      const allAppointments = await calendarService.getAppointments();
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      setStats({
+        total: allAppointments?.length || 0,
+        pending: allAppointments?.filter((apt: any) => apt.status === 'pending').length || 0,
+        confirmed: allAppointments?.filter((apt: any) => apt.status === 'confirmed').length || 0,
+        completed: allAppointments?.filter((apt: any) => apt.status === 'completed').length || 0,
+        cancelled: allAppointments?.filter((apt: any) => apt.status === 'cancelled').length || 0,
+        today: allAppointments?.filter((apt: any) => {
+          const aptDate = new Date(apt.start_time || apt.appointment_date);
+          return aptDate >= today && aptDate < tomorrow;
+        }).length || 0,
+      });
+
+      console.log('✅ Estadísticas cargadas:', {
+        total: allAppointments?.length || 0,
+        pending: allAppointments?.filter((apt: any) => apt.status === 'pending').length || 0,
+        confirmed: allAppointments?.filter((apt: any) => apt.status === 'confirmed').length || 0,
+        completed: allAppointments?.filter((apt: any) => apt.status === 'completed').length || 0,
+        cancelled: allAppointments?.filter((apt: any) => apt.status === 'cancelled').length || 0,
+        today: allAppointments?.filter((apt: any) => {
+          const aptDate = new Date(apt.start_time || apt.appointment_date);
+          return aptDate >= today && aptDate < tomorrow;
+        }).length || 0,
+      });
+    } catch (error) {
+      console.error('❌ Error cargando estadísticas:', error);
+    }
+  };
 
   const loadAdditionalData = async () => {
     setAdditionalDataLoading(true);
@@ -114,21 +166,38 @@ function AdminAppointments() {
   };
 
   const loadAppointments = async () => {
-    console.log('📅 AdminAppointments: Cargando citas con paginación');
+    console.log('📅 AdminAppointments: Cargando citas con paginación', {
+      statusFilter,
+      dateFilter
+    });
 
     await loadData(async (options) => {
-      const response = await getAppointmentsPaginated(options);
+      const response = await getAppointmentsPaginated({
+        ...options,
+        statusFilter,
+        dateFilter
+      });
       return response;
     });
   };
 
   const refreshAppointments = async () => {
-    console.log('🔄 AdminAppointments: Refrescando citas con paginación');
+    console.log('🔄 AdminAppointments: Refrescando citas con paginación', {
+      statusFilter,
+      dateFilter
+    });
 
     await loadData(async (options) => {
-      const response = await getAppointmentsPaginated(options);
+      const response = await getAppointmentsPaginated({
+        ...options,
+        statusFilter,
+        dateFilter
+      });
       return response;
     });
+    
+    // Actualizar estadísticas después de refrescar
+    await loadStats();
   };
 
   // Funciones para manejar modales
@@ -760,20 +829,6 @@ function AdminAppointments() {
       </div>
     );
   }
-
-  // Cálculo de estadísticas
-  const stats = {
-    total: appointments.length,
-    pending: appointments.filter(apt => apt.status === 'pending').length,
-    confirmed: appointments.filter(apt => apt.status === 'confirmed').length,
-    completed: appointments.filter(apt => apt.status === 'completed').length,
-    cancelled: appointments.filter(apt => apt.status === 'cancelled').length,
-    today: appointments.filter(apt => {
-      const aptDate = new Date(apt.appointment_date);
-      const today = new Date();
-      return aptDate.toDateString() === today.toDateString();
-    }).length,
-  };
 
   return (
     <div className="space-y-6">

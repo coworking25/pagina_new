@@ -17,6 +17,8 @@ export async function getAppointmentsPaginated(
     page?: number;
     limit?: number;
     search?: string;
+    statusFilter?: string;
+    dateFilter?: string;
   } = {}
 ): Promise<AppointmentsPaginatedResponse> {
   try {
@@ -24,7 +26,13 @@ export async function getAppointmentsPaginated(
     const limit = options.limit || 10;
     const offset = (page - 1) * limit;
 
-    console.log('🔍 getAppointmentsPaginated called:', { page, limit, search: options.search });
+    console.log('🔍 getAppointmentsPaginated called:', { 
+      page, 
+      limit, 
+      search: options.search,
+      statusFilter: options.statusFilter,
+      dateFilter: options.dateFilter
+    });
 
     // Consulta simple sin joins problemáticos
     let query = supabase
@@ -38,11 +46,95 @@ export async function getAppointmentsPaginated(
       query = query.or(`title.ilike.%${options.search}%,contact_name.ilike.%${options.search}%,contact_email.ilike.%${options.search}%`);
     }
 
-    // Obtener el total
-    const { count, error: countError } = await supabase
+    // Aplicar filtro de estado si existe
+    if (options.statusFilter && options.statusFilter !== 'all') {
+      query = query.eq('status', options.statusFilter);
+    }
+
+    // Aplicar filtro de fecha si existe
+    if (options.dateFilter && options.dateFilter !== 'all') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      switch (options.dateFilter) {
+        case 'today':
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          query = query
+            .gte('start_time', today.toISOString())
+            .lt('start_time', tomorrow.toISOString());
+          break;
+        
+        case 'week':
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay()); // Inicio de semana (domingo)
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 7);
+          query = query
+            .gte('start_time', weekStart.toISOString())
+            .lt('start_time', weekEnd.toISOString());
+          break;
+        
+        case 'month':
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          query = query
+            .gte('start_time', monthStart.toISOString())
+            .lt('start_time', monthEnd.toISOString());
+          break;
+      }
+    }
+
+    // Construir la consulta de conteo con los mismos filtros
+    let countQuery = supabase
       .from('appointments')
       .select('*', { count: 'exact', head: true })
       .is('deleted_at', null);
+
+    // Aplicar los mismos filtros a la consulta de conteo
+    if (options.search) {
+      countQuery = countQuery.or(`title.ilike.%${options.search}%,contact_name.ilike.%${options.search}%,contact_email.ilike.%${options.search}%`);
+    }
+
+    if (options.statusFilter && options.statusFilter !== 'all') {
+      countQuery = countQuery.eq('status', options.statusFilter);
+    }
+
+    if (options.dateFilter && options.dateFilter !== 'all') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      switch (options.dateFilter) {
+        case 'today':
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          countQuery = countQuery
+            .gte('start_time', today.toISOString())
+            .lt('start_time', tomorrow.toISOString());
+          break;
+        
+        case 'week':
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 7);
+          countQuery = countQuery
+            .gte('start_time', weekStart.toISOString())
+            .lt('start_time', weekEnd.toISOString());
+          break;
+        
+        case 'month':
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          countQuery = countQuery
+            .gte('start_time', monthStart.toISOString())
+            .lt('start_time', monthEnd.toISOString());
+          break;
+      }
+    }
+
+    // Obtener el total con filtros aplicados
+    const { count, error: countError } = await countQuery;
 
     if (countError) {
       console.error('❌ Error obteniendo total:', countError);
