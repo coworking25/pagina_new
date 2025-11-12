@@ -1311,9 +1311,23 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
         </button>
       </div>
 
-      {/* EstadÃ­sticas */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+      {/* EstadÃ­sticas - Clickeables para Filtrar */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        {/* Total */}
+        <motion.button
+          onClick={() => {
+            setTypeFilter('all');
+            setStatusFilter('all');
+            setSearchTerm('');
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+            typeFilter === 'all' && statusFilter === 'all' && searchTerm === ''
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
               <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -1323,9 +1337,22 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+        {/* Propietarios */}
+        <motion.button
+          onClick={() => {
+            setTypeFilter('landlord');
+            setStatusFilter('all');
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+            typeFilter === 'landlord'
+              ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
               <Home className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -1335,9 +1362,22 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.landlords}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+        {/* Inquilinos */}
+        <motion.button
+          onClick={() => {
+            setTypeFilter('tenant');
+            setStatusFilter('all');
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+            typeFilter === 'tenant'
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
               <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -1347,9 +1387,22 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.tenants}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+        {/* Compradores */}
+        <motion.button
+          onClick={() => {
+            setTypeFilter('buyer');
+            setStatusFilter('all');
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+            typeFilter === 'buyer'
+              ? 'border-orange-500 ring-2 ring-orange-200 dark:ring-orange-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400" />
@@ -1359,9 +1412,22 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.buyers}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+        {/* Vendedores */}
+        <motion.button
+          onClick={() => {
+            setTypeFilter('seller');
+            setStatusFilter('all');
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+            typeFilter === 'seller'
+              ? 'border-yellow-500 ring-2 ring-yellow-200 dark:ring-yellow-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-600'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
@@ -1371,9 +1437,22 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.sellers}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+        {/* Interesados */}
+        <motion.button
+          onClick={() => {
+            setTypeFilter('interested');
+            setStatusFilter('all');
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+            typeFilter === 'interested'
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
               <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -1383,9 +1462,22 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.interested}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+        {/* Activos */}
+        <motion.button
+          onClick={() => {
+            setTypeFilter('all');
+            setStatusFilter('active');
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+            statusFilter === 'active'
+              ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -1395,9 +1487,22 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.active}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
 
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+        {/* Inactivos */}
+        <motion.button
+          onClick={() => {
+            setTypeFilter('all');
+            setStatusFilter('inactive');
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+            statusFilter === 'inactive'
+              ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-600'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -1407,8 +1512,55 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.inactive}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
       </div>
+
+      {/* Indicador de filtro activo */}
+      {(typeFilter !== 'all' || statusFilter !== 'all') && (
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-gray-600 dark:text-gray-400">Filtros activos:</span>
+          {typeFilter !== 'all' && (
+            <motion.span
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full text-sm"
+            >
+              Tipo: {formatClientType(typeFilter)}
+              <button
+                onClick={() => setTypeFilter('all')}
+                className="ml-1 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </motion.span>
+          )}
+          {statusFilter !== 'all' && (
+            <motion.span
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm"
+            >
+              Estado: {statusFilter === 'active' ? 'Activo' : 'Inactivo'}
+              <button
+                onClick={() => setStatusFilter('all')}
+                className="ml-1 hover:bg-green-200 dark:hover:bg-green-800 rounded-full p-0.5"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </motion.span>
+          )}
+          <button
+            onClick={() => {
+              setTypeFilter('all');
+              setStatusFilter('all');
+              setSearchTerm('');
+            }}
+            className="text-sm text-red-600 dark:text-red-400 hover:underline"
+          >
+            Limpiar todos los filtros
+          </button>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700 mb-6">
