@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Property, Advisor, PropertyAppointment } from '../types';
 import * as XLSX from 'xlsx';
 import { syncPropertyToAppointments, deleteSyncedAppointment } from './appointmentSync';
@@ -11,12 +11,29 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Variables de entorno de Supabase no configuradas. Revisa tu archivo .env');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Singleton pattern: Crear una única instancia del cliente
+let supabaseInstance: SupabaseClient | null = null;
 
-// Exponer supabase globalmente solo para debugging en desarrollo
-if (typeof window !== 'undefined' && import.meta.env.DEV) {
-  (window as any).supabase = supabase;
+function getSupabaseClient(): SupabaseClient {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        storageKey: 'coworking-auth' // Clave única para este proyecto
+      }
+    });
+    
+    // Exponer supabase globalmente solo para debugging en desarrollo
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      (window as any).supabase = supabaseInstance;
+    }
+  }
+  return supabaseInstance;
 }
+
+export const supabase = getSupabaseClient();
 
 // ==========================================
 // TIPOS PARA PAGINACIÓN
@@ -1232,9 +1249,10 @@ export async function getAllPropertyAppointments() {
   try {
     const { data, error } = await supabase
       .from('property_appointments')
-      .select('*')
+      .select('id, status, appointment_date, created_at')  // Solo campos necesarios
       .is('deleted_at', null)  // Excluir citas eliminadas
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(500);  // Límite para evitar timeouts
     
     if (error) {
       console.error('❌ Error al obtener todas las citas:', error);

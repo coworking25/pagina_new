@@ -4,6 +4,7 @@ import { FileText, Download, Calendar, AlertCircle, Search, TrendingDown, Trendi
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '../../lib/supabase';
+import { getAuthenticatedClientId } from '../../lib/client-portal/clientAuth';
 
 interface PaymentExtract {
   id: string;
@@ -49,9 +50,9 @@ const ClientExtractos: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Obtener el usuario actual
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      // Obtener el ID del cliente autenticado desde la sesión del portal
+      const clientId = getAuthenticatedClientId();
+      if (!clientId) {
         throw new Error('Usuario no autenticado');
       }
 
@@ -59,7 +60,7 @@ const ClientExtractos: React.FC = () => {
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select('*, contracts!inner(property_id)')
-        .eq('client_id', user.id)
+        .eq('client_id', clientId)
         .order('payment_date', { ascending: false });
 
       if (paymentsError) {
