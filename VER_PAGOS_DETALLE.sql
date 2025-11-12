@@ -21,3 +21,4 @@ FROM payments p
 JOIN contracts c ON c.id = p.contract_id
 WHERE c.client_id = 'f183c02b-4a97-4ad3-9e45-2bb9500f3024'
 ORDER BY p.due_date DESC;
+ 

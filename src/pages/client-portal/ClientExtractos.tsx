@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Download, Calendar, AlertCircle, Search } from 'lucide-react';
+import { FileText, Download, Calendar, AlertCircle, Search, TrendingDown, TrendingUp, DollarSign, MinusCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '../../lib/supabase';
@@ -16,6 +16,12 @@ interface PaymentExtract {
   status: string;
   receipt_url?: string;
   created_at: string;
+  // Campos de desglose
+  gross_amount?: number;
+  admin_deduction?: number;
+  agency_commission?: number;
+  net_amount?: number;
+  payment_direction?: string;
 }
 
 const ClientExtractos: React.FC = () => {
@@ -49,10 +55,10 @@ const ClientExtractos: React.FC = () => {
         throw new Error('Usuario no autenticado');
       }
 
-      // Obtener pagos del cliente
+      // Obtener pagos del cliente con información del contrato
       const { data: paymentsData, error: paymentsError } = await supabase
-        .from('client_payments')
-        .select('*')
+        .from('payments')
+        .select('*, contracts!inner(property_id)')
         .eq('client_id', user.id)
         .order('payment_date', { ascending: false });
 
@@ -61,39 +67,54 @@ const ClientExtractos: React.FC = () => {
         throw paymentsError;
       }
 
-      // Obtener códigos únicos de propiedades
-      const propertyCodes = [...new Set((paymentsData || []).map(p => p.property_code))];
+      // Obtener IDs únicos de propiedades
+      const propertyIds = [...new Set(
+        (paymentsData || [])
+          .map(p => p.contracts?.property_id)
+          .filter(id => id != null)
+      )];
 
       // Obtener información de propiedades
-      const { data: propertiesData, error: propertiesError } = await supabase
-        .from('properties')
-        .select('code, title')
-        .in('code', propertyCodes);
+      let propertiesMap = new Map();
+      if (propertyIds.length > 0) {
+        const { data: propertiesData, error: propertiesError } = await supabase
+          .from('properties')
+          .select('id, code, title')
+          .in('id', propertyIds);
 
-      if (propertiesError) {
-        console.error('Error loading properties:', propertiesError);
-        // Continuar sin información de propiedades
+        if (propertiesError) {
+          console.error('Error loading properties:', propertiesError);
+        } else {
+          (propertiesData || []).forEach(prop => {
+            propertiesMap.set(prop.id, { code: prop.code, title: prop.title });
+          });
+        }
       }
 
-      // Crear mapa de propiedades
-      const propertiesMap = new Map();
-      (propertiesData || []).forEach(prop => {
-        propertiesMap.set(prop.code, prop.title);
-      });
-
       // Transformar los datos
-      const transformedExtracts: PaymentExtract[] = (paymentsData || []).map(item => ({
-        id: item.id,
-        client_id: item.client_id,
-        property_code: item.property_code,
-        property_title: propertiesMap.get(item.property_code) || 'Propiedad sin título',
-        payment_date: item.payment_date,
-        amount: item.amount,
-        payment_type: item.payment_type,
-        status: item.status,
-        receipt_url: item.receipt_url,
-        created_at: item.created_at
-      }));
+      const transformedExtracts: PaymentExtract[] = (paymentsData || []).map(item => {
+        const propertyId = item.contracts?.property_id;
+        const property = propertiesMap.get(propertyId);
+        
+        return {
+          id: item.id,
+          client_id: item.client_id,
+          property_code: property?.code || 'N/A',
+          property_title: property?.title || 'Propiedad sin título',
+          payment_date: item.payment_date || item.due_date,
+          amount: item.amount,
+          payment_type: item.payment_type,
+          status: item.status,
+          receipt_url: item.receipt_url,
+          created_at: item.created_at,
+          // Campos de desglose
+          gross_amount: item.gross_amount,
+          admin_deduction: item.admin_deduction,
+          agency_commission: item.agency_commission,
+          net_amount: item.net_amount,
+          payment_direction: item.payment_direction
+        };
+      });
 
       setExtracts(transformedExtracts);
       setFilteredExtracts(transformedExtracts);
@@ -522,7 +543,7 @@ Inmobiliaria - Sistema de Gestión
                         Código: {extract.property_code}
                       </p>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
                         <div>
                           <span className="font-medium">Fecha:</span>
                           <p>{format(new Date(extract.payment_date), 'dd/MM/yyyy', { locale: es })}</p>
@@ -544,6 +565,77 @@ Inmobiliaria - Sistema de Gestión
                           </span>
                         </div>
                       </div>
+
+                      {/* Desglose de Pago - Solo si tiene campos de desglose */}
+                      {extract.gross_amount && extract.gross_amount > 0 && (
+                        <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                            <DollarSign className="w-4 h-4" />
+                            Desglose del Pago
+                          </h4>
+                          <div className="space-y-2">
+                            {/* Monto Bruto */}
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                <TrendingUp className="w-4 h-4 text-blue-500" />
+                                Monto Pagado
+                              </span>
+                              <span className="font-semibold text-gray-900 dark:text-white">
+                                {formatCurrency(extract.gross_amount)}
+                              </span>
+                            </div>
+
+                            {/* Deducción de Administración */}
+                            {extract.admin_deduction && extract.admin_deduction > 0 && (
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                  <MinusCircle className="w-4 h-4 text-orange-500" />
+                                  Administración
+                                </span>
+                                <span className="font-medium text-orange-600 dark:text-orange-400">
+                                  - {formatCurrency(extract.admin_deduction)}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Comisión de la Agencia */}
+                            {extract.agency_commission && extract.agency_commission > 0 && (
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                  <MinusCircle className="w-4 h-4 text-purple-500" />
+                                  Comisión Agencia
+                                </span>
+                                <span className="font-medium text-purple-600 dark:text-purple-400">
+                                  - {formatCurrency(extract.agency_commission)}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Línea divisora */}
+                            <div className="border-t border-gray-300 dark:border-gray-600 my-2"></div>
+
+                            {/* Monto Neto al Propietario */}
+                            {extract.net_amount && extract.net_amount > 0 && (
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-300">
+                                  <TrendingDown className="w-4 h-4 text-green-500" />
+                                  Monto al Propietario
+                                </span>
+                                <span className="font-bold text-green-600 dark:text-green-400">
+                                  {formatCurrency(extract.net_amount)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Nota explicativa */}
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                              💡 El monto neto es lo que recibe el propietario después de descontar administración y comisiones.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

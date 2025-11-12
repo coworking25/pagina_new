@@ -5,6 +5,7 @@ import ClientWizard from '../components/ClientWizard';
 import { ClientDetailsEnhanced } from '../components/ClientDetailsEnhanced';
 import { ClientEditForm } from '../components/ClientEditForm';
 import CreatePortalCredentialsModal from '../components/CreatePortalCredentialsModal';
+import RegisterPaymentModal from '../components/Modals/RegisterPaymentModal';
 import {
   Users,
   Search,
@@ -212,6 +213,8 @@ function AdminClients() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showWizard, setShowWizard] = useState(false); // Wizard de cliente
   const [showPortalCredentialsModal, setShowPortalCredentialsModal] = useState(false); // Modal de credenciales del portal
+  const [showPaymentModal, setShowPaymentModal] = useState(false); // Modal de registro de pagos
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null); // Contrato seleccionado para pago
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editForm, setEditForm] = useState<Partial<Client>>({});
   
@@ -2134,6 +2137,37 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
             alert('âŒ Error al eliminar el cliente');
           }
         }}
+        onRegisterPayment={(contractInfo) => {
+          // Convertir contractInfo a Contract
+          const contract: Contract = {
+            id: contractInfo.id || '',
+            client_id: selectedClient?.id || '',
+            landlord_id: contractInfo.landlord_id,
+            property_id: contractInfo.property_id,
+            start_date: contractInfo.start_date,
+            end_date: contractInfo.end_date,
+            monthly_rent: contractInfo.monthly_rent || 0,
+            administration_fee: contractInfo.administration_fee || 0,
+            deposit_amount: contractInfo.deposit_amount || 0,
+            status: 'active',
+            contract_number: contractInfo.contract_number,
+            contract_type: contractInfo.contract_type || 'monthly',
+            renewal_type: 'manual',
+            payment_day: 1,
+            late_fee_percentage: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            // Campos de administración con valores por defecto
+            admin_included_in_rent: contractInfo.admin_included_in_rent || false,
+            admin_paid_by: contractInfo.admin_paid_by || 'landlord',
+            admin_payment_method: contractInfo.admin_payment_method || 'deducted',
+            admin_landlord_percentage: contractInfo.admin_landlord_percentage || 0,
+            agency_commission_percentage: contractInfo.agency_commission_percentage || 0,
+            agency_commission_fixed: contractInfo.agency_commission_fixed || 0
+          };
+          setSelectedContract(contract);
+          setShowPaymentModal(true);
+        }}
       />
 
       {/* Modal de EdiciÃ³n del Cliente - NUEVO */}
@@ -2159,6 +2193,27 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
         properties={allProperties}
         loadingProperties={loadingFormProperties}
       />
+
+      {/* Modal de Registro de Pagos */}
+      {selectedContract && (
+        <RegisterPaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedContract(null);
+          }}
+          contract={selectedContract}
+          onPaymentRegistered={() => {
+            setShowPaymentModal(false);
+            setSelectedContract(null);
+            // Recargar datos del cliente si está en vista de detalles
+            if (selectedClient) {
+              handleViewClient(selectedClient);
+            }
+            alert('✅ Pago registrado exitosamente');
+          }}
+        />
+      )}
 
       {/* Barra de Acciones Masivas */}
       <BulkActionBar

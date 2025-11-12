@@ -193,7 +193,14 @@ function AdminProperties() {
     videos: [] as PropertyVideo[],
     cover_image: '',
     cover_video: '',
-    featured: false
+    featured: false,
+    // 💰 Configuración de administración (para arriendos)
+    admin_included_in_rent: true,
+    admin_paid_by: 'tenant' as 'tenant' | 'landlord' | 'split',
+    admin_payment_method: 'separate' as 'separate' | 'included',
+    admin_landlord_percentage: '',
+    agency_commission_percentage: '',
+    agency_commission_fixed: ''
   };
 
   const {
@@ -993,7 +1000,14 @@ function AdminProperties() {
       videos: property.videos || [],
       cover_image: property.cover_image || '',
       cover_video: property.cover_video || '',
-      featured: property.featured || false
+      featured: property.featured || false,
+      // 💰 Configuración de administración
+      admin_included_in_rent: (property as any).admin_included_in_rent ?? true,
+      admin_paid_by: (property as any).admin_paid_by || 'tenant',
+      admin_payment_method: (property as any).admin_payment_method || 'separate',
+      admin_landlord_percentage: (property as any).admin_landlord_percentage?.toString() || '',
+      agency_commission_percentage: (property as any).agency_commission_percentage?.toString() || '',
+      agency_commission_fixed: (property as any).agency_commission_fixed?.toString() || ''
     });
     
     // Cargar amenidades seleccionadas
@@ -1092,7 +1106,14 @@ function AdminProperties() {
         images: previewImages, // Usar imágenes de preview (ya ordenadas con portada primero)
         cover_image: coverImage, // ✅ Imagen de portada explícita (columna ya existe en Supabase)
         featured: false,
-        advisor_id: formData.advisor_id || undefined
+        advisor_id: formData.advisor_id || undefined,
+        // 💰 Configuración de administración (solo para arriendos)
+        admin_included_in_rent: formData.admin_included_in_rent,
+        admin_paid_by: formData.admin_paid_by,
+        admin_payment_method: formData.admin_payment_method,
+        admin_landlord_percentage: formData.admin_landlord_percentage && formData.admin_landlord_percentage !== '' ? Number(formData.admin_landlord_percentage) : undefined,
+        agency_commission_percentage: formData.agency_commission_percentage && formData.agency_commission_percentage !== '' ? Number(formData.agency_commission_percentage) : undefined,
+        agency_commission_fixed: formData.agency_commission_fixed && formData.agency_commission_fixed !== '' ? Number(formData.agency_commission_fixed) : undefined
       };
       
       console.log('📤 Creando propiedad con portada:', coverImage);
@@ -1159,7 +1180,14 @@ function AdminProperties() {
         amenities: selectedAmenities, // Usar amenidades seleccionadas
         images: selectedProperty.images, // Usar imágenes actuales de la propiedad (con orden de portada)
         advisor_id: formData.advisor_id || undefined,
-        featured: formData.featured || false // Incluir estado destacado
+        featured: formData.featured || false, // Incluir estado destacado
+        // 💰 Configuración de administración (solo para arriendos)
+        admin_included_in_rent: formData.admin_included_in_rent,
+        admin_paid_by: formData.admin_paid_by,
+        admin_payment_method: formData.admin_payment_method,
+        admin_landlord_percentage: formData.admin_landlord_percentage && formData.admin_landlord_percentage !== '' ? Number(formData.admin_landlord_percentage) : undefined,
+        agency_commission_percentage: formData.agency_commission_percentage && formData.agency_commission_percentage !== '' ? Number(formData.agency_commission_percentage) : undefined,
+        agency_commission_fixed: formData.agency_commission_fixed && formData.agency_commission_fixed !== '' ? Number(formData.agency_commission_fixed) : undefined
       };
       
       console.log('📝 Datos a actualizar (incluyendo estrato):', propertyData);
@@ -2095,6 +2123,174 @@ function AdminProperties() {
               </div>
             </div>
           </div>
+
+          {/* Sección 1.5: Configuración de Administración (solo para arriendo) */}
+          {(formData.availability_type === 'rent' || formData.availability_type === 'both') && (
+            <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl border border-blue-200 dark:border-blue-800">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <DollarSign className="w-5 h-5 mr-2 text-blue-600" />
+                💰 Configuración de Administración
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Configure cómo se manejarán los pagos de administración para esta propiedad
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ¿Quién paga la administración? */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    👤 ¿Quién paga la administración?
+                  </label>
+                  <select
+                    name="admin_paid_by"
+                    value={formData.admin_paid_by}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                  >
+                    <option value="tenant">🏠 Inquilino (arriba del arriendo)</option>
+                    <option value="landlord">👨‍💼 Propietario (se descuenta del pago)</option>
+                    <option value="split">🤝 Compartido (ambos pagan parte)</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Determina quién asume el costo de administración
+                  </p>
+                </div>
+
+                {/* ¿La administración está incluida en el arriendo? */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    📋 Método de pago de administración
+                  </label>
+                  <select
+                    name="admin_payment_method"
+                    value={formData.admin_payment_method}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                  >
+                    <option value="included">✅ Incluida en el precio de arriendo</option>
+                    <option value="separate">🔀 Pago separado del arriendo</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Cómo se cobra la administración al inquilino
+                  </p>
+                </div>
+
+                {/* Porcentaje que paga el propietario (si es split) */}
+                {formData.admin_paid_by === 'split' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      📊 % que paga el propietario
+                    </label>
+                    <input
+                      type="number"
+                      name="admin_landlord_percentage"
+                      value={formData.admin_landlord_percentage}
+                      onChange={handleFormChange}
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                      placeholder="Ej: 50 (50%)"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      El inquilino pagará el porcentaje restante
+                    </p>
+                  </div>
+                )}
+
+                {/* Comisión de la inmobiliaria (%) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    🏢 Comisión inmobiliaria (%)
+                  </label>
+                  <input
+                    type="number"
+                    name="agency_commission_percentage"
+                    value={formData.agency_commission_percentage}
+                    onChange={handleFormChange}
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                    placeholder="Ej: 10 (10% sobre el arriendo)"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Porcentaje que cobra la inmobiliaria sobre el arriendo
+                  </p>
+                </div>
+
+                {/* Comisión fija de la inmobiliaria */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    💵 Comisión fija (COP)
+                  </label>
+                  <input
+                    type="number"
+                    name="agency_commission_fixed"
+                    value={formData.agency_commission_fixed}
+                    onChange={handleFormChange}
+                    min="0"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                    placeholder="Ej: 100000 (opcional)"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Monto fijo adicional (opcional, se suma al porcentaje)
+                  </p>
+                </div>
+              </div>
+
+              {/* Preview del desglose si hay datos */}
+              {formData.rent_price && Number(formData.rent_price) > 0 && (
+                <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                    📊 Vista previa del desglose de pagos
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Arriendo base:</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        ${Number(formData.rent_price).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                    {formData.agency_commission_percentage && Number(formData.agency_commission_percentage) > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          Comisión inmobiliaria ({formData.agency_commission_percentage}%):
+                        </span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          ${(Number(formData.rent_price) * Number(formData.agency_commission_percentage) / 100).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    )}
+                    {formData.agency_commission_fixed && Number(formData.agency_commission_fixed) > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Comisión fija:</span>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          ${Number(formData.agency_commission_fixed).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex justify-between">
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">
+                          {formData.admin_paid_by === 'landlord' ? 'Propietario recibe:' : 'Total a pagar:'}
+                        </span>
+                        <span className="font-bold text-green-600 dark:text-green-400 text-lg">
+                          ${(() => {
+                            const rent = Number(formData.rent_price);
+                            const commissionPct = Number(formData.agency_commission_percentage || 0);
+                            const commissionFixed = Number(formData.agency_commission_fixed || 0);
+                            const total = rent - (rent * commissionPct / 100) - commissionFixed;
+                            return total.toLocaleString('es-CO');
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Sección 2: Características */}
           <div className="mb-8">
@@ -3247,6 +3443,95 @@ function AdminProperties() {
                 placeholder="Ej: Zona Norte, Bogotá"
               />
             </div>
+
+            {/* Configuración de Administración - Modal de Edición */}
+            {(formData.availability_type === 'rent' || formData.availability_type === 'both') && (
+              <div className="md:col-span-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                  <DollarSign className="w-4 h-4 mr-2 text-blue-600" />
+                  💰 Configuración de Administración
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      ¿Quién paga administración?
+                    </label>
+                    <select
+                      name="admin_paid_by"
+                      value={formData.admin_paid_by}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      <option value="tenant">Inquilino</option>
+                      <option value="landlord">Propietario</option>
+                      <option value="split">Compartido</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Método de pago
+                    </label>
+                    <select
+                      name="admin_payment_method"
+                      value={formData.admin_payment_method}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      <option value="included">Incluida en arriendo</option>
+                      <option value="separate">Pago separado</option>
+                    </select>
+                  </div>
+                  {formData.admin_paid_by === 'split' && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        % Propietario
+                      </label>
+                      <input
+                        type="number"
+                        name="admin_landlord_percentage"
+                        value={formData.admin_landlord_percentage}
+                        onChange={handleFormChange}
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        placeholder="50"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Comisión inmobiliaria (%)
+                    </label>
+                    <input
+                      type="number"
+                      name="agency_commission_percentage"
+                      value={formData.agency_commission_percentage}
+                      onChange={handleFormChange}
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      placeholder="10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Comisión fija (COP)
+                    </label>
+                    <input
+                      type="number"
+                      name="agency_commission_fixed"
+                      value={formData.agency_commission_fixed}
+                      onChange={handleFormChange}
+                      min="0"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      placeholder="100000"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Habitaciones */}
             <div>

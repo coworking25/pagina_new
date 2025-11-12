@@ -49,6 +49,7 @@ interface ClientDetailsEnhancedProps {
   client: ClientWithDetails | null;
   onEdit?: () => void;
   onDelete?: (clientId: string) => void;
+  onRegisterPayment?: (contract: any) => void;
 }
 
 interface PortalCredentials {
@@ -156,7 +157,8 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
   onClose,
   client,
   onEdit,
-  onDelete
+  onDelete,
+  onRegisterPayment
 }) => {
   const [activeTab, setActiveTab] = useState('basic');
   const [credentials, setCredentials] = useState<PortalCredentials | null>(null);
@@ -550,7 +552,10 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
 
                 {/* Tab: Contrato */}
                 {activeTab === 'contract' && (
-                  <ContractTab contractInfo={contractInfo} />
+                  <ContractTab 
+                    contractInfo={contractInfo} 
+                    onRegisterPayment={onRegisterPayment}
+                  />
                 )}
 
                 {/* Tab: Propiedades */}
@@ -974,7 +979,10 @@ const ReferencesTab: React.FC<{ references: ClientReference[] }> = ({ references
   );
 };
 
-const ContractTab: React.FC<{ contractInfo: ContractInfo | null }> = ({ contractInfo }) => {
+const ContractTab: React.FC<{ 
+  contractInfo: ContractInfo | null; 
+  onRegisterPayment?: (contract: any) => void;
+}> = ({ contractInfo, onRegisterPayment }) => {
   if (!contractInfo) {
     return (
       <div className="text-center py-12">
@@ -986,6 +994,19 @@ const ContractTab: React.FC<{ contractInfo: ContractInfo | null }> = ({ contract
 
   return (
     <div className="space-y-6">
+      {/* Botón para registrar pago */}
+      {onRegisterPayment && (
+        <div className="mb-6">
+          <button
+            onClick={() => onRegisterPayment(contractInfo)}
+            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl"
+          >
+            <DollarSign className="w-5 h-5" />
+            <span className="font-semibold">Registrar Pago</span>
+          </button>
+        </div>
+      )}
+      
       <InfoCard title="Fechas del Contrato" icon={Calendar}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <InfoRow 
