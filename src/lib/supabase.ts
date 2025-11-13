@@ -839,16 +839,48 @@ export async function requestPasswordReset(email: string): Promise<boolean> {
   try {
     console.log('📧 Solicitando reseteo de contraseña para:', email);
 
+    // Verificar que el email existe en la base de datos
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('❌ Error verificando usuario:', profileError);
+      throw new Error('Error al verificar el usuario');
+    }
+
+    if (!profile) {
+      // Por seguridad, no revelamos si el email existe o no
+      console.log('⚠️ Email no encontrado, pero enviando respuesta genérica');
+    }
+
+    // Enviar email de recuperación (Supabase lo enviará solo si el usuario existe)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`
     });
 
     if (error) {
       console.error('❌ Error solicitando reseteo:', error);
-      throw new Error(error.message);
+      
+      // Mensajes de error más amigables
+      if (error.message.includes('rate limit')) {
+        throw new Error('Has solicitado demasiados correos. Espera unos minutos e intenta de nuevo.');
+      }
+      
+      if (error.message.includes('invalid')) {
+        throw new Error('El correo electrónico no es válido.');
+      }
+      
+      throw new Error('No se pudo enviar el correo de recuperación. Intenta de nuevo.');
     }
 
-    console.log('✅ Email de reseteo enviado');
+    console.log('✅ Email de reseteo enviado exitosamente');
+    
+    // Log del evento
+    await logAuthEvent('password_reset', null, { email, requested_at: new Date().toISOString() });
+    
     return true;
 
   } catch (error: any) {

@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  HelpCircle
+  HelpCircle,
+  User
 } from 'lucide-react';
 import { getCurrentUser } from '../../lib/supabase';
 import { useAdminBadges } from '../../contexts/AdminBadgeContext';
@@ -97,6 +98,12 @@ function AdminLayout() {
       label: 'Reportes',
       icon: BarChart3,
       path: '/admin/reports'
+    },
+    {
+      id: 'profile',
+      label: 'Mi Perfil',
+      icon: User,
+      path: '/admin/profile'
     },
     {
       id: 'settings',
@@ -199,17 +206,20 @@ function AdminLayout() {
 
       {/* User Info */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center space-x-3 mb-4">
+        <button
+          onClick={() => navigate('/admin/profile')}
+          className="flex items-center space-x-3 mb-4 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+        >
           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-            <Users className="w-6 h-6 text-white" />
+            <User className="w-6 h-6 text-white" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 text-left">
             <p className="font-medium text-gray-900 dark:text-white truncate">
               {currentUser?.email || 'admin@coworking.inmobiliaria'}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Administrador</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Ver mi perfil →</p>
           </div>
-        </div>
+        </button>
         
         <div className="flex space-x-2">
           <motion.button

@@ -27,6 +27,7 @@ const Advisors = lazy(() => import('./pages/Advisors'));
 const Documentation = lazy(() => import('./pages/Documentation'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Login = lazy(() => import('./pages/Login'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const TestPage = lazy(() => import('./pages/TestPage'));
 const TestAppointmentPage = lazy(() => import('./pages/TestAppointmentPage'));
 
@@ -39,6 +40,7 @@ const AdminProperties = lazy(() => import('./pages/AdminProperties'));
 const AdminAdvisors = lazy(() => import('./pages/AdminAdvisors'));
 const AdminInquiries = lazy(() => import('./pages/AdminInquiries'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
+const AdminProfile = lazy(() => import('./pages/AdminProfile'));
 const AdminCalendar = lazy(() => import('./pages/AdminCalendar').then(module => ({ default: module.AdminCalendarPage })));
 
 // Code Splitting: Lazy loading de páginas de cliente
@@ -92,6 +94,7 @@ const AppLayout = () => {
               <Route path="/documentation" element={<Documentation />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               
               {/* Rutas Admin */}
               <Route 
@@ -111,6 +114,7 @@ const AppLayout = () => {
                 <Route path="service-inquiries" element={<AdminInquiries />} />
                 <Route path="documents" element={<div>Documentos - En desarrollo</div>} />
                 <Route path="reports" element={<div>Reportes - En desarrollo</div>} />
+                <Route path="profile" element={<AdminProfile />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 

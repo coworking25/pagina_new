@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { clientLogin } from '../lib/client-portal/clientAuth';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
+import ForgotPasswordModal from '../components/Auth/ForgotPasswordModal';
 
 interface LoginProps {
   onLoginSuccess?: () => void;
@@ -25,6 +26,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [loginType, setLoginType] = useState<'admin' | 'client'>('admin');
   const [hasInteracted, setHasInteracted] = useState(false); // Nuevo: track interacción del usuario
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // NO redirigir automáticamente - dar control al usuario
   // Solo redirigir si el usuario ya completó el formulario exitosamente
@@ -255,6 +257,17 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   Recordarme
                 </label>
               </div>
+              
+              {/* Forgot Password Link - Solo para admins */}
+              {loginType === 'admin' && (
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
             </div>
 
             {/* Submit Button */}
@@ -291,6 +304,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </p>
         </motion.div>
       </motion.div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </div>
   );
 };
