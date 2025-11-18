@@ -18,8 +18,8 @@ import {
   HelpCircle,
   User
 } from 'lucide-react';
-import { getCurrentUser } from '../../lib/supabase';
 import { useAdminBadges } from '../../contexts/AdminBadgeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import QuickActions from './QuickActions';
 import { useNotificationContext } from '../../contexts/NotificationContext';
 import NotificationBell from './NotificationBell';
@@ -39,8 +39,7 @@ function AdminLayout() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { badges } = useAdminBadges();
   const { getUnreadCount, notifications, markAsRead, markAllAsRead } = useNotificationContext();
-  
-  const currentUser = getCurrentUser();
+  const { user: currentUser } = useAuth();
 
   const menuItems: MenuItem[] = [
     {
@@ -215,9 +214,11 @@ function AdminLayout() {
           </div>
           <div className="flex-1 min-w-0 text-left">
             <p className="font-medium text-gray-900 dark:text-white truncate">
-              {currentUser?.email || 'admin@coworking.inmobiliaria'}
+              {currentUser?.full_name || currentUser?.email || 'Usuario'}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Ver mi perfil →</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {currentUser?.role === 'admin' ? 'Administrador' : 'Asesor'} →
+            </p>
           </div>
         </button>
         
