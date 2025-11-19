@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface PersistedStateOptions<T> {
   key: string;
@@ -20,10 +20,26 @@ export function usePersistedState<T>({
   initialValue,
   expirationTime = 24 * 60 * 60 * 1000, // 24 horas por defecto
 }: PersistedStateOptions<T>) {
-  const [state, setState] = useState<T>(() => {
+  const stateRef = useRef<T>(initialValue);
+  const [trigger, setTrigger] = useState(0);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  const state = stateRef.current;
+
+  const setState = useCallback((newState: T | ((prev: T) => T)) => {
+    const nextState = typeof newState === 'function' ? (newState as (prev: T) => T)(stateRef.current) : newState;
+    stateRef.current = nextState;
+    setTrigger(prev => prev + 1);
+  }, []);
+
+  // Cargar desde localStorage al montar el componente
+  useEffect(() => {
     try {
       const storedData = localStorage.getItem(key);
-      if (!storedData) return initialValue;
+      if (!storedData) {
+        console.log(`ℹ️ usePersistedState: No hay datos almacenados para ${key}`);
+        return;
+      }
 
       const parsed: StoredData<T> = JSON.parse(storedData);
       
@@ -31,18 +47,16 @@ export function usePersistedState<T>({
       const isExpired = Date.now() - parsed.timestamp > expirationTime;
       if (isExpired) {
         localStorage.removeItem(key);
-        return initialValue;
+        console.log(`⏰ usePersistedState: Datos expirados para ${key}, eliminados`);
+        return;
       }
 
-      console.log(`✅ Estado restaurado desde localStorage: ${key}`);
-      return parsed.value;
+      console.log(`✅ usePersistedState: Estado restaurado desde localStorage: ${key}`, parsed.value);
+      setState(parsed.value);
     } catch (error) {
-      console.error('Error al restaurar estado desde localStorage:', error);
-      return initialValue;
+      console.error('❌ usePersistedState: Error al restaurar estado desde localStorage:', error);
     }
-  });
-
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  }, [key, expirationTime, setState]);
 
   // Guardar en localStorage cada vez que cambia el estado
   useEffect(() => {
@@ -51,11 +65,12 @@ export function usePersistedState<T>({
         value: state,
         timestamp: Date.now(),
       };
-      localStorage.setItem(key, JSON.stringify(dataToStore));
+      const jsonString = JSON.stringify(dataToStore);
+      console.log(`💾 usePersistedState: Guardando estado en localStorage: ${key}, tamaño: ${jsonString.length} caracteres`, state);
+      localStorage.setItem(key, jsonString);
       setLastSaved(new Date());
-      console.log(`💾 Estado guardado en localStorage: ${key}`);
     } catch (error) {
-      console.error('Error al guardar en localStorage:', error);
+      console.error('❌ usePersistedState: Error al guardar en localStorage:', error);
     }
   }, [state, key]);
 
@@ -65,7 +80,7 @@ export function usePersistedState<T>({
     setState(initialValue);
     setLastSaved(null);
     console.log(`🗑️ Estado limpiado: ${key}`);
-  }, [key, initialValue]);
+  }, [key, initialValue, setState]);
 
   // Función para verificar si hay un borrador guardado
   const hasDraft = useCallback(() => {

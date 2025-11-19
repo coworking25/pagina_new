@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { usePersistedState } from '../hooks/usePersistedState';
@@ -916,12 +916,50 @@ function AdminProperties() {
   };
 
   // Función para manejar cambios en el formulario
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Se mejora el manejo de distintos tipos de inputs (checkbox, radio, file, select)
+  // y se valida el 'name' antes de actualizar el estado para evitar sobreescrituras inesperadas.
+  const handleFormChange = useCallback((
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
+    const { name, type } = target as HTMLInputElement;
+
+    if (!name) {
+      console.warn('handleFormChange: input without name, ignoring change');
+      return;
+    }
+
+    // Manejar checkboxes (booleanos) y elementos con checked
+    if (type === 'checkbox') {
+      const checked = (target as HTMLInputElement).checked;
+      console.log(`handleFormChange: checkbox ${name} = ${checked}`);
+      setFormData(prev => ({ ...prev, [name]: checked }));
+      return;
+    }
+
+    // Para archivos, no guardamos el valor del input (files) directamente en el formData
+    if (type === 'file') {
+      console.log('handleFormChange: file input changed - skipping setting formData value');
+      return;
+    }
+
+    // Radio y selects y textareas still come here; use the value directly
+    const value = (target as HTMLInputElement).value;
+    console.log(`handleFormChange: ${name} = ${value} (type: ${type})`);
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  // Mapa de colores para los estados, usado en los radios para que Tailwind genere clases
+  // de forma explícita (evitar dynamic class names que puedan no ser detectadas por Tailwind)
+  const statusColorClassMap: Record<string, string> = {
+    green: 'border-green-500 bg-green-50 dark:bg-green-900/20',
+    blue: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20',
+    purple: 'border-purple-500 bg-purple-50 dark:bg-purple-900/20',
+    gray: 'border-gray-400 bg-gray-50 dark:bg-gray-700/20',
+    yellow: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20',
+    orange: 'border-orange-500 bg-orange-50 dark:bg-orange-900/20',
+    red: 'border-red-500 bg-red-50 dark:bg-red-900/20'
   };
 
   // Funciones para manejar modales
@@ -2419,11 +2457,13 @@ function AdminProperties() {
                       onChange={handleFormChange}
                       className="sr-only"
                     />
-                    <div className={`flex-1 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                      formData.status === status.value
-                        ? `border-${status.color}-500 bg-${status.color}-50 dark:bg-${status.color}-900/20`
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
-                    }`}>
+                    <div
+                      className={`flex-1 p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                        formData.status === status.value
+                          ? (statusColorClassMap[status.color] || 'border-gray-300 bg-gray-50')
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                      }`}
+                    >
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {status.label}
                       </span>
