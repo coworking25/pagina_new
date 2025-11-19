@@ -235,6 +235,13 @@ function AdminProperties() {
     expirationTime: 24 * 60 * 60 * 1000
   });
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null);
+  
+  // Estado para el último guardado automático
+  const [autoSaveLastSaved, setAutoSaveLastSaved] = useState<Date | null>(null);
+  
+  // Estado para envío de formularios
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Estados para manejo de imágenes
@@ -253,8 +260,100 @@ function AdminProperties() {
     expirationTime: 30 * 60 * 1000
   });
 
-  // NO verificamos automáticamente al montar - solo cuando se abre el modal
-  // El borrador se restaura automáticamente por usePersistedState
+  // Agregar persistencia para videos seleccionados (solo metadata, no los archivos)
+  const { state: selectedVideosMetadata, setState: setSelectedVideosMetadata } = usePersistedState({
+    key: 'admin-property-videos-draft',
+    initialValue: [] as { name: string; size: number; type: string }[],
+    expirationTime: 24 * 60 * 60 * 1000
+  });
+
+  // Función para guardar drafts automáticamente
+  const saveDraft = useCallback(() => {
+    if (!formData.title) return; // No guardar si no hay título
+    
+    try {
+      const draftKey = isEditing && editingPropertyId 
+        ? `admin-property-edit-draft-${editingPropertyId}`
+        : 'admin-property-form-draft';
+      
+      const imagesDraftKey = isEditing && editingPropertyId
+        ? `admin-property-edit-images-draft-${editingPropertyId}`
+        : 'admin-property-images-draft';
+        
+      const amenitiesDraftKey = isEditing && editingPropertyId
+        ? `admin-property-edit-amenities-draft-${editingPropertyId}`
+        : 'admin-property-amenities-draft';
+        
+      const videosDraftKey = isEditing && editingPropertyId
+        ? `admin-property-edit-videos-draft-${editingPropertyId}`
+        : 'admin-property-videos-draft';
+      
+      // Guardar formData
+      const formDataToStore = {
+        value: formData,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(draftKey, JSON.stringify(formDataToStore));
+      
+      // Guardar imágenes
+      const imagesToStore = {
+        value: previewImages,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(imagesDraftKey, JSON.stringify(imagesToStore));
+      
+      // Guardar amenidades
+      const amenitiesToStore = {
+        value: selectedAmenities,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(amenitiesDraftKey, JSON.stringify(amenitiesToStore));
+      
+      // Guardar metadata de videos
+      const videosToStore = {
+        value: selectedVideosMetadata,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(videosDraftKey, JSON.stringify(videosToStore));
+      
+      console.log(`💾 Draft guardado automáticamente (${isEditing ? 'edición' : 'creación'}): ${draftKey}`);
+    } catch (error) {
+      console.error('❌ Error guardando draft:', error);
+    }
+  }, [formData, previewImages, selectedAmenities, selectedVideosMetadata, isEditing, editingPropertyId]);
+  
+  // Auto-guardado con debouncing (2 segundos)
+  useEffect(() => {
+    if (!formData.title) return; // No guardar si no hay título
+    
+    const timeoutId = setTimeout(() => {
+      saveDraft();
+      setAutoSaveLastSaved(new Date());
+    }, 2000); // 2 segundos de delay
+    
+    return () => clearTimeout(timeoutId); // Limpiar timeout si cambia antes
+  }, [formData, previewImages, selectedAmenities, selectedVideosMetadata, isEditing, editingPropertyId, saveDraft]);
+  
+  // Función para formatear la fecha del último guardado
+  const formatLastSaved = (date: Date | null) => {
+    if (!date) return '';
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Guardado hace unos segundos';
+    if (diffMins < 60) return `Guardado hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Guardado hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+    
+    return date.toLocaleDateString('es-ES', { 
+      day: 'numeric', 
+      month: 'short', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
   
   // Estados para amenidades predefinidas
 
@@ -594,6 +693,8 @@ function AdminProperties() {
     setCustomAmenities([]);
     setNewCustomAmenity('');
     setPreviewImages([]);
+    setSelectedVideos([]);
+    setSelectedVideosMetadata([]);
     
     // Limpiar borradores de localStorage
     clearFormDraft();
@@ -749,6 +850,14 @@ function AdminProperties() {
     }
     
     setSelectedVideos(prev => [...prev, ...validVideos]);
+    
+    // Guardar metadata de los videos para persistencia
+    const newMetadata = validVideos.map(file => ({
+      name: file.name,
+      size: file.size,
+      type: file.type
+    }));
+    setSelectedVideosMetadata(prev => [...prev, ...newMetadata]);
   };
 
   // Función para subir videos
@@ -782,6 +891,8 @@ function AdminProperties() {
       setSelectedVideos([]);
       showNotification(`✅ ${uploadedVideos.length} videos subidos exitosamente`, 'success');
       
+      // Limpiar metadata de videos seleccionados
+      setSelectedVideosMetadata([]);
     } catch (error) {
       console.error('Error subiendo videos:', error);
       showNotification('Error al subir videos', 'error');
@@ -1018,7 +1129,85 @@ function AdminProperties() {
     console.log('🖍️ EDITANDO PROPIEDAD:', property.title);
     alert(`Editando propiedad: ${property.title}`);
     setSelectedProperty(property);
-    // Llenar el formulario con los datos de la propiedad
+    setIsEditing(true);
+    setEditingPropertyId(property.id);
+    
+    // Verificar si hay un draft específico para esta propiedad en edición
+    const editDraftKey = `admin-property-edit-draft-${property.id}`;
+    const editImagesDraftKey = `admin-property-edit-images-draft-${property.id}`;
+    const editAmenitiesDraftKey = `admin-property-edit-amenities-draft-${property.id}`;
+    const editVideosDraftKey = `admin-property-edit-videos-draft-${property.id}`;
+    
+    // Intentar cargar draft de edición específico
+    try {
+      const editDraftData = localStorage.getItem(editDraftKey);
+      const editImagesDraftData = localStorage.getItem(editImagesDraftKey);
+      const editAmenitiesDraftData = localStorage.getItem(editAmenitiesDraftKey);
+      const editVideosDraftData = localStorage.getItem(editVideosDraftKey);
+      
+      if (editDraftData) {
+        const parsedDraft = JSON.parse(editDraftData);
+        const timestamp = parsedDraft.timestamp || 0;
+        
+        // Verificar si el draft no ha expirado (24 horas)
+        if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+          console.log('📝 Restaurando draft de edición existente');
+          
+          // Restaurar formData del draft
+          setFormData(parsedDraft.value);
+          
+          // Restaurar imágenes si existen
+          if (editImagesDraftData) {
+            const parsedImages = JSON.parse(editImagesDraftData);
+            setPreviewImages(parsedImages.value || []);
+          } else {
+            setPreviewImages(property.images || []);
+          }
+          
+          // Restaurar amenidades si existen
+          if (editAmenitiesDraftData) {
+            const parsedAmenities = JSON.parse(editAmenitiesDraftData);
+            setSelectedAmenities(parsedAmenities.value || []);
+            
+            // Separar amenidades predefinidas de personalizadas
+            const predefinedAmenityNames = amenitiesList.map(a => a.name);
+            const customAmenitiesFromDraft = (parsedAmenities.value || []).filter(
+              (amenity: string) => !predefinedAmenityNames.includes(amenity)
+            );
+            setCustomAmenities(customAmenitiesFromDraft);
+          } else {
+            const propertyAmenities = property.amenities || [];
+            setSelectedAmenities(propertyAmenities);
+            
+            // Separar amenidades predefinidas de personalizadas
+            const predefinedAmenityNames = amenitiesList.map(a => a.name);
+            const customAmenitiesFromProperty = propertyAmenities.filter(
+              amenity => !predefinedAmenityNames.includes(amenity)
+            );
+            setCustomAmenities(customAmenitiesFromProperty);
+          }
+          
+          // Restaurar metadata de videos si existe
+          if (editVideosDraftData) {
+            const parsedVideos = JSON.parse(editVideosDraftData);
+            setSelectedVideosMetadata(parsedVideos.value || []);
+          }
+          
+          setShowEditModal(true);
+          return;
+        } else {
+          // Draft expirado, limpiar
+          localStorage.removeItem(editDraftKey);
+          localStorage.removeItem(editImagesDraftKey);
+          localStorage.removeItem(editAmenitiesDraftKey);
+          localStorage.removeItem(editVideosDraftKey);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Error cargando draft de edición:', error);
+    }
+    
+    // Si no hay draft válido, cargar datos de la propiedad
     setFormData({
       code: property.code || '',
       title: property.title || '',
@@ -1067,6 +1256,8 @@ function AdminProperties() {
 
   const handleAddProperty = async () => {
     setSelectedProperty(null);
+    setIsEditing(false);
+    setEditingPropertyId(null);
     
     // Verificar si hay un borrador guardado
     const hasDraft = hasFormDraft() && formData.title;
@@ -1142,6 +1333,7 @@ function AdminProperties() {
         status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
         images: previewImages, // Usar imágenes de preview (ya ordenadas con portada primero)
+        videos: formData.videos || [], // ✅ Incluir videos subidos
         cover_image: coverImage, // ✅ Imagen de portada explícita (columna ya existe en Supabase)
         featured: false,
         advisor_id: formData.advisor_id || undefined,
@@ -2033,10 +2225,10 @@ function AdminProperties() {
           )}
 
           {/* Indicador de auto-guardado */}
-          {formData.title && formLastSaved && (
+          {formData.title && autoSaveLastSaved && (
             <div className="mb-4 flex items-center justify-end text-xs text-gray-500 dark:text-gray-400">
               <Check className="w-3 h-3 mr-1 text-green-500" />
-              <span>Borrador guardado automáticamente</span>
+              <span>{formatLastSaved(autoSaveLastSaved)}</span>
             </div>
           )}
 
@@ -2436,41 +2628,23 @@ function AdminProperties() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Estado de la Propiedad *
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { value: 'available', label: '🟢 Disponible', color: 'green' },
-                  { value: 'sale', label: '💰 En Venta', color: 'blue' },
-                  { value: 'rent', label: '🏠 En Arriendo', color: 'green' },
-                  { value: 'both', label: '🔄 En Venta y Arriendo', color: 'purple' },
-                  { value: 'sold', label: '✅ Vendido', color: 'gray' },
-                  { value: 'rented', label: '🔒 Arrendado', color: 'purple' },
-                  { value: 'reserved', label: '📅 Reservado', color: 'yellow' },
-                  { value: 'maintenance', label: '🔧 Mantenimiento', color: 'orange' },
-                  { value: 'pending', label: '⏳ Pendiente', color: 'red' }
-                ].map(status => (
-                  <label key={status.value} className="flex items-center">
-                    <input
-                      type="radio"
-                      name="status"
-                      value={status.value}
-                      checked={formData.status === status.value}
-                      onChange={handleFormChange}
-                      className="sr-only"
-                    />
-                    <div
-                      className={`flex-1 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                        formData.status === status.value
-                          ? (statusColorClassMap[status.color] || 'border-gray-300 bg-gray-50')
-                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
-                      }`}
-                    >
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {status.label}
-                      </span>
-                    </div>
-                  </label>
-                ))}
-              </div>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleFormChange}
+                required
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+              >
+                <option value="available">🟢 Disponible</option>
+                <option value="sale">💰 En Venta</option>
+                <option value="rent">🏠 En Arriendo</option>
+                <option value="both">🔄 En Venta y Arriendo</option>
+                <option value="sold">✅ Vendido</option>
+                <option value="rented">🔒 Arrendado</option>
+                <option value="reserved">📅 Reservado</option>
+                <option value="maintenance">🔧 Mantenimiento</option>
+                <option value="pending">⏳ Pendiente</option>
+              </select>
             </div>
 
             {/* Asesor Asignado */}
