@@ -4,12 +4,12 @@
 // Incluye todas las funcionalidades del wizard:
 // - Información básica
 // - Información financiera
-// - Documentos subidos
 // - Credenciales del portal
 // - Configuración de pagos
 // - Referencias personales y comerciales
 // - Información del contrato
 // - Propiedades asignadas
+// - Historial de pagos
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -58,19 +58,6 @@ interface PortalCredentials {
   last_login: string | null;
   welcome_email_sent: boolean;
   must_change_password: boolean;
-}
-
-interface ClientDocument {
-  id: string;
-  document_type: string;
-  document_name: string;
-  file_path: string;
-  file_size: number;
-  storage_path: string;
-  mime_type: string;
-  status: string;
-  created_at: string;
-  is_required: boolean;
 }
 
 interface ClientProperty {
@@ -162,7 +149,6 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('basic');
   const [credentials, setCredentials] = useState<PortalCredentials | null>(null);
-  const [documents, setDocuments] = useState<ClientDocument[]>([]);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [references, setReferences] = useState<ClientReference[]>([]);
   const [contractInfo, setContractInfo] = useState<ContractInfo | null>(null);
@@ -194,17 +180,6 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
       
       if (credData) {
         setCredentials(credData);
-      }
-
-      // Cargar documentos
-      const { data: docsData } = await supabase
-        .from('client_documents')
-        .select('*')
-        .eq('client_id', client.id)
-        .order('created_at', { ascending: false });
-      
-      if (docsData) {
-        setDocuments(docsData);
       }
 
       // Cargar configuración de pagos
@@ -287,7 +262,6 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
   const tabs = [
     { id: 'basic', label: 'Información Básica', icon: User },
     { id: 'financial', label: 'Información Financiera', icon: DollarSign },
-    { id: 'documents', label: 'Documentos', icon: FileText, count: documents.length },
     { id: 'credentials', label: 'Credenciales', icon: Key },
     { id: 'payments', label: 'Configuración de Pagos', icon: CreditCard },
     { id: 'references', label: 'Referencias', icon: Users, count: references.length },
@@ -313,29 +287,6 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
       'seller': 'Vendedor'
     };
     return labels[type as keyof typeof labels] || type;
-  };
-
-  const getDocumentTypeLabel = (type: string) => {
-    const labels = {
-      'cedula_frente': 'Cédula (Frente)',
-      'cedula_reverso': 'Cédula (Reverso)',
-      'certificado_laboral': 'Certificado Laboral',
-      'certificado_ingresos': 'Certificado de Ingresos',
-      'referencias_bancarias': 'Referencias Bancarias',
-      'contrato_firmado': 'Contrato Firmado',
-      'recibo_pago': 'Recibo de Pago',
-      'garantia': 'Documentos del Fiador',
-      'comprobante_pago': 'Comprobante de Pago',
-      'otro': 'Otro Documento',
-      'otros': 'Otros Documentos'
-    };
-    return labels[type as keyof typeof labels] || type;
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
   const calculateMonthlyTotal = () => {
@@ -410,7 +361,7 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
   const handleDelete = async () => {
     if (!client || !onDelete) return;
     
-    if (window.confirm(`¿Estás seguro de que quieres eliminar al cliente ${client.full_name}?\n\n⚠️ Esta acción eliminará PERMANENTEMENTE:\n- Todos los documentos\n- Todas las credenciales del portal\n- Todos los pagos y contratos\n- Todas las propiedades asignadas\n- Todas las comunicaciones\n\nEsta acción NO se puede deshacer.`)) {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar al cliente ${client.full_name}?\n\n⚠️ Esta acción eliminará PERMANENTEMENTE:\n- Todas las credenciales del portal\n- Todos los pagos y contratos\n- Todas las propiedades asignadas\n- Todas las comunicaciones\n\nEsta acción NO se puede deshacer.`)) {
       try {
         await onDelete(client.id);
         onClose(); // Cerrar el modal después de eliminar
@@ -521,15 +472,6 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
                 {/* Tab: Información Financiera */}
                 {activeTab === 'financial' && (
                   <FinancialInfoTab client={client} />
-                )}
-
-                {/* Tab: Documentos */}
-                {activeTab === 'documents' && (
-                  <DocumentsTab 
-                    documents={documents} 
-                    getDocumentTypeLabel={getDocumentTypeLabel}
-                    formatFileSize={formatFileSize}
-                  />
                 )}
 
                 {/* Tab: Credenciales */}
@@ -658,140 +600,6 @@ const FinancialInfoTab: React.FC<{ client: ClientWithDetails }> = ({ client }) =
     </InfoCard>
   </div>
 );
-
-const DocumentsTab: React.FC<{ 
-  documents: ClientDocument[];
-  getDocumentTypeLabel: (type: string) => string;
-  formatFileSize: (bytes: number) => string;
-}> = ({ documents, getDocumentTypeLabel, formatFileSize }) => {
-  
-  const handleDownload = async (doc: ClientDocument) => {
-    try {
-      if (!doc.storage_path) {
-        alert('No se encontró la ruta del archivo');
-        return;
-      }
-
-      // Bucket 'clients' es privado, necesitamos URL firmada temporal
-      const { data, error } = await supabase.storage
-        .from('clients')
-        .createSignedUrl(doc.storage_path, 60); // URL válida por 60 segundos
-      
-      if (error) {
-        console.error('❌ Error creando URL firmada:', error);
-        throw error;
-      }
-
-      // Descargar usando la URL firmada
-      const a = document.createElement('a');
-      a.href = data.signedUrl;
-      a.download = doc.document_name;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('❌ Error descargando documento:', error);
-      alert('Error al descargar el documento. Verifica que el archivo existe en Storage.');
-    }
-  };
-
-  const handleView = async (doc: ClientDocument) => {
-    try {
-      if (!doc.storage_path) {
-        alert('No se encontró la ruta del archivo');
-        return;
-      }
-
-      // Bucket 'clients' es privado, necesitamos URL firmada temporal
-      const { data, error } = await supabase.storage
-        .from('clients')
-        .createSignedUrl(doc.storage_path, 300); // URL válida por 5 minutos
-      
-      if (error) {
-        console.error('❌ Error creando URL firmada:', error);
-        throw error;
-      }
-
-      window.open(data.signedUrl, '_blank');
-    } catch (error) {
-      console.error('❌ Error abriendo documento:', error);
-      alert('Error al abrir el documento. Verifica que el archivo exists en Storage.');
-    }
-  };
-
-  if (documents.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-600 dark:text-gray-400">No hay documentos subidos</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {documents.map((doc) => (
-        <div 
-          key={doc.id} 
-          className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        >
-          <div className="flex items-center gap-4 flex-1">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400 dark:text-blue-400" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium text-gray-900"> dark:text-white{getDocumentTypeLabel(doc.document_type)}</h4>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-sm text-gray-600">{doc.document_name}</span>
-                <span className="text-sm text-gray-400">•</span>
-                <span className="text-sm text-gray-600">{formatFileSize(doc.file_size || 0)}</span>
-                <span className="text-sm text-gray-400">•</span>
-                <span className="text-sm text-gray-600">
-                  {new Date(doc.created_at).toLocaleDateString('es-ES')}
-                </span>
-                {doc.status === 'verified' && (
-                  <>
-                    <span className="text-sm text-gray-400">•</span>
-                    <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-                      <CheckCircle className="w-4 h-4" />
-                      Verificado
-                    </span>
-                  </>
-                )}
-                {doc.is_required && (
-                  <>
-                    <span className="text-sm text-gray-400">•</span>
-                    <span className="flex items-center gap-1 text-sm text-orange-600">
-                      <AlertTriangle className="w-4 h-4" />
-                      Requerido
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleView(doc)}
-              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/30 rounded-lg transition-colors"
-              title="Ver documento"
-            >
-              <Eye className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => handleDownload(doc)}
-              className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 rounded-lg transition-colors"
-              title="Descargar documento"
-            >
-              <Download className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 const CredentialsTab: React.FC<{ credentials: PortalCredentials | null }> = ({ credentials }) => {
   if (!credentials) {

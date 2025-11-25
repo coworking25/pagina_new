@@ -87,12 +87,6 @@ function AdminLayout() {
       badge: badges.clients
     },
     {
-      id: 'documents',
-      label: 'Documentos',
-      icon: FileText,
-      path: '/admin/documents'
-    },
-    {
       id: 'reports',
       label: 'Reportes',
       icon: BarChart3,

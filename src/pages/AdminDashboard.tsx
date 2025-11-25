@@ -26,7 +26,7 @@ import {
   getSmartAlerts
 } from '../lib/supabase';
 import FloatingCard from '../components/UI/FloatingCard';
-import ReportsModal from '../components/Modals/ReportsModal';
+import ReportsModalExpanded from '../components/Modals/ReportsModalExpanded';
 import UserManagementModal from '../components/Modals/UserManagementModal';
 import { useAuth } from '../contexts/AuthContext';
 import { usePersistedState } from '../hooks/usePersistedState';
@@ -610,7 +610,7 @@ function AdminDashboard() {
       </div>
 
       {/* Reports Modal */}
-      <ReportsModal 
+      <ReportsModalExpanded 
         isOpen={isReportsModalOpen}
         onClose={() => setIsReportsModalOpen(false)}
       />

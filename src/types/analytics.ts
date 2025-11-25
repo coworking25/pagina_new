@@ -136,7 +136,15 @@ export type ReportType =
   | 'advisor-performance'
   | 'sector-analysis'
   | 'daily-activity'
-  | 'user-engagement';
+  | 'user-engagement'
+  | 'clients'
+  | 'appointments'
+  | 'financial'
+  | 'contracts'
+  | 'communications'
+  | 'alerts'
+  | 'advisors'
+  | 'operations';
 
 export interface ReportConfig {
   type: ReportType;
@@ -144,4 +152,103 @@ export interface ReportConfig {
   description: string;
   icon: string;
   filters: AnalyticsFilters;
+}
+
+// =====================================================
+// NUEVOS TIPOS PARA REPORTES EXPANDIDOS
+// =====================================================
+
+// Reportes de Clientes
+export interface ClientReport {
+  totalClients: number;
+  clientsByType: { type: string; count: number }[];
+  clientsByStatus: { status: string; count: number }[];
+  clientsByAdvisor: { advisor: string; count: number }[];
+  newClientsThisMonth: number;
+  activeContracts: number;
+  clientsWithOverduePayments: number;
+}
+
+// Reportes de Citas
+export interface AppointmentReport {
+  totalAppointments: number;
+  appointmentsByStatus: { status: string; count: number }[];
+  appointmentsByType: { type: string; count: number }[];
+  appointmentsByAdvisor: { advisor: string; count: number }[];
+  conversionRate: number;
+  averageRating: number;
+  upcomingAppointments: number;
+}
+
+// Reportes Financieros
+export interface FinancialReport {
+  totalRevenue: number;
+  pendingPayments: number;
+  overduePayments: number;
+  paymentsByType: { type: string; amount: number; count: number }[];
+  monthlyRevenue: { month: string; amount: number }[];
+  averagePaymentAmount: number;
+}
+
+// Reportes de Contratos
+export interface ContractReport {
+  totalContracts: number;
+  activeContracts: number;
+  contractsByType: { type: string; count: number }[];
+  expiringContracts: number;
+  averageContractValue: number;
+  averageContractDuration: number;
+}
+
+// Reportes de Comunicaciones
+export interface CommunicationReport {
+  totalCommunications: number;
+  communicationsByType: { type: string; count: number }[];
+  communicationsByAdvisor: { advisor: string; count: number }[];
+  pendingFollowUps: number;
+  responseRate: number;
+}
+
+export interface DocumentsReport {
+  totalDocuments: number;
+  documentsByType: { type: string; count: number }[];
+  documentsByStatus: { status: string; count: number }[];
+  recentUploads: number;
+  expiringDocuments: number;
+}
+
+export interface AlertsReport {
+  totalAlerts: number;
+  activeAlerts: number;
+  criticalAlerts: number;
+  alertsByType: { type: string; count: number }[];
+  alertsByPriority: { priority: string; count: number }[];
+  recentAlerts: number;
+}
+
+export interface AdvisorsReport {
+  totalAdvisors: number;
+  activeAdvisors: number;
+  totalClientsAssigned: number;
+  averageClientsPerAdvisor: number;
+  advisorsPerformance: {
+    advisor: string;
+    clients_count: number;
+    contracts_closed: number;
+    total_revenue: number;
+  }[];
+  advisorsBySpecialty: { specialty: string; count: number }[];
+}
+
+// Dashboard Completo
+export interface CompleteDashboardData {
+  propertyAnalytics: DashboardAnalytics | null;
+  clientReport: ClientReport;
+  appointmentReport: AppointmentReport;
+  financialReport: FinancialReport;
+  contractReport: ContractReport;
+  communicationReport: CommunicationReport;
+  documentsReport: DocumentsReport;
+  alertsReport: AlertsReport;
+  advisorsReport: AdvisorsReport;
 }

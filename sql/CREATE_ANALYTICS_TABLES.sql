@@ -4,6 +4,7 @@
 -- =====================================================
 
 -- Limpiar objetos existentes si es necesario
+DROP VIEW IF EXISTS property_stats CASCADE;
 DROP TABLE IF EXISTS property_stats CASCADE;
 DROP TABLE IF EXISTS daily_analytics CASCADE;
 
@@ -161,6 +162,7 @@ FROM property_contacts
 GROUP BY DATE(created_at);
 
 -- 8. FUNCIÓN: Obtener propiedades más populares
+DROP FUNCTION IF EXISTS get_top_properties(INTEGER, INTEGER);
 CREATE OR REPLACE FUNCTION get_top_properties(
   limit_count INTEGER DEFAULT 10,
   days_back INTEGER DEFAULT 30
@@ -168,7 +170,7 @@ CREATE OR REPLACE FUNCTION get_top_properties(
 RETURNS TABLE (
   property_id BIGINT,
   title TEXT,
-  code TEXT,
+  code VARCHAR,
   total_likes BIGINT,
   total_views BIGINT,
   total_contacts BIGINT,

@@ -39,6 +39,7 @@ const AdminClients = lazy(() => import('./pages/AdminClients'));
 const AdminProperties = lazy(() => import('./pages/AdminProperties'));
 const AdminAdvisors = lazy(() => import('./pages/AdminAdvisors'));
 const AdminInquiries = lazy(() => import('./pages/AdminInquiries'));
+const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 const AdminProfile = lazy(() => import('./pages/AdminProfile'));
 const AdminCalendar = lazy(() => import('./pages/AdminCalendar').then(module => ({ default: module.AdminCalendarPage })));
@@ -113,7 +114,7 @@ const AppLayout = () => {
                 <Route path="advisors" element={<AdminAdvisors />} />
                 <Route path="service-inquiries" element={<AdminInquiries />} />
                 <Route path="documents" element={<div>Documentos - En desarrollo</div>} />
-                <Route path="reports" element={<div>Reportes - En desarrollo</div>} />
+                <Route path="reports" element={<AdminReports />} />
                 <Route path="profile" element={<AdminProfile />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>

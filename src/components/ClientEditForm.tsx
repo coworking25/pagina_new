@@ -110,9 +110,6 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
     signatures_complete: false
   });
 
-  const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
-  const [uploadingDocuments, setUploadingDocuments] = useState(false);
-
   // Estados para referencias y propiedades
   const [references, setReferences] = useState<any[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
@@ -124,30 +121,12 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
   useEffect(() => {
     if (isOpen && client) {
       loadClientData();
-      loadClientDocuments();
       loadClientReferences();
       loadClientProperties();
       loadAvailableProperties();
       loadClientPayments();
     }
   }, [isOpen, client]);
-
-  const loadClientDocuments = async () => {
-    if (!client) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('client_documents')
-        .select('*')
-        .eq('client_id', client.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setExistingDocuments(data || []);
-    } catch (error) {
-      console.error('Error cargando documentos:', error);
-    }
-  };
 
   const loadClientReferences = async () => {
     if (!client) return;
@@ -550,7 +529,6 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
     { id: 'contract', label: 'Contrato', icon: Shield },
     { id: 'references', label: 'Referencias', icon: Users },
     { id: 'properties', label: 'Propiedades', icon: Home },
-    { id: 'documents', label: 'Documentos', icon: FileText },
     { id: 'history', label: 'Historial de Pagos', icon: Clock }
   ];
 
@@ -660,16 +638,6 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
                   setProperties={setProperties}
                   clientId={client.id}
                   onPropertiesChange={loadClientProperties}
-                />
-              )}
-
-              {/* Documents Tab */}
-              {activeTab === 'documents' && (
-                <DocumentsForm
-                  clientId={client.id}
-                  existingDocuments={existingDocuments}
-                  onDocumentUploaded={loadClientDocuments}
-                  onDocumentDeleted={loadClientDocuments}
                 />
               )}
 
@@ -1307,194 +1275,6 @@ const ContractForm: React.FC<{
     </div>
   </div>
 );
-};
-
-const DocumentsForm: React.FC<{
-  clientId: string;
-  existingDocuments: any[];
-  onDocumentUploaded: () => void;
-  onDocumentDeleted: () => void;
-}> = ({ clientId, existingDocuments, onDocumentUploaded, onDocumentDeleted }) => {
-  const [uploading, setUploading] = useState(false);
-  const [selectedDocType, setSelectedDocType] = useState<string>('cedula_frente');
-
-  const documentTypes = [
-    { value: 'cedula_frente', label: 'Cédula (Frente)' },
-    { value: 'cedula_reverso', label: 'Cédula (Reverso)' },
-    { value: 'certificado_laboral', label: 'Certificado Laboral' },
-    { value: 'certificado_ingresos', label: 'Certificado de Ingresos' },
-    { value: 'referencias_bancarias', label: 'Referencias Bancarias' },
-    { value: 'contrato_firmado', label: 'Contrato Firmado' },
-    { value: 'recibo_pago', label: 'Recibo de Pago' },
-    { value: 'garantia', label: 'Documentos del Fiador' },
-    { value: 'otro', label: 'Otro Documento' }
-  ];
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setUploading(true);
-      await uploadClientDocument(clientId, selectedDocType as any, file);
-      alert('✅ Documento subido exitosamente');
-      onDocumentUploaded();
-      e.target.value = ''; // Reset input
-    } catch (error) {
-      console.error('Error subiendo documento:', error);
-      alert('❌ Error al subir el documento');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDeleteDocument = async (documentId: string, storagePath: string) => {
-    if (!confirm('¿Estás seguro de eliminar este documento?')) return;
-
-    try {
-      // Eliminar de Storage
-      if (storagePath) {
-        await deleteClientFile(storagePath);
-      }
-
-      // Eliminar de la base de datos
-      const { error } = await supabase
-        .from('client_documents')
-        .delete()
-        .eq('id', documentId);
-
-      if (error) throw error;
-
-      alert('✅ Documento eliminado');
-      onDocumentDeleted();
-    } catch (error) {
-      console.error('Error eliminando documento:', error);
-      alert('❌ Error al eliminar el documento');
-    }
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (!bytes) return 'N/A';
-    const kb = bytes / 1024;
-    const mb = kb / 1024;
-    return mb >= 1 ? `${mb.toFixed(2)} MB` : `${kb.toFixed(2)} KB`;
-  };
-
-  const getDocumentTypeLabel = (type: string): string => {
-    const docType = documentTypes.find(dt => dt.value === type);
-    return docType?.label || type;
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Uploader */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-        <h4 className="font-medium text-gray-900 mb-4">Subir Nuevo Documento</h4>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tipo de Documento
-            </label>
-            <select
-              value={selectedDocType}
-              onChange={(e) => setSelectedDocType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
-            >
-              {documentTypes.map(type => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Seleccionar Archivo
-            </label>
-            <input
-              type="file"
-              onChange={handleFileSelect}
-              disabled={uploading}
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip,.rar"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            />
-          </div>
-        </div>
-
-        {uploading && (
-          <div className="mt-4 flex items-center gap-2 text-blue-600">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-            <span className="text-sm">Subiendo documento...</span>
-          </div>
-        )}
-
-        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-          Formatos permitidos: PDF, JPG, PNG, Word, Excel, ZIP, RAR • Máximo 20MB
-        </p>
-      </div>
-
-      {/* Lista de documentos existentes */}
-      <div>
-        <h4 className="font-medium text-gray-900 mb-4">Documentos Subidos ({existingDocuments.length})</h4>
-        
-        {existingDocuments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            No hay documentos subidos aún
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {existingDocuments.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 truncate">
-                        {getDocumentTypeLabel(doc.document_type)}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {doc.document_name} • {formatFileSize(doc.file_size)}
-                      </p>
-                      {doc.created_at && (
-                        <p className="text-xs text-gray-400">
-                          Subido: {new Date(doc.created_at).toLocaleDateString('es-CO')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 ml-4">
-                  {doc.file_path && (
-                    <a
-                      href={doc.file_path}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    >
-                      Ver
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteDocument(doc.id, doc.storage_path)}
-                    className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
 };
 
 const ReferencesForm: React.FC<{
