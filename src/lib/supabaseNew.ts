@@ -12,9 +12,11 @@ export function getAdvisorImageUrl(photoUrl: string | null): string {
     return photoUrl;
   }
   
-  // Construir URL para el bucket de asesores
+  // Construir URL para el bucket property-images carpeta Asesores
+  // Codificar el nombre del archivo para manejar espacios y caracteres especiales
   const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-  return `${baseUrl}/storage/v1/object/public/asesores/${photoUrl}`;
+  const encodedFileName = encodeURIComponent(photoUrl);
+  return `${baseUrl}/storage/v1/object/public/property-images/Asesores/${encodedFileName}`;
 }
 
 // Función para obtener todos los asesores activos

@@ -393,8 +393,8 @@ body {
 
 /* Image Quality Enhancement */
 img {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
+  image-rendering: auto;
+  -webkit-image-rendering: auto;
   backface-visibility: hidden;
   transform: translateZ(0);
 }

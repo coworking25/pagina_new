@@ -95,23 +95,24 @@ function AdvisorDetailsModal({ advisor, isOpen, onClose }: AdvisorDetailsModalPr
                 {advisor.photo ? (
                   <div className="relative">
                     <img
-                      src={`${advisor.photo}?quality=100&format=auto&fit=face&facepad=2`}
+                      src={advisor.photo}
                       alt={advisor.name}
-                      className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                      className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
+                      style={{
+                        objectPosition: 'center top',
+                        imageRendering: 'auto'
+                      }}
                       onError={(e) => {
+                        // Si falla, mostrar imagen por defecto
                         const target = e.currentTarget;
-                        if (target.src.includes('?')) {
-                          target.src = advisor.photo;
-                        } else {
-                          target.style.display = 'none';
-                        }
+                        target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=90';
                       }}
                     />
                     <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center border-4 border-white">
-                    <ImageIcon className="w-8 h-8 text-white" />
+                  <div className="w-28 h-28 rounded-full bg-white/20 flex items-center justify-center border-4 border-white">
+                    <ImageIcon className="w-10 h-10 text-white" />
                   </div>
                 )}
                 

@@ -7,7 +7,7 @@ import {
   Calendar, 
   Award, 
   Clock,
-  MessageSquare,
+  MessageCircle,
   Briefcase,
   Users
 } from 'lucide-react';
@@ -119,30 +119,27 @@ const Advisors: React.FC = () => {
               }}
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 w-full max-w-sm cursor-pointer"
             >
-              {/* Advisor Photo */}
-              <div className="relative h-72 bg-[#40534C] overflow-hidden rounded-t-2xl group">
+              {/* Advisor Photo - Diseño mejorado */}
+              <div className="relative aspect-[3/4] overflow-hidden rounded-t-2xl group">
                 <motion.img
-                  whileHover={{ scale: 1.1 }}
+                  whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.4 }}
                   src={advisor.photo}
                   alt={advisor.name}
-                  className="asesor-img w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     console.error(`❌ Error cargando imagen de ${advisor.name}:`, advisor.photo);
-                    // Si falla la imagen específica, usar imagen por defecto del avatar profesional
-                    target.src = 'https://gfczfjpyyyyvteyrvhgt.supabase.co/storage/v1/object/public/property-images/Asesores/default-advisor.jpg';
-                  }}
-                  onLoad={() => {
-                    console.log(`✅ Imagen cargada exitosamente para ${advisor.name}:`, advisor.photo);
+                    target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80';
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent group-hover:from-black/60 transition-all duration-300"></div>
+                {/* Overlay gradiente elegante */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:from-black/80 transition-all duration-300"></div>
                 
                 {/* Rating Badge */}
                 <motion.div 
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1"
+                  className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg"
                 >
                   <div className="flex items-center space-x-1">
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -155,100 +152,85 @@ const Advisors: React.FC = () => {
                 {/* Experience Badge */}
                 <motion.div 
                   whileHover={{ scale: 1.1, rotate: -5 }}
-                  className="absolute top-4 left-4 bg-[#40534C]/90 backdrop-blur-sm rounded-full px-3 py-1"
+                  className="absolute top-4 left-4 bg-blue-600 rounded-full px-3 py-1.5 shadow-lg"
                 >
                   <div className="flex items-center space-x-1">
                     <Award className="w-4 h-4 text-white" />
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-sm font-bold text-white">
                       {advisor.experience_years} años
                     </span>
                   </div>
                 </motion.div>
+
+                {/* Nombre y especialidad sobre la imagen */}
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
+                    {advisor.name}
+                  </h3>
+                  <p className="text-blue-200 text-sm font-medium drop-shadow-md">
+                    {advisor.specialty}
+                  </p>
+                </div>
               </div>
 
               {/* Advisor Info */}
-              <div className="p-6">
-                <div className="mb-4">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                    {advisor.name}
-                  </h3>
-                  <p className="text-[#40534C] dark:text-[#6B8E7F] font-medium mb-3">
-                    {advisor.specialty}
-                  </p>
-                  
-                  {/* Rating and Reviews */}
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="flex items-center space-x-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < Math.floor(advisor.rating)
-                              ? 'text-yellow-400 fill-current'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
+              <div className="p-5">
+                {/* Rating and Reviews */}
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="flex items-center space-x-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < Math.floor(advisor.rating)
+                            ? 'text-yellow-400 fill-current'
+                            : 'text-gray-300 dark:text-gray-600'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    ({advisor.reviews} reseñas)
+                  </span>
+                </div>
+
+                {/* Bio */}
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
+                  {advisor.bio}
+                </p>
+
+                {/* Stats compactos */}
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center space-x-2">
+                    <Briefcase className="w-4 h-4 text-blue-600" />
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      ({advisor.reviews} reseñas)
+                      <span className="font-semibold text-gray-900 dark:text-white">{advisor.experience_years}</span> años exp.
                     </span>
                   </div>
-
-                  {/* Bio */}
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3">
-                    {advisor.bio}
-                  </p>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <motion.div 
-                    whileHover={{ scale: 1.05, y: -3 }}
-                    className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer transition-all"
-                  >
-                    <div className="flex items-center justify-center mb-1">
-                      <Briefcase className="w-4 h-4 text-[#40534C]" />
-                    </div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
-                      {advisor.experience_years}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Años exp.
-                    </div>
-                  </motion.div>
-                  <motion.div 
-                    whileHover={{ scale: 1.05, y: -3 }}
-                    className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer transition-all"
-                  >
-                    <div className="flex items-center justify-center mb-1">
-                      <Users className="w-4 h-4 text-[#40534C]" />
-                    </div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
-                      {advisor.reviews}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Clientes
-                    </div>
-                  </motion.div>
-                </div>
-
-                {/* Availability */}
-                <div className="mb-6">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    <Clock className="w-4 h-4" />
-                    <span className="font-medium">Disponibilidad:</span>
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-semibold text-gray-900 dark:text-white">{advisor.reviews}</span> clientes
+                    </span>
                   </div>
-                  <div className="text-sm space-y-1">
+                </div>
+
+                {/* Availability compacta */}
+                <div className="mb-5">
+                  <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Disponibilidad:</span>
+                  </div>
+                  <div className="text-xs space-y-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5">
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Lun-Vie:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">
+                      <span className="text-gray-500 dark:text-gray-400">Lun-Vie:</span>
+                      <span className="text-gray-800 dark:text-gray-200 font-medium">
                         {advisor.availability?.weekdays}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Sáb-Dom:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">
+                      <span className="text-gray-500 dark:text-gray-400">Sáb-Dom:</span>
+                      <span className="text-gray-800 dark:text-gray-200 font-medium">
                         {advisor.availability?.weekends}
                       </span>
                     </div>
@@ -257,25 +239,22 @@ const Advisors: React.FC = () => {
 
                 {/* Contact Buttons */}
                 <div className="space-y-3">
-                  <motion.div
+                  <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.97 }}
+                    onClick={() => contactWhatsApp(advisor)}
+                    className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-all"
                   >
-                    <Button
-                      onClick={() => contactWhatsApp(advisor)}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all"
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      WhatsApp
-                    </Button>
-                  </motion.div>
+                    <MessageCircle className="w-5 h-5" />
+                    <span>WhatsApp</span>
+                  </motion.button>
                   
                   <div className="grid grid-cols-2 gap-3">
                     <motion.a
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                       href={`tel:${advisor.phone}`}
-                      className="flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-[#40534C] hover:border-[#40534C] hover:text-white transition-all duration-300"
+                      className="flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-blue-600 hover:border-blue-600 hover:text-white transition-all duration-300"
                     >
                       <Phone className="w-4 h-4 mr-2" />
                       <span className="text-sm font-medium">
@@ -326,13 +305,13 @@ const Advisors: React.FC = () => {
               Nuestros asesores están listos para ayudarte a encontrar la propiedad perfecta. 
               Contáctanos y recibe atención especializada.
             </p>
-            <Button
+            <button
               onClick={() => window.open(CONTACT_INFO.urls.whatsapp(WHATSAPP_MESSAGES.advisory), '_blank')}
-              className="bg-white text-[#40534C] hover:bg-gray-100"
+              className="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all"
             >
-              <MessageSquare className="w-5 h-5 mr-2" />
-              Contactar Equipo
-            </Button>
+              <MessageCircle className="w-5 h-5" />
+              <span>Contactar Equipo</span>
+            </button>
           </div>
         </motion.div>
       </div>

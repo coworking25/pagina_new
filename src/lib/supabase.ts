@@ -229,7 +229,33 @@ export async function getAdvisorsPaginated(
       query = query.or(`name.ilike.%${options.search}%,email.ilike.%${options.search}%,specialty.ilike.%${options.search}%`);
     }
 
-    return await paginateQuery<Advisor>(query, options);
+    const result = await paginateQuery<any>(query, options);
+    
+    // Transformar los datos para incluir el campo photo correctamente
+    const transformedData: Advisor[] = result.data.map((advisor: any) => ({
+      id: advisor.id,
+      name: advisor.name,
+      email: advisor.email,
+      phone: advisor.phone,
+      photo: getAdvisorImageUrl(advisor.photo_url),
+      specialty: advisor.specialty,
+      whatsapp: advisor.whatsapp,
+      rating: advisor.rating || 0,
+      reviews: advisor.reviews_count || 0,
+      availability: {
+        weekdays: advisor.availability_weekdays || '9:00 AM - 6:00 PM',
+        weekends: advisor.availability_weekends || 'No disponible'
+      },
+      calendar_link: advisor.calendar_link,
+      availability_hours: `Lun-Vie: ${advisor.availability_weekdays || '9:00 AM - 6:00 PM'}, Sáb-Dom: ${advisor.availability_weekends || 'No disponible'}`,
+      bio: advisor.bio,
+      experience_years: advisor.experience_years || 0
+    }));
+
+    return {
+      ...result,
+      data: transformedData
+    };
   } catch (error) {
     console.error('❌ Error en getAdvisorsPaginated:', error);
     throw error;
@@ -1530,8 +1556,10 @@ export function getAdvisorImageUrl(photoUrl: string | null): string {
   }
   
   // Construir URL para el bucket property-images carpeta Asesores
+  // Codificar el nombre del archivo para manejar espacios y caracteres especiales
   const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-  return `${baseUrl}/storage/v1/object/public/property-images/Asesores/${photoUrl}`;
+  const encodedFileName = encodeURIComponent(photoUrl);
+  return `${baseUrl}/storage/v1/object/public/property-images/Asesores/${encodedFileName}`;
 }
 
 // Función para obtener todos los asesores activos

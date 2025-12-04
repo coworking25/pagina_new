@@ -91,117 +91,112 @@ const Advisors: React.FC = () => {
               transition={{ duration: 0.6, delay: index * 0.1 }}
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
             >
-              {/* Advisor Photo */}
-              <div className="relative h-64 bg-gradient-to-br from-blue-400 to-blue-600">
-                <img
-                  src={advisor.photo}
-                  alt={advisor.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+              {/* Advisor Photo - Diseño mejorado */}
+              <div className="relative">
+                {/* Contenedor de imagen con aspect ratio */}
+                <div className="relative aspect-[4/5] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+                  <img
+                    src={advisor.photo}
+                    alt={advisor.name}
+                    className="w-full h-full object-cover object-top"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80';
+                    }}
+                  />
+                  {/* Overlay gradiente sutil */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                </div>
                 
                 {/* Rating Badge */}
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
+                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg">
                   <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="text-sm font-semibold text-gray-800">
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <span className="text-sm font-bold text-gray-800">
                       {advisor.rating}
                     </span>
                   </div>
                 </div>
 
                 {/* Experience Badge */}
-                <div className="absolute top-4 left-4 bg-blue-600/90 backdrop-blur-sm rounded-full px-3 py-1">
+                <div className="absolute top-4 left-4 bg-blue-600 rounded-full px-3 py-1.5 shadow-lg">
                   <div className="flex items-center space-x-1">
                     <Award className="w-4 h-4 text-white" />
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-sm font-bold text-white">
                       {advisor.experience_years} años
                     </span>
                   </div>
                 </div>
+
+                {/* Nombre y especialidad sobre la imagen */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
+                    {advisor.name}
+                  </h3>
+                  <p className="text-blue-200 text-sm font-medium drop-shadow-md">
+                    {advisor.specialty}
+                  </p>
+                </div>
               </div>
 
               {/* Advisor Info */}
-              <div className="p-6">
-                <div className="mb-4">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                    {advisor.name}
-                  </h3>
-                  <p className="text-blue-600 dark:text-blue-400 font-medium mb-3">
-                    {advisor.specialty}
-                  </p>
-                  
-                  {/* Rating and Reviews */}
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="flex items-center space-x-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < Math.floor(advisor.rating)
-                              ? 'text-yellow-400 fill-current'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
+              <div className="p-5">
+                {/* Rating and Reviews */}
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="flex items-center space-x-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < Math.floor(advisor.rating)
+                            ? 'text-yellow-400 fill-current'
+                            : 'text-gray-300 dark:text-gray-600'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    ({advisor.reviews} reseñas)
+                  </span>
+                </div>
+
+                {/* Bio */}
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
+                  {advisor.bio}
+                </p>
+
+                {/* Stats compactos */}
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center space-x-2">
+                    <Briefcase className="w-4 h-4 text-blue-600" />
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      ({advisor.reviews} reseñas)
+                      <span className="font-semibold text-gray-900 dark:text-white">{advisor.experience_years}</span> años exp.
                     </span>
                   </div>
-
-                  {/* Bio */}
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3">
-                    {advisor.bio}
-                  </p>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="flex items-center justify-center mb-1">
-                      <Briefcase className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
-                      {advisor.experience_years}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Años exp.
-                    </div>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="flex items-center justify-center mb-1">
-                      <Users className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
-                      {advisor.reviews}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Clientes
-                    </div>
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-semibold text-gray-900 dark:text-white">{advisor.reviews}</span> clientes
+                    </span>
                   </div>
                 </div>
 
-                {/* Availability */}
-                <div className="mb-6">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    <Clock className="w-4 h-4" />
-                    <span className="font-medium">Disponibilidad:</span>
+                {/* Availability compacta */}
+                <div className="mb-5">
+                  <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Disponibilidad:</span>
                   </div>
-                  <div className="text-sm space-y-1">
+                  <div className="text-xs space-y-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5">
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Lun-Vie:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">
+                      <span className="text-gray-500 dark:text-gray-400">Lun-Vie:</span>
+                      <span className="text-gray-800 dark:text-gray-200 font-medium">
                         {advisor.availability?.weekdays}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Sáb-Dom:</span>
-                      <span className="text-gray-900 dark:text-white font-medium">
+                      <span className="text-gray-500 dark:text-gray-400">Sáb-Dom:</span>
+                      <span className="text-gray-800 dark:text-gray-200 font-medium">
                         {advisor.availability?.weekends}
                       </span>
                     </div>

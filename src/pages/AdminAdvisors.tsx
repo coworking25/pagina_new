@@ -346,30 +346,26 @@ function AdminAdvisors() {
             <div className="p-6 text-center">
               <div className="relative inline-block mb-4">
                 {advisor.photo ? (
-                  <div className="relative w-32 h-32 mx-auto">
+                  <div className="relative w-36 h-36 mx-auto">
                     <img
-                      src={`${advisor.photo}?quality=100&format=auto&fit=face&facepad=2`}
+                      src={advisor.photo}
                       alt={advisor.name}
                       className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg ring-2 ring-blue-100 dark:ring-blue-900 dark:border-gray-700"
                       style={{
-                        objectPosition: 'center top'
+                        objectPosition: 'center top',
+                        imageRendering: 'auto'
                       }}
                       onError={(e) => {
-                        // Si falla con parámetros, intentar sin ellos
+                        // Si falla, mostrar imagen por defecto
                         const target = e.currentTarget;
-                        if (target.src.includes('?')) {
-                          target.src = advisor.photo;
-                        } else {
-                          target.style.display = 'none';
-                        }
+                        target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=90';
                       }}
-                      loading="lazy"
                     />
                     {/* Indicador de estado activo */}
-                    <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                    <div className="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
                   </div>
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mx-auto border-4 border-white shadow-lg ring-2 ring-gray-100 dark:ring-gray-700 dark:border-gray-700">
+                  <div className="w-36 h-36 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mx-auto border-4 border-white shadow-lg ring-2 ring-gray-100 dark:ring-gray-700 dark:border-gray-700">
                     <ImageIcon className="w-12 h-12 text-gray-400" />
                   </div>
                 )}
