@@ -8,7 +8,6 @@ interface Testimonial {
   location: string;
   rating: number;
   text: string;
-  image: string;
   propertyType: string;
 }
 
@@ -22,7 +21,6 @@ const TestimonialsCarousel: React.FC = () => {
       location: "Medellín",
       rating: 5,
       text: "Excelente servicio! Encontré el apartamento perfecto para mi familia en menos de una semana. El equipo de Coworking Inmobiliario fue muy profesional y me acompañaron en todo el proceso.",
-      image: "/img/testimonial1.jpg",
       propertyType: "Apartamento"
     },
     {
@@ -31,7 +29,6 @@ const TestimonialsCarousel: React.FC = () => {
       location: "Envigado",
       rating: 5,
       text: "Vendí mi casa mucho más rápido de lo que esperaba. El avalúo fue justo y el marketing que hicieron fue excepcional. Totalmente recomendado.",
-      image: "/img/testimonial2.jpg",
       propertyType: "Casa"
     },
     {
@@ -40,7 +37,6 @@ const TestimonialsCarousel: React.FC = () => {
       location: "Sabaneta",
       rating: 5,
       text: "El proceso de arriendo fue muy transparente y sin complicaciones. Me explicaron todo claramente y me sentí segura en todo momento. ¡Gracias por hacer realidad mi sueño!",
-      image: "/img/testimonial3.jpg",
       propertyType: "Apartamento"
     },
     {
@@ -49,8 +45,71 @@ const TestimonialsCarousel: React.FC = () => {
       location: "Itagüí",
       rating: 5,
       text: "Después de buscar por meses, finalmente encontré la oficina perfecta para mi negocio. El asesoramiento fue clave para tomar la mejor decisión.",
-      image: "/img/testimonial4.jpg",
       propertyType: "Oficina"
+    },
+    {
+      id: 5,
+      name: "Sofía Hernández",
+      location: "El Poblado",
+      rating: 5,
+      text: "Increíble atención desde el primer contacto. Santiago me ayudó a encontrar un apartamento con la vista perfecta. El proceso fue rápido y muy profesional.",
+      propertyType: "Apartamento"
+    },
+    {
+      id: 6,
+      name: "Andrés Felipe Castro",
+      location: "Laureles",
+      rating: 5,
+      text: "Como inversionista, valoro mucho la honestidad y el conocimiento del mercado. El equipo me asesoró perfectamente y ya he comprado 3 propiedades con ellos.",
+      propertyType: "Local Comercial"
+    },
+    {
+      id: 7,
+      name: "Valentina Mejía",
+      location: "Belén",
+      rating: 5,
+      text: "Buscaba mi primer apartamento propio y estaba muy nerviosa. Me guiaron paso a paso, explicándome cada detalle. Ahora tengo mi hogar soñado.",
+      propertyType: "Apartamento"
+    },
+    {
+      id: 8,
+      name: "Roberto Sánchez",
+      location: "La Estrella",
+      rating: 5,
+      text: "Necesitaba vender urgente y ellos lograron cerrar el negocio en tiempo récord. El precio fue mejor de lo que esperaba. 100% recomendados.",
+      propertyType: "Casa"
+    },
+    {
+      id: 9,
+      name: "Camila Restrepo",
+      location: "Envigado",
+      rating: 5,
+      text: "El servicio de administración de mi propiedad ha sido excelente. Siempre están pendientes y los inquilinos están muy satisfechos. Muy profesionales.",
+      propertyType: "Apartamento"
+    },
+    {
+      id: 10,
+      name: "Diego Alejandro Ríos",
+      location: "Sabaneta",
+      rating: 5,
+      text: "Encontré la bodega perfecta para mi empresa. El asesor conocía muy bien la zona industrial y me mostró opciones que no había considerado. Excelente servicio.",
+      propertyType: "Bodega"
+    },
+    {
+      id: 11,
+      name: "Laura Patricia Gómez",
+      location: "Medellín",
+      rating: 5,
+      text: "Después de una mala experiencia con otra inmobiliaria, llegué aquí y fue totalmente diferente. Transparencia total y un trato muy humano. Los recomiendo.",
+      propertyType: "Casa"
+    },
+    {
+      id: 12,
+      name: "Fernando Álvarez",
+      location: "Itagüí",
+      rating: 5,
+      text: "Compré un lote para construir y el equipo me asesoró incluso con los trámites legales. Van más allá de lo esperado. Servicio de primera.",
+      propertyType: "Lote"
     }
   ];
 
@@ -110,29 +169,18 @@ const TestimonialsCarousel: React.FC = () => {
               transition={{ duration: 0.5 }}
               className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6"
             >
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-                {/* Image */}
-                <div className="flex-shrink-0">
-                  <div className="relative">
-                    <img
-                      src={testimonials[currentIndex].image}
-                      alt={testimonials[currentIndex].name}
-                      className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-4 border-green-200 dark:border-green-700"
-                      onError={(e) => {
-                        // Fallback to placeholder
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(testimonials[currentIndex].name)}&background=10b981&color=fff&size=128`;
-                      }}
-                    />
-                    <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2">
-                      <Quote className="w-4 h-4 text-white" />
-                    </div>
+              <div className="flex flex-col items-center text-center">
+                {/* Quote Icon */}
+                <div className="mb-4">
+                  <div className="bg-green-500 rounded-full p-3">
+                    <Quote className="w-6 h-6 text-white" />
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 text-center md:text-left">
+                <div className="flex-1">
                   {/* Rating */}
-                  <div className="flex justify-center md:justify-start mb-2">
+                  <div className="flex justify-center mb-3">
                     {[...Array(testimonials[currentIndex].rating)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                     ))}
