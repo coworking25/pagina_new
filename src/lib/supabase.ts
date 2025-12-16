@@ -12,11 +12,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Singleton pattern: Crear una única instancia del cliente
-let supabaseInstance: SupabaseClient | null = null;
+// Usar window para evitar múltiples instancias durante HMR en desarrollo
+declare global {
+  interface Window {
+    __supabase_instance?: SupabaseClient;
+  }
+}
 
 function getSupabaseClient(): SupabaseClient {
-  if (!supabaseInstance) {
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+  // En desarrollo, usar instancia global para evitar duplicados con HMR
+  if (typeof window !== 'undefined') {
+    if (window.__supabase_instance) {
+      return window.__supabase_instance;
+    }
+    
+    window.__supabase_instance = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
@@ -25,12 +35,23 @@ function getSupabaseClient(): SupabaseClient {
       }
     });
     
-    // Exponer supabase globalmente solo para debugging en desarrollo
-    if (typeof window !== 'undefined' && import.meta.env.DEV) {
-      (window as any).supabase = supabaseInstance;
+    // Solo en desarrollo, exponer para debugging
+    if (import.meta.env.DEV) {
+      (window as any).supabase = window.__supabase_instance;
     }
+    
+    return window.__supabase_instance;
   }
-  return supabaseInstance;
+  
+  // Fallback para SSR (si alguna vez se usa)
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      storageKey: 'coworking-auth'
+    }
+  });
 }
 
 export const supabase = getSupabaseClient();
