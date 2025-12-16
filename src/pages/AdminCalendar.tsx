@@ -91,20 +91,20 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <Calendar className="h-8 w-8 text-blue-600" />
-                Sistema de Calendario Avanzado
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
+                <Calendar className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-blue-600 flex-shrink-0" />
+                <span className="truncate">Sistema de Calendario Avanzado</span>
               </h1>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
                 Gestión completa de citas con integración a Google Calendar
               </p>
             </div>
-            <Button onClick={handleNewAppointment} className="flex items-center gap-2">
+            <Button onClick={handleNewAppointment} className="w-full sm:w-auto flex items-center justify-center gap-2">
               <Plus className="h-4 w-4" />
               Nueva Cita
             </Button>
@@ -112,9 +112,9 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+        <div className="mb-4 sm:mb-6">
+          <div className="border-b border-gray-200 overflow-x-auto">
+            <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max px-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -137,11 +137,11 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
         </div>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {activeTab === 'calendar' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Calendar View */}
-              <Card className="p-6">
+              <Card className="p-3 sm:p-4 lg:p-6">
                 <CalendarView
                   key={refreshKey}
                   onAppointmentClick={handleViewAppointmentDetails}
@@ -149,39 +149,39 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
               </Card>
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+                <Card className="p-3 sm:p-4 lg:p-6">
                   <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Calendar className="h-6 w-6 text-blue-600" />
+                    <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                      <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Citas Hoy</p>
-                      <p className="text-2xl font-bold text-gray-900">--</p>
+                    <div className="ml-3 sm:ml-4 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600">Citas Hoy</p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">--</p>
                     </div>
                   </div>
                 </Card>
 
-                <Card className="p-6">
+                <Card className="p-3 sm:p-4 lg:p-6">
                   <div className="flex items-center">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <Users className="h-6 w-6 text-green-600" />
+                    <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg flex-shrink-0">
+                      <Users className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Asesores Activos</p>
-                      <p className="text-2xl font-bold text-gray-900">--</p>
+                    <div className="ml-3 sm:ml-4 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600">Asesores Activos</p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">--</p>
                     </div>
                   </div>
                 </Card>
 
-                <Card className="p-6">
+                <Card className="p-3 sm:p-4 lg:p-6">
                   <div className="flex items-center">
-                    <div className="p-2 bg-orange-100 rounded-lg">
-                      <Clock className="h-6 w-6 text-orange-600" />
+                    <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
+                      <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Próxima Cita</p>
-                      <p className="text-2xl font-bold text-gray-900">--:--</p>
+                    <div className="ml-3 sm:ml-4 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600">Próxima Cita</p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">--:--</p>
                     </div>
                   </div>
                 </Card>
@@ -197,10 +197,10 @@ export const AdminCalendarPage: React.FC<AdminCalendarPageProps> = () => {
           )}
 
           {activeTab === 'settings' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Additional Settings */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Configuración General</h3>
+              <Card className="p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Configuración General</h3>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -1637,34 +1637,34 @@ function AdminProperties() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestión de Propiedades</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">Gestión de Propiedades</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
             Administra todas las propiedades del catálogo
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleAddProperty}
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base"
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Nueva Propiedad
           </motion.button>
         </div>
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1673,23 +1673,23 @@ function AdminProperties() {
           onClick={() => handleQuickFilter('all')}
           className="cursor-pointer"
         >
-          <FloatingCard glowEffect className={`p-6 transition-all duration-200 ${
+          <FloatingCard glowEffect className={`p-3 sm:p-4 lg:p-6 transition-all duration-200 ${
             statusFilter === 'all' && !featuredFilter 
               ? 'ring-2 ring-blue-500 shadow-lg' 
               : ''
           }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Propiedades</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{allProperties.length}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Total Propiedades</p>
+                <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{allProperties.length}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 hidden sm:block">
                   {properties.length !== allProperties.length 
                     ? `Mostrando ${properties.length} filtradas` 
                     : 'Todas las propiedades'}
                 </p>
               </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                <Home className="w-8 h-8 text-blue-600" />
+              <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg sm:rounded-xl flex-shrink-0">
+                <Home className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-600" />
               </div>
             </div>
           </FloatingCard>
@@ -1704,24 +1704,24 @@ function AdminProperties() {
           onClick={() => handleQuickFilter('sale')}
           className="cursor-pointer"
         >
-          <FloatingCard glowEffect className={`p-6 transition-all duration-200 ${
+          <FloatingCard glowEffect className={`p-3 sm:p-4 lg:p-6 transition-all duration-200 ${
             statusFilter === 'sale' && !featuredFilter 
               ? 'ring-2 ring-blue-500 shadow-lg' 
               : ''
           }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">En Venta</p>
-                <p className="text-3xl font-bold text-blue-600">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">En Venta</p>
+                <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-blue-600">
                   {allProperties.filter(p => 
                     (p.availability_type === 'sale' || p.availability_type === 'both') && 
                     (p.status === 'available' || p.status === 'sale')
                   ).length}
                 </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Disponibles</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 hidden sm:block">Disponibles</p>
               </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                <DollarSign className="w-8 h-8 text-blue-600" />
+              <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg sm:rounded-xl flex-shrink-0">
+                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-600" />
               </div>
             </div>
           </FloatingCard>
@@ -1736,24 +1736,24 @@ function AdminProperties() {
           onClick={() => handleQuickFilter('rent')}
           className="cursor-pointer"
         >
-          <FloatingCard glowEffect className={`p-6 transition-all duration-200 ${
+          <FloatingCard glowEffect className={`p-3 sm:p-4 lg:p-6 transition-all duration-200 ${
             statusFilter === 'rent' && !featuredFilter 
               ? 'ring-2 ring-green-500 shadow-lg' 
               : ''
           }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">En Arriendo</p>
-                <p className="text-3xl font-bold text-green-600">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">En Arriendo</p>
+                <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-green-600">
                   {allProperties.filter(p => 
                     (p.availability_type === 'rent' || p.availability_type === 'both') && 
                     (p.status === 'available' || p.status === 'rent')
                   ).length}
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">Disponibles</p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 hidden sm:block">Disponibles</p>
               </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                <Home className="w-8 h-8 text-green-600" />
+              <div className="p-2 sm:p-3 bg-green-100 dark:bg-green-900/30 rounded-lg sm:rounded-xl flex-shrink-0">
+                <Home className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-green-600" />
               </div>
             </div>
           </FloatingCard>
@@ -1768,21 +1768,21 @@ function AdminProperties() {
           onClick={() => handleQuickFilter('featured')}
           className="cursor-pointer"
         >
-          <FloatingCard glowEffect className={`p-6 transition-all duration-200 ${
+          <FloatingCard glowEffect className={`p-3 sm:p-4 lg:p-6 transition-all duration-200 ${
             featuredFilter 
               ? 'ring-2 ring-purple-500 shadow-lg' 
               : ''
           }`}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Destacadas</p>
-                <p className="text-3xl font-bold text-purple-600">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Destacadas</p>
+                <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-purple-600">
                   {allProperties.filter(p => p.featured).length}
                 </p>
-                <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">Premium</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400 mt-1 hidden sm:block">Premium</p>
               </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-                <Star className="w-8 h-8 text-purple-600" />
+              <div className="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg sm:rounded-xl flex-shrink-0">
+                <Star className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-600" />
               </div>
             </div>
           </FloatingCard>
@@ -1794,7 +1794,7 @@ function AdminProperties() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <FloatingCard className="p-6">
+        <FloatingCard className="p-3 sm:p-4 lg:p-6">
           {/* Select All Checkbox */}
           <div className="mb-4 flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
             <button
@@ -1833,7 +1833,7 @@ function AdminProperties() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1888,7 +1888,7 @@ function AdminProperties() {
       </motion.div>
 
       {/* Properties Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {properties.map((property, index) => (
           <motion.div
             key={property.id}

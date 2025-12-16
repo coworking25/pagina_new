@@ -201,16 +201,16 @@ function AdminAdvisors() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0"
       >
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestión de Asesores</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">Gestión de Asesores</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 truncate">
             Administra el equipo de asesores inmobiliarios
           </p>
         </div>
@@ -218,26 +218,27 @@ function AdminAdvisors() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleCreateAdvisor}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          Nuevo Asesor
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+          <span className="sm:hidden">Nuevo</span>
+          <span className="hidden sm:inline">Nuevo Asesor</span>
         </motion.button>
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Asesores</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{advisors.length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Total Asesores</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">{advisors.length}</p>
             </div>
-            <Users className="w-8 h-8 text-blue-600" />
+            <Users className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-blue-600 flex-shrink-0 ml-2" />
           </div>
         </motion.div>
 
@@ -245,16 +246,16 @@ function AdminAdvisors() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Especialistas en Ventas</p>
-              <p className="text-2xl font-bold text-blue-600">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Espec. Ventas</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">
                 {advisors.filter(a => a.specialty.toLowerCase().includes('venta')).length}
               </p>
             </div>
-            <Award className="w-8 h-8 text-blue-600" />
+            <Award className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-blue-600 flex-shrink-0 ml-2" />
           </div>
         </motion.div>
 
@@ -262,16 +263,16 @@ function AdminAdvisors() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Especialistas en Arriendos</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Espec. Arriendos</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">
                 {advisors.filter(a => a.specialty.toLowerCase().includes('arriendo')).length}
               </p>
             </div>
-            <UserCheck className="w-8 h-8 text-green-600" />
+            <UserCheck className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-green-600 flex-shrink-0 ml-2" />
           </div>
         </motion.div>
 
@@ -279,19 +280,19 @@ function AdminAdvisors() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Rating Promedio</p>
-              <p className="text-2xl font-bold text-yellow-600">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Rating Promedio</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-600">
                 {advisors.length > 0 
                   ? (advisors.reduce((sum, advisor) => sum + advisor.rating, 0) / advisors.length).toFixed(1)
                   : '0.0'
                 }
               </p>
             </div>
-            <Star className="w-8 h-8 text-yellow-600" />
+            <Star className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-yellow-600 flex-shrink-0 ml-2" />
           </div>
         </motion.div>
       </div>
@@ -300,9 +301,9 @@ function AdminAdvisors() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+        className="bg-white dark:bg-gray-800 rounded-xl p-3 sm:p-4 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -333,7 +334,7 @@ function AdminAdvisors() {
       </motion.div>
 
       {/* Advisors Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
         {advisors.map((advisor, index) => (
           <motion.div
             key={advisor.id}
@@ -343,10 +344,10 @@ function AdminAdvisors() {
             className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
           >
             {/* Advisor Header */}
-            <div className="p-6 text-center">
-              <div className="relative inline-block mb-4">
+            <div className="p-4 sm:p-5 lg:p-6 text-center">
+              <div className="relative inline-block mb-3 sm:mb-4">
                 {advisor.photo ? (
-                  <div className="relative w-36 h-36 mx-auto">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-36 lg:h-36 mx-auto">
                     <img
                       src={advisor.photo}
                       alt={advisor.name}
@@ -365,8 +366,8 @@ function AdminAdvisors() {
                     <div className="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
                   </div>
                 ) : (
-                  <div className="w-36 h-36 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mx-auto border-4 border-white shadow-lg ring-2 ring-gray-100 dark:ring-gray-700 dark:border-gray-700">
-                    <ImageIcon className="w-12 h-12 text-gray-400" />
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-36 lg:h-36 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center mx-auto border-4 border-white shadow-lg ring-2 ring-gray-100 dark:ring-gray-700 dark:border-gray-700">
+                    <ImageIcon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-gray-400" />
                   </div>
                 )}
               </div>
@@ -398,10 +399,10 @@ function AdminAdvisors() {
             </div>
 
             {/* Contact Info */}
-            <div className="px-6 pb-4 space-y-2">
+            <div className="px-4 sm:px-5 lg:px-6 pb-3 sm:pb-4 space-y-1.5 sm:space-y-2">
               <div className="flex items-center text-gray-600 dark:text-gray-400">
-                <Mail className="w-4 h-4 mr-2" />
-                <span className="text-sm truncate">{advisor.email}</span>
+                <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+                <span className="text-xs sm:text-sm truncate">{advisor.email}</span>
               </div>
               
               <div className="flex items-center text-gray-600 dark:text-gray-400">
@@ -437,7 +438,7 @@ function AdminAdvisors() {
             )}
 
             {/* Actions */}
-            <div className="px-6 pb-6 flex justify-between">
+            <div className="px-4 sm:px-5 lg:px-6 pb-4 sm:pb-5 lg:pb-6 flex justify-between">
               <div className="flex space-x-2">
                 <motion.button
                   whileHover={{ scale: 1.1 }}

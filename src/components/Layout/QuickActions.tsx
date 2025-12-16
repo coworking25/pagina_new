@@ -73,7 +73,7 @@ const QuickActions: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 group">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 group">
       {/* Backdrop */}
       <AnimatePresence>
         {isOpen && (
@@ -90,7 +90,7 @@ const QuickActions: React.FC = () => {
       {/* Quick Action Buttons */}
       <AnimatePresence>
         {isOpen && (
-          <div className="absolute bottom-20 right-0 space-y-3">
+          <div className="absolute bottom-16 sm:bottom-20 right-0 space-y-2 sm:space-y-3">
             {quickActions.map((action, index) => {
               const Icon = action.icon;
               return (
@@ -111,7 +111,7 @@ const QuickActions: React.FC = () => {
                   }}
                   onClick={() => handleActionClick(action.action)}
                   className={`
-                    relative flex items-center space-x-3 px-5 py-3 text-white rounded-2xl shadow-xl
+                    relative flex items-center space-x-2 sm:space-x-3 px-3 sm:px-5 py-2 sm:py-3 text-white rounded-xl sm:rounded-2xl shadow-xl
                     transition-all duration-300 transform hover:scale-105 overflow-hidden
                     bg-gradient-to-r ${action.gradient} hover:shadow-2xl
                     border border-white/20 backdrop-blur-sm
@@ -120,8 +120,8 @@ const QuickActions: React.FC = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-                  <Icon className="w-5 h-5 relative z-10" />
-                  <span className="text-sm font-medium whitespace-nowrap relative z-10">
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
+                  <span className="text-xs sm:text-sm font-medium whitespace-nowrap relative z-10">
                     {action.label}
                   </span>
                   <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
@@ -136,7 +136,7 @@ const QuickActions: React.FC = () => {
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          relative w-16 h-16 rounded-full shadow-2xl flex items-center justify-center
+          relative w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-2xl flex items-center justify-center
           transition-all duration-500 transform hover:scale-110 overflow-hidden
           ${isOpen
             ? 'bg-gradient-to-r from-red-500 to-red-600 rotate-45'
@@ -151,15 +151,15 @@ const QuickActions: React.FC = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
         {isOpen ? (
-          <X className="w-7 h-7 text-white relative z-10" />
+          <X className="w-5 h-5 sm:w-7 sm:h-7 text-white relative z-10" />
         ) : (
-          <Zap className="w-7 h-7 text-white relative z-10" />
+          <Zap className="w-5 h-5 sm:w-7 sm:h-7 text-white relative z-10" />
         )}
       </motion.button>
 
       {/* Tooltip for closed state */}
       {!isOpen && (
-        <div className="absolute bottom-20 right-0 bg-gray-900/90 dark:bg-gray-700/90 text-white text-sm px-3 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none backdrop-blur-sm border border-white/10">
+        <div className="absolute bottom-16 sm:bottom-20 right-0 bg-gray-900/90 dark:bg-gray-700/90 text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none backdrop-blur-sm border border-white/10">
           Acciones Rápidas
           <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900/90 dark:border-t-gray-700/90"></div>
         </div>

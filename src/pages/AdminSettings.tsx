@@ -315,16 +315,16 @@ function AdminSettings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0"
       >
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Configuración del Sistema</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">Configuración del Sistema</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 truncate">
             Administra la configuración general de la plataforma
           </p>
         </div>
@@ -334,14 +334,15 @@ function AdminSettings() {
           whileTap={{ scale: 0.95 }}
           onClick={saveSettings}
           disabled={loading}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="w-full sm:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
         >
           {loading ? (
-            <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+            <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 animate-spin" />
           ) : (
-            <Save className="w-5 h-5 mr-2" />
+            <Save className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
           )}
-          Guardar Configuración
+          <span className="sm:hidden">Guardar</span>
+          <span className="hidden sm:inline">Guardar Configuración</span>
         </motion.button>
       </motion.div>
 
@@ -356,23 +357,23 @@ function AdminSettings() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Sidebar - horizontal scroll on mobile */}
         <div className="lg:col-span-1">
-          <nav className="space-y-1">
+          <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  className={`flex-shrink-0 lg:w-full flex items-center px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                       : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800'
                   }`}
                 >
-                  <Icon className="w-5 h-5 mr-3" />
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
                   {tab.label}
                 </button>
               );
@@ -386,12 +387,12 @@ function AdminSettings() {
             key={activeTab}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700"
           >
             {/* General Tab */}
             {activeTab === 'general' && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Información General</h2>
+              <div className="space-y-4 sm:space-y-6">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Información General</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -454,8 +455,8 @@ function AdminSettings() {
 
             {/* Contact Tab */}
             {activeTab === 'contact' && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Información de Contacto</h2>
+              <div className="space-y-4 sm:space-y-6">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Información de Contacto</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>

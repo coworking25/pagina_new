@@ -47,17 +47,17 @@ const Modal: React.FC<ModalProps> = ({
   }, [isOpen, onClose]);
 
   const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-7xl mx-4',
+    sm: 'max-w-[95vw] sm:max-w-md',
+    md: 'max-w-[95vw] sm:max-w-lg',
+    lg: 'max-w-[95vw] sm:max-w-2xl',
+    xl: 'max-w-[95vw] sm:max-w-4xl',
+    full: 'max-w-[95vw] lg:max-w-7xl mx-2 sm:mx-4',
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -77,9 +77,9 @@ const Modal: React.FC<ModalProps> = ({
           >
             {/* Header */}
             {(title || showCloseButton) && (
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
                 {title && (
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white pr-2">
                     {title}
                   </h3>
                 )}
@@ -95,7 +95,7 @@ const Modal: React.FC<ModalProps> = ({
             )}
 
             {/* Content */}
-            <div className="overflow-y-auto max-h-[calc(90vh-8rem)]">
+            <div className="overflow-y-auto max-h-[calc(85vh-6rem)] sm:max-h-[calc(90vh-8rem)]">
               {children}
             </div>
           </motion.div>

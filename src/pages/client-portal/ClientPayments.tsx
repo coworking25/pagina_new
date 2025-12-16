@@ -219,44 +219,44 @@ const ClientPayments: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Historial de Pagos</h1>
-          <p className="text-gray-600 mt-1">Gestiona y revisa todos los pagos recibidos</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">Historial de Pagos</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Gestiona y revisa todos los pagos recibidos</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={() => setShowCalendar(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base flex-1 sm:flex-none"
           >
             <Calendar className="w-4 h-4" />
-            Ver Calendario
+            <span className="hidden xs:inline">Ver</span> Calendario
           </button>
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base flex-1 sm:flex-none"
           >
             <Download className="w-4 h-4" />
-            Exportar CSV
+            Exportar <span className="hidden xs:inline">CSV</span>
           </button>
         </div>
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white"
+          className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-3 sm:p-4 lg:p-6 text-white"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm">Total Recibido</p>
-              <p className="text-2xl font-bold mt-1">{formatCurrency(stats.totalReceived)}</p>
+            <div className="min-w-0">
+              <p className="text-green-100 text-xs sm:text-sm truncate">Total Recibido</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold mt-0.5 sm:mt-1">{formatCurrency(stats.totalReceived)}</p>
             </div>
-            <CheckCircle className="w-10 h-10 text-green-200" />
+            <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-green-200 flex-shrink-0" />
           </div>
         </motion.div>
 
@@ -264,14 +264,14 @@ const ClientPayments: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-6 text-white"
+          className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-3 sm:p-4 lg:p-6 text-white"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-yellow-100 text-sm">Pendiente</p>
-              <p className="text-2xl font-bold mt-1">{formatCurrency(stats.totalPending)}</p>
+            <div className="min-w-0">
+              <p className="text-yellow-100 text-xs sm:text-sm truncate">Pendiente</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold mt-0.5 sm:mt-1">{formatCurrency(stats.totalPending)}</p>
             </div>
-            <Clock className="w-10 h-10 text-yellow-200" />
+            <Clock className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-yellow-200 flex-shrink-0" />
           </div>
         </motion.div>
 
@@ -279,14 +279,14 @@ const ClientPayments: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white"
+          className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-3 sm:p-4 lg:p-6 text-white"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-red-100 text-sm">Vencido</p>
-              <p className="text-2xl font-bold mt-1">{formatCurrency(stats.totalOverdue)}</p>
+            <div className="min-w-0">
+              <p className="text-red-100 text-xs sm:text-sm truncate">Vencido</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold mt-0.5 sm:mt-1">{formatCurrency(stats.totalOverdue)}</p>
             </div>
-            <XCircle className="w-10 h-10 text-red-200" />
+            <XCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-red-200 flex-shrink-0" />
           </div>
         </motion.div>
 
@@ -294,26 +294,26 @@ const ClientPayments: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white"
+          className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-3 sm:p-4 lg:p-6 text-white"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm">Promedio</p>
-              <p className="text-2xl font-bold mt-1">{formatCurrency(stats.averageAmount)}</p>
+            <div className="min-w-0">
+              <p className="text-blue-100 text-xs sm:text-sm truncate">Promedio</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold mt-0.5 sm:mt-1">{formatCurrency(stats.averageAmount)}</p>
             </div>
-            <DollarSign className="w-10 h-10 text-blue-200" />
+            <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-blue-200 flex-shrink-0" />
           </div>
         </motion.div>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 lg:p-6">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900">Filtros</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Búsqueda */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />

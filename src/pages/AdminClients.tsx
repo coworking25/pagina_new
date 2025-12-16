@@ -1294,28 +1294,28 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
   }
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-4 lg:p-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
             Gestión de Clientes
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
             Administra tu base de clientes reales
           </p>
         </div>
         <button
           onClick={() => setShowWizard(true)}
-          className="mt-4 md:mt-0 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
           Nuevo Cliente
         </button>
       </div>
 
-      {/* EstadÃ­sticas - Clickeables para Filtrar */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      {/* Estadísticas - Clickeables para Filtrar */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
         {/* Total */}
         <motion.button
           onClick={() => {
@@ -1325,19 +1325,19 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+          className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
             typeFilter === 'all' && statusFilter === 'all' && searchTerm === ''
               ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900'
               : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.total}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Total</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
           </div>
         </motion.button>
@@ -1350,19 +1350,19 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+          className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
             typeFilter === 'landlord'
               ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-900'
               : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-              <Home className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Home className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Propietarios</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.landlords}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Propietarios</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{stats.landlords}</p>
             </div>
           </div>
         </motion.button>
@@ -1375,19 +1375,19 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+          className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
             typeFilter === 'tenant'
               ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900'
               : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-              <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Inquilinos</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.tenants}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Inquilinos</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{stats.tenants}</p>
             </div>
           </div>
         </motion.button>
@@ -1400,19 +1400,19 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+          className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
             typeFilter === 'buyer'
               ? 'border-orange-500 ring-2 ring-orange-200 dark:ring-orange-900'
               : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Compradores</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.buyers}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Compradores</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{stats.buyers}</p>
             </div>
           </div>
         </motion.button>
@@ -1425,19 +1425,19 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+          className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
             typeFilter === 'seller'
               ? 'border-yellow-500 ring-2 ring-yellow-200 dark:ring-yellow-900'
               : 'border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-600'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400" />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Vendedores</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.sellers}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Vendedores</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{stats.sellers}</p>
             </div>
           </div>
         </motion.button>
@@ -1450,19 +1450,19 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+          className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
             typeFilter === 'interested'
               ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900'
               : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-              <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Interesados</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.interested}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Interesados</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{stats.interested}</p>
             </div>
           </div>
         </motion.button>
@@ -1475,19 +1475,19 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+          className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
             statusFilter === 'active'
               ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-900'
               : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Activos</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.active}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Activos</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{stats.active}</p>
             </div>
           </div>
         </motion.button>
@@ -1500,19 +1500,19 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`bg-white dark:bg-gray-800 p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+          className={`bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
             statusFilter === 'inactive'
               ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-900'
               : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-600'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400" />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Inactivos</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{stats.inactive}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">Inactivos</p>
+              <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{stats.inactive}</p>
             </div>
           </div>
         </motion.button>
@@ -1520,13 +1520,13 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
 
       {/* Indicador de filtro activo */}
       {(typeFilter !== 'all' || statusFilter !== 'all') && (
-        <div className="mb-4 flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Filtros activos:</span>
+        <div className="mb-3 sm:mb-4 flex items-center gap-2 flex-wrap">
+          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Filtros activos:</span>
           {typeFilter !== 'all' && (
             <motion.span
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full text-sm"
+              className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full text-xs sm:text-sm"
             >
               Tipo: {formatClientType(typeFilter)}
               <button
@@ -1541,7 +1541,7 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
             <motion.span
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm"
+              className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs sm:text-sm"
             >
               Estado: {statusFilter === 'active' ? 'Activo' : 'Inactivo'}
               <button
@@ -1566,8 +1566,8 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
       )}
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border dark:border-gray-700 mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -1638,7 +1638,7 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
       </div>
 
       {/* Lista de clientes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {filteredClients.map((client, index) => (
           <motion.div
             key={client.id}

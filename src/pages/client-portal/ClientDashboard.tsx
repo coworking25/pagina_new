@@ -210,13 +210,13 @@ const ClientDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">
           Bienvenido, {summary.full_name}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
           Aquí puedes ver un resumen de tu actividad
         </p>
       </div>
@@ -246,7 +246,7 @@ const ClientDashboard: React.FC = () => {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -259,21 +259,21 @@ const ClientDashboard: React.FC = () => {
               className="cursor-pointer"
             >
               <Card
-                className={`p-6 hover:shadow-lg transition-shadow ${
+                className={`p-3 sm:p-4 lg:p-6 hover:shadow-lg transition-shadow ${
                   stat.alert ? 'ring-2 ring-red-500' : ''
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 sm:mb-2 truncate">
                       {stat.label}
                     </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                       {stat.value}
                     </p>
                   </div>
-                  <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                    <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+                  <div className={`${stat.bgColor} p-2 sm:p-3 rounded-lg flex-shrink-0`}>
+                    <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.iconColor}`} />
                   </div>
                 </div>
                 {stat.alert && (

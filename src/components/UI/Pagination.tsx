@@ -84,16 +84,16 @@ export default function Pagination({
           <ChevronLeft className="w-4 h-4" />
         </button>
 
-        {/* Números de página */}
-        <div className="flex items-center gap-1">
+        {/* Números de página - ocultos en móvil muy pequeño */}
+        <div className="hidden xs:flex items-center gap-1">
           {getVisiblePages().map((page, index) => (
             <React.Fragment key={index}>
               {page === '...' ? (
-                <span className="px-3 py-2 text-gray-500">...</span>
+                <span className="px-2 sm:px-3 py-1.5 sm:py-2 text-gray-500 text-sm">...</span>
               ) : (
                 <button
                   onClick={() => onPageChange(page as number)}
-                  className={`px-3 py-2 rounded-lg border transition-colors ${
+                  className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-colors text-sm ${
                     currentPage === page
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -129,12 +129,12 @@ export default function Pagination({
 
       {/* Selector de elementos por página */}
       {onPageSizeChange && (
-        <div className="flex items-center gap-2 mt-4">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Mostrar:</span>
+        <div className="flex items-center gap-2 mt-3 sm:mt-4">
+          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Mostrar:</span>
           <select
             value={itemsPerPage || 10}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>

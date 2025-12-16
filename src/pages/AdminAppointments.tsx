@@ -831,208 +831,175 @@ function AdminAppointments() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestión de Citas</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Administra todas las citas agendadas por los clientes
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
+            Gestión de Citas
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
+            Administra todas las citas agendadas
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={() => setShowCreateModal(true)}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <Plus className="w-5 h-5 mr-2" />
+          <Plus className="w-4 h-4" />
           Nueva Cita
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
 
-      {/* Statistics Bar - Clickeable */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
-      >
+      {/* Estadísticas - Clickeables para Filtrar */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-3">
         {/* Total */}
-        <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={() => {
             setStatusFilter('all');
             setDateFilter('all');
             setSearch('');
           }}
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+          className={`bg-white dark:bg-gray-800 p-1.5 sm:p-3 rounded-lg border-2 transition-all text-left ${
             statusFilter === 'all' && dateFilter === 'all' && search === ''
-              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
-              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center shrink-0">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">Total</p>
+              <p className="text-xs sm:text-base font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
           </div>
-        </motion.button>
+        </button>
 
         {/* Hoy */}
-        <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={() => {
             setStatusFilter('all');
             setDateFilter('today');
           }}
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+          className={`bg-white dark:bg-gray-800 p-1.5 sm:p-3 rounded-lg border-2 transition-all text-left ${
             dateFilter === 'today'
-              ? 'border-purple-500 ring-2 ring-purple-200 dark:ring-purple-800'
-              : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700'
+              ? 'border-purple-500 ring-2 ring-purple-200 dark:ring-purple-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center shrink-0">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Hoy</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.today}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">Hoy</p>
+              <p className="text-xs sm:text-base font-bold text-gray-900 dark:text-white">{stats.today}</p>
             </div>
           </div>
-        </motion.button>
+        </button>
 
         {/* Pendientes */}
-        <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={() => {
             setStatusFilter('pending');
             setDateFilter('all');
           }}
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+          className={`bg-white dark:bg-gray-800 p-1.5 sm:p-3 rounded-lg border-2 transition-all text-left ${
             statusFilter === 'pending'
-              ? 'border-yellow-500 ring-2 ring-yellow-200 dark:ring-yellow-800'
-              : 'border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-700'
+              ? 'border-yellow-500 ring-2 ring-yellow-200 dark:ring-yellow-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-yellow-300'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-600 dark:text-yellow-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">Pendientes</p>
+              <p className="text-xs sm:text-base font-bold text-gray-900 dark:text-white">{stats.pending}</p>
             </div>
           </div>
-        </motion.button>
+        </button>
 
         {/* Confirmadas */}
-        <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={() => {
             setStatusFilter('confirmed');
             setDateFilter('all');
           }}
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+          className={`bg-white dark:bg-gray-800 p-1.5 sm:p-3 rounded-lg border-2 transition-all text-left ${
             statusFilter === 'confirmed'
-              ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-800'
-              : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700'
+              ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-green-300'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center shrink-0">
+              <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Confirmadas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.confirmed}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">Confirmadas</p>
+              <p className="text-xs sm:text-base font-bold text-gray-900 dark:text-white">{stats.confirmed}</p>
             </div>
           </div>
-        </motion.button>
+        </button>
 
         {/* Completadas */}
-        <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={() => {
             setStatusFilter('completed');
             setDateFilter('all');
           }}
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+          className={`bg-white dark:bg-gray-800 p-1.5 sm:p-3 rounded-lg border-2 transition-all text-left ${
             statusFilter === 'completed'
-              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
-              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+              ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center shrink-0">
+              <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completadas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completed}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">Completadas</p>
+              <p className="text-xs sm:text-base font-bold text-gray-900 dark:text-white">{stats.completed}</p>
             </div>
           </div>
-        </motion.button>
+        </button>
 
         {/* Canceladas */}
-        <motion.button
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={() => {
             setStatusFilter('cancelled');
             setDateFilter('all');
           }}
-          className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-2 transition-all text-left ${
+          className={`bg-white dark:bg-gray-800 p-1.5 sm:p-3 rounded-lg border-2 transition-all text-left ${
             statusFilter === 'cancelled'
-              ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-800'
-              : 'border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-700'
+              ? 'border-red-500 ring-2 ring-red-200 dark:ring-red-900'
+              : 'border-gray-200 dark:border-gray-700 hover:border-red-300'
           }`}
         >
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
-                <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-              </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center shrink-0">
+              <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 dark:text-red-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Canceladas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.cancelled}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">Canceladas</p>
+              <p className="text-xs sm:text-base font-bold text-gray-900 dark:text-white">{stats.cancelled}</p>
             </div>
           </div>
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
 
       {/* Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+        className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-700"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1086,8 +1053,8 @@ function AdminAppointments() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+          <table className="w-full min-w-[700px]">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="px-6 py-4 text-left">

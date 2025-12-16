@@ -164,8 +164,8 @@ function AdminLayout() {
       animate={isMobile ? { x: 0 } : undefined}
       exit={isMobile ? { x: -300 } : undefined}
       className={`${
-        isMobile ? 'fixed inset-y-0 left-0 z-50' : 'relative'
-      } w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg flex flex-col h-full`}
+        isMobile ? 'fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[280px]' : 'relative w-64'
+      } bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg flex flex-col h-full`}
     >
       {/* Logo */}
       <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -281,11 +281,11 @@ function AdminLayout() {
                 <Menu className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               </motion.button>
               
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">
                   Panel de Administración
                 </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                   Gestiona tu inmobiliaria desde aquí
                 </p>
               </div>
@@ -298,11 +298,12 @@ function AdminLayout() {
         </motion.header>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-2 sm:p-4 lg:p-6 overflow-x-hidden">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className="w-full max-w-full"
           >
             <Outlet />
           </motion.div>

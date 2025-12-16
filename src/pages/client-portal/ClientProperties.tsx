@@ -91,32 +91,32 @@ const ClientProperties: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">
           Mis Propiedades
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
           Gestiona tus contratos y propiedades asignadas
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
-              <Home className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 sm:p-3 rounded-lg">
+              <Home className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Propiedades</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{properties.length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Total Propiedades</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">{properties.length}</p>
             </div>
           </div>
         </motion.div>
@@ -125,15 +125,15 @@ const ClientProperties: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          <div className="flex items-center gap-3">
-            <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
-              <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-green-100 dark:bg-green-900/30 p-2 sm:p-3 rounded-lg">
+              <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Contratos Activos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Contratos Activos</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {properties.filter(p => p.status === 'active').length}
               </p>
             </div>
@@ -144,15 +144,15 @@ const ClientProperties: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          <div className="flex items-center gap-3">
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg">
-              <Calendar className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 sm:p-3 rounded-lg">
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Contratos Pendientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Contratos Pendientes</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {properties.filter(p => p.status === 'pending').length}
               </p>
             </div>
@@ -161,7 +161,7 @@ const ClientProperties: React.FC = () => {
       </div>
 
       {/* Properties List */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {properties.length === 0 ? (
           <div className="text-center py-12">
             <Home className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
@@ -181,7 +181,7 @@ const ClientProperties: React.FC = () => {
             >
               <div className="flex flex-col md:flex-row">
                 {/* Property Image */}
-                <div className="w-full md:w-48 h-48 bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                <div className="w-full md:w-40 lg:w-48 h-32 sm:h-40 md:h-48 bg-gray-100 dark:bg-gray-700 flex-shrink-0">
                   {property.property.cover_image ? (
                     <img
                       src={property.property.cover_image}
@@ -190,26 +190,26 @@ const ClientProperties: React.FC = () => {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Home className="w-12 h-12 text-gray-400" />
+                      <Home className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
                     </div>
                   )}
                 </div>
 
                 {/* Property Info */}
-                <div className="flex-1 p-6">
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <div className="flex-1 p-4 sm:p-5 lg:p-6">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-3 sm:mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white mb-2 truncate">
                         {property.property.title || 'Sin título'}
                       </h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{property.property.code}</span>
-                        <span className="text-sm text-gray-400">•</span>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(property.status)}`}>
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                        <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{property.property.code}</span>
+                        <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline">•</span>
+                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full ${getStatusColor(property.status)}`}>
                           {getStatusLabel(property.status)}
                         </span>
-                        <span className="text-sm text-gray-400">•</span>
-                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                        <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline">•</span>
+                        <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                           {getRelationTypeLabel(property.relation_type)}
                         </span>
                       </div>
@@ -217,44 +217,44 @@ const ClientProperties: React.FC = () => {
                   </div>
 
                   {/* Property Details */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <MapPin className="w-4 h-4" />
-                      <span>{property.property.location || 'Sin ubicación'}</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate">{property.property.location || 'Sin ubicación'}</span>
                     </div>
                     {property.property.bedrooms && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Bed className="w-4 h-4" />
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                        <Bed className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span>{property.property.bedrooms} hab</span>
                       </div>
                     )}
                     {property.property.bathrooms && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Bath className="w-4 h-4" />
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                        <Bath className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span>{property.property.bathrooms} baños</span>
                       </div>
                     )}
                     {property.property.area && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Square className="w-4 h-4" />
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                        <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span>{property.property.area} m²</span>
                       </div>
                     )}
                   </div>
 
                   {/* Price and Dates */}
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                       {property.property.price && (
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-green-600" />
-                          <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                          <span className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                             ${property.property.price.toLocaleString('es-CO')}
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                       Asignada el {format(new Date(property.created_at), 'dd/MM/yyyy', { locale: es })}
                     </div>
                   </div>

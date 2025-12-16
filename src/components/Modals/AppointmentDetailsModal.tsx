@@ -206,9 +206,9 @@ Equipo de Inmobiliaria`;
       title="Detalles de la Cita"
       size="lg"
     >
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-4">
         {/* Header con estado */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center space-x-3">
             {getStatusIcon(appointment.status || 'pending')}
             <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(appointment.status || 'pending')}`}>
@@ -296,40 +296,40 @@ Equipo de Inmobiliaria`;
         </div>
 
         {/* Información del cliente */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <div className="flex items-center space-x-2">
               <User className="w-5 h-5 text-green-600" />
               <h3 className="font-semibold text-gray-900 dark:text-white">Información del Cliente</h3>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               {appointment.client_email && (
                 <button
                   onClick={handleEmailContact}
-                  className="flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors text-sm"
+                  className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors text-xs sm:text-sm"
                   title="Enviar email"
                 >
-                  <Mail className="w-4 h-4" />
-                  <span>Email</span>
+                  <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Email</span>
                 </button>
               )}
               {appointment.client_phone && (
                 <>
                   <button
                     onClick={handleWhatsAppContact}
-                    className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 transition-colors text-sm"
+                    className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 transition-colors text-xs sm:text-sm"
                     title="Contactar por WhatsApp"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>WhatsApp</span>
+                    <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">WhatsApp</span>
                   </button>
                   <button
                     onClick={handlePhoneCall}
-                    className="flex items-center space-x-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50 transition-colors text-sm"
+                    className="flex items-center space-x-1 px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50 transition-colors text-xs sm:text-sm"
                     title="Llamar por teléfono"
                   >
-                    <Phone className="w-4 h-4" />
-                    <span>Llamar</span>
+                    <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Llamar</span>
                   </button>
                 </>
               )}
@@ -381,10 +381,10 @@ Equipo de Inmobiliaria`;
         )}
 
         {/* Información adicional */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Información Adicional</h3>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
             <div>
               <span className="text-gray-500 dark:text-gray-400">Propiedad:</span>
               <p className="font-medium text-gray-900 dark:text-white">
@@ -511,12 +511,12 @@ Equipo de Inmobiliaria`;
         )}
 
         {/* Acciones */}
-        <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           {/* Botón de enviar confirmación por WhatsApp */}
           {onSendConfirmation && appointment.client_phone && (
             <button
               onClick={onSendConfirmation}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"
               title="Enviar confirmación por WhatsApp al cliente"
             >
               <MessageSquare className="w-4 h-4" />
@@ -527,7 +527,7 @@ Equipo de Inmobiliaria`;
           {onEdit && (
             <button
               onClick={onEdit}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
               Editar Cita
             </button>
@@ -536,7 +536,7 @@ Equipo de Inmobiliaria`;
           {onDelete && (
             <button
               onClick={onDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
             >
               Eliminar Cita
             </button>
@@ -544,7 +544,7 @@ Equipo de Inmobiliaria`;
 
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
           >
             Cerrar
           </button>

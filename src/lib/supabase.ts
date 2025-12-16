@@ -1250,15 +1250,21 @@ async function logAuthEvent(
   metadata: any = {}
 ): Promise<void> {
   try {
-    await supabase.from('auth_logs').insert({
+    const { error } = await supabase.from('auth_logs').insert({
       user_id: userId,
       action,
       ip_address: null, // Se puede obtener del cliente si es necesario
       user_agent: navigator.userAgent,
       metadata
     });
+    
+    // Si hay error, solo logear en consola sin romper el flujo
+    if (error) {
+      console.warn('⚠️ No se pudo registrar el evento de autenticación:', error.message);
+      // Esto es normal si la tabla auth_logs no existe aún
+    }
   } catch (error) {
-    console.error('⚠️ Error logging auth event:', error);
+    console.warn('⚠️ Error logging auth event:', error);
     // No lanzar error para no interrumpir el flujo principal
   }
 }

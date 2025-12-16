@@ -218,7 +218,7 @@ const ClientLayout: React.FC = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 20 }}
-              className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-50 lg:hidden flex flex-col"
+              className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-[85vw] max-w-[280px] bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-50 lg:hidden flex flex-col"
             >
               <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                 {menuItems.map((item) => {
@@ -271,7 +271,7 @@ const ClientLayout: React.FC = () => {
 
       {/* Main Content */}
       <main className="lg:ml-64 pt-16 min-h-screen">
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-3 sm:p-4 lg:p-6 xl:p-8">
           <Outlet />
         </div>
       </main>

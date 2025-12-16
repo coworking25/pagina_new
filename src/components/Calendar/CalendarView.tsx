@@ -249,15 +249,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   }
 
   return (
-    <Card className="p-4 bg-white dark:bg-gray-800 shadow-lg">
+    <Card className="p-3 sm:p-4 bg-white dark:bg-gray-800 shadow-lg">
       {/* Header del Calendario */}
-      <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-lg flex items-center justify-center shadow-md">
-            <span className="text-2xl">📅</span>
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+            <span className="text-lg sm:text-2xl">📅</span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
               Calendario de Citas
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -266,7 +266,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
@@ -318,9 +318,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Leyenda de colores mejorada */}
-      <div className="mt-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-        <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <span className="text-lg">🎨</span>
+      <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-2 sm:mb-3 flex items-center gap-2">
+          <span className="text-base sm:text-lg">🎨</span>
           Leyenda de Tipos y Estados
         </h4>
         
@@ -328,7 +328,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           {/* Tipos de Cita */}
           <div>
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Tipos de Cita:</p>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 sm:gap-2 text-xs">
               <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
                 <div className="w-4 h-4 bg-green-500 dark:bg-green-600 rounded shadow-sm"></div>
                 <span className="text-gray-700 dark:text-gray-300">Visita</span>
@@ -355,7 +355,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           {/* Estados */}
           <div>
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Estados Especiales:</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 text-xs">
               <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
                 <div className="w-4 h-4 bg-red-500 dark:bg-red-600 rounded shadow-sm"></div>
                 <span className="text-gray-700 dark:text-gray-300">Cancelada</span>

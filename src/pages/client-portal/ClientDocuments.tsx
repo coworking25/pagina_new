@@ -210,32 +210,32 @@ const ClientDocuments: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">
           Mis Documentos
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
           Gestiona y descarga tus documentos personales y de contratos
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 sm:p-3 rounded-lg">
+              <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Documentos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{documents.length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Total Documentos</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">{documents.length}</p>
             </div>
           </div>
         </motion.div>
@@ -244,15 +244,15 @@ const ClientDocuments: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          <div className="flex items-center gap-3">
-            <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
-              <Eye className="w-6 h-6 text-green-600 dark:text-green-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-green-100 dark:bg-green-900/30 p-2 sm:p-3 rounded-lg">
+              <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Verificados</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Verificados</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {documents.filter(d => d.status === 'verified').length}
               </p>
             </div>
@@ -263,15 +263,15 @@ const ClientDocuments: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-lg border border-gray-200 dark:border-gray-700"
         >
-          <div className="flex items-center gap-3">
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg">
-              <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 sm:p-3 rounded-lg">
+              <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">Pendientes</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
                 {documents.filter(d => d.status === 'pending').length}
               </p>
             </div>
@@ -284,28 +284,28 @@ const ClientDocuments: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+        className="bg-white dark:bg-gray-800 p-4 sm:p-5 lg:p-6 rounded-lg border border-gray-200 dark:border-gray-700"
       >
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="text"
                 placeholder="Buscar documentos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-400" />
+            <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+              className="flex-1 sm:flex-none px-2 sm:px-3 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">Todos los tipos</option>
               {documentTypes.map(type => (
@@ -319,11 +319,11 @@ const ClientDocuments: React.FC = () => {
       </motion.div>
 
       {/* Documents List */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {filteredDocuments.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">
+          <div className="text-center py-8 sm:py-12">
+            <FileText className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3 sm:mb-4" />
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               {documents.length === 0 ? 'No tienes documentos subidos' : 'No se encontraron documentos con los filtros aplicados'}
             </p>
           </div>
@@ -334,19 +334,19 @@ const ClientDocuments: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 sm:p-5 lg:p-6 hover:shadow-lg transition-shadow"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                  <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-xl sm:text-2xl flex-shrink-0">
                     {getDocumentIcon(doc.document_type)}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                    <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
                       {getDocumentTypeLabel(doc.document_type)}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 truncate">
                       {doc.document_name}
                     </p>
 

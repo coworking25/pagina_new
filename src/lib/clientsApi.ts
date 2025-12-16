@@ -150,8 +150,105 @@ export async function updateClient(id: string, clientData: Partial<ClientFormDat
 // Eliminar cliente
 export async function deleteClient(id: string): Promise<boolean> {
   try {
-    console.log('🗑️ Intentando eliminar cliente:', id);
+    console.log('🗑️🗑️🗑️ [NUEVA VERSION] Intentando eliminar cliente:', id);
     
+    // PASO 1: Eliminar o actualizar TODOS los contratos donde aparece el cliente
+    console.log('🔍 Paso 1: Manejando contratos...');
+    
+    // Opción A: Actualizar contratos donde es landlord (remover referencia)
+    const { data: contractsAsLandlord, error: checkLandlord } = await supabase
+      .from('contracts')
+      .select('id')
+      .eq('landlord_id', id);
+
+    if (!checkLandlord && contractsAsLandlord && contractsAsLandlord.length > 0) {
+      console.log(`⚠️ Cliente es landlord en ${contractsAsLandlord.length} contratos. Actualizando...`);
+      const { error: updateError } = await supabase
+        .from('contracts')
+        .update({ landlord_id: null })
+        .eq('landlord_id', id);
+
+      if (updateError) {
+        console.warn('⚠️ Error actualizando landlord_id:', updateError);
+      } else {
+        console.log('✅ Referencias de landlord_id actualizadas');
+      }
+    }
+
+    // Opción B: Eliminar contratos donde es client_id
+    const { data: contractsAsClient, error: checkClient } = await supabase
+      .from('contracts')
+      .select('id')
+      .eq('client_id', id);
+
+    if (!checkClient && contractsAsClient && contractsAsClient.length > 0) {
+      console.log(`🗑️ Eliminando ${contractsAsClient.length} contratos donde es client...`);
+      const { error: deleteContractsError } = await supabase
+        .from('contracts')
+        .delete()
+        .eq('client_id', id);
+
+      if (deleteContractsError) {
+        console.warn('⚠️ Error eliminando contratos:', deleteContractsError);
+      } else {
+        console.log('✅ Contratos eliminados');
+      }
+    }
+
+    // PASO 2: Eliminar appointments
+    console.log('🔍 Paso 2: Eliminando appointments...');
+    const { error: appointmentsError } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('client_id', id);
+
+    if (appointmentsError) {
+      console.warn('⚠️ Error eliminando appointments:', appointmentsError);
+    } else {
+      console.log('✅ Appointments eliminados');
+    }
+
+    // PASO 3: Eliminar client_property_relations
+    console.log('🔍 Paso 3: Eliminando relaciones con propiedades...');
+    const { error: relationsError } = await supabase
+      .from('client_property_relations')
+      .delete()
+      .eq('client_id', id);
+
+    if (relationsError) {
+      console.warn('⚠️ Error eliminando relaciones:', relationsError);
+    } else {
+      console.log('✅ Relaciones con propiedades eliminadas');
+    }
+
+    // PASO 4: Eliminar client_alerts
+    console.log('🔍 Paso 4: Eliminando alertas...');
+    const { error: alertsError } = await supabase
+      .from('client_alerts')
+      .delete()
+      .eq('client_id', id);
+
+    if (alertsError) {
+      console.warn('⚠️ Error eliminando alertas:', alertsError);
+    } else {
+      console.log('✅ Alertas eliminadas');
+    }
+
+    // PASO 5: Eliminar client_communications
+    console.log('🔍 Paso 5: Eliminando comunicaciones...');
+    const { error: commsError } = await supabase
+      .from('client_communications')
+      .delete()
+      .eq('client_id', id);
+
+    if (commsError) {
+      console.warn('⚠️ Error eliminando comunicaciones:', commsError);
+    } else {
+      console.log('✅ Comunicaciones eliminadas');
+    }
+
+    // PASO 6: FINALMENTE eliminar el cliente
+    console.log('🔍 Paso 6: Eliminando cliente definitivamente...');
     const { error, data } = await supabase
       .from('clients')
       .delete()
@@ -169,7 +266,7 @@ export async function deleteClient(id: string): Promise<boolean> {
       throw new Error(`Error eliminando cliente: ${error.message}`);
     }
 
-    console.log('✅ Cliente eliminado exitosamente:', data);
+    console.log('✅✅✅ Cliente eliminado exitosamente con todas sus relaciones:', data);
     return true;
   } catch (error: any) {
     console.error('❌ Error en deleteClient:', error);

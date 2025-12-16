@@ -41,37 +41,37 @@ export function BulkActionBar({
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50"
+        className="fixed bottom-4 sm:bottom-8 left-2 right-2 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50"
       >
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 rounded-2xl shadow-2xl px-6 py-4 flex items-center gap-4 backdrop-blur-lg">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 rounded-xl sm:rounded-2xl shadow-2xl px-3 sm:px-6 py-3 sm:py-4 flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-start gap-2 sm:gap-4 backdrop-blur-lg">
           {/* Contador */}
           <div className="flex items-center gap-2 text-white font-medium">
-            <div className="bg-white/20 rounded-full px-3 py-1">
-              <span className="text-sm font-bold">{selectedCount}</span>
+            <div className="bg-white/20 rounded-full px-2 sm:px-3 py-0.5 sm:py-1">
+              <span className="text-xs sm:text-sm font-bold">{selectedCount}</span>
             </div>
-            <span className="text-sm">
+            <span className="text-xs sm:text-sm hidden xs:inline">
               {selectedCount === 1 ? entityName.slice(0, -1) : entityName} seleccionado{selectedCount === 1 ? '' : 's'}
             </span>
           </div>
 
-          {/* Separador */}
-          <div className="h-8 w-px bg-white/30" />
+          {/* Separador - oculto en móvil muy pequeño */}
+          <div className="hidden sm:block h-8 w-px bg-white/30" />
 
           {/* Acciones */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
             {actions.map((action) => (
               <button
                 key={action.id}
                 onClick={action.onClick}
                 className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
+                  flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm
                   transition-all duration-200 transform hover:scale-105
                   ${getVariantStyles(action.variant)}
                 `}
                 title={action.label}
               >
                 {action.icon}
-                <span className="hidden sm:inline">{action.label}</span>
+                <span className="hidden md:inline">{action.label}</span>
               </button>
             ))}
           </div>
@@ -79,10 +79,10 @@ export function BulkActionBar({
           {/* Botón cerrar */}
           <button
             onClick={onClearSelection}
-            className="ml-2 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+            className="ml-1 sm:ml-2 p-1.5 sm:p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
             title="Deseleccionar todo"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </motion.div>

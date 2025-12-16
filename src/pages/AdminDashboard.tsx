@@ -286,31 +286,31 @@ function AdminDashboard() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white"
+        className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 sm:p-6 text-white"
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Panel de Administración</h1>
-            <p className="text-blue-100 mt-2">Bienvenido al centro de control</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold truncate">Panel de Administración</h1>
+            <p className="text-blue-100 mt-1 sm:mt-2 text-sm sm:text-base">Bienvenido al centro de control</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             {isAdmin && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsUserManagementModalOpen(true)}
-                className="p-3 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                className="p-2 sm:p-3 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
                 title="Gestionar Usuarios"
               >
-                <Users className="w-6 h-6" />
+                <Users className="w-5 h-5 sm:w-6 sm:h-6" />
               </motion.button>
             )}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="p-3 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+              className="p-2 sm:p-3 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
             >
-              <Settings className="w-6 h-6" />
+              <Settings className="w-5 h-5 sm:w-6 sm:h-6" />
             </motion.button>
           </div>
         </div>
@@ -321,48 +321,50 @@ function AdminDashboard() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg"
+        className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-lg"
       >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
-            <AlertCircle className="w-6 h-6 mr-3 text-orange-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Alertas Inteligentes</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center min-w-0">
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 text-orange-600 flex-shrink-0" />
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">Alertas Inteligentes</h2>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4 flex-shrink-0">
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Críticas ({smartAlerts ? smartAlerts.critical.length : 0})</span>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full mr-1.5 sm:mr-2"></div>
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Críticas ({smartAlerts ? smartAlerts.critical.length : 0})</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Advertencias ({smartAlerts ? smartAlerts.warnings.length : 0})</span>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-yellow-500 rounded-full mr-1.5 sm:mr-2"></div>
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Advertencias ({smartAlerts ? smartAlerts.warnings.length : 0})</span>
             </div>
           </div>
         </div>
 
         {/* Critical Alerts */}
         {smartAlerts && smartAlerts.critical.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-3 flex items-center">
-              <AlertCircle className="w-5 h-5 mr-2" />
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-semibold text-red-600 dark:text-red-400 mb-2 sm:mb-3 flex items-center">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Alertas Críticas
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {smartAlerts.critical.slice(0, 3).map((alert) => (
                 <motion.div
                   key={alert.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="flex items-start p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer group"
+                  className="flex flex-col sm:flex-row sm:items-start p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer group gap-2 sm:gap-0"
                   onClick={() => handleAlertAction(alert)}
                 >
-                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 mr-3 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-red-800 dark:text-red-200">{alert.title}</h4>
-                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">{alert.description}</p>
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-2 font-medium">{alert.actionRequired}</p>
+                  <div className="flex items-start flex-1 min-w-0">
+                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400 mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-red-800 dark:text-red-200 text-sm sm:text-base truncate">{alert.title}</h4>
+                      <p className="text-xs sm:text-sm text-red-700 dark:text-red-300 mt-1 line-clamp-2">{alert.description}</p>
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-1 sm:mt-2 font-medium">{alert.actionRequired}</p>
+                    </div>
                   </div>
-                  <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                  <div className="flex items-center justify-between sm:justify-end sm:ml-4 flex-shrink-0 space-x-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">
                       Alta Prioridad
                     </span>
@@ -402,27 +404,29 @@ function AdminDashboard() {
         {/* Warning Alerts */}
         {smartAlerts && smartAlerts.warnings.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-yellow-600 dark:text-yellow-400 mb-3 flex items-center">
-              <Clock className="w-5 h-5 mr-2" />
+            <h3 className="text-base sm:text-lg font-semibold text-yellow-600 dark:text-yellow-400 mb-2 sm:mb-3 flex items-center">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Advertencias
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {smartAlerts.warnings.slice(0, 3).map((alert) => (
                 <motion.div
                   key={alert.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="flex items-start p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors cursor-pointer group"
+                  className="flex flex-col sm:flex-row sm:items-start p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors cursor-pointer group gap-2 sm:gap-0"
                   onClick={() => handleAlertAction(alert)}
                 >
-                  <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200">{alert.title}</h4>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">{alert.description}</p>
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2 font-medium">{alert.actionRequired}</p>
+                  <div className="flex items-start flex-1 min-w-0">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-2 sm:mr-3 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 text-sm sm:text-base truncate">{alert.title}</h4>
+                      <p className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 mt-1 line-clamp-2">{alert.description}</p>
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 sm:mt-2 font-medium">{alert.actionRequired}</p>
+                    </div>
                   </div>
-                  <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                  <div className="flex items-center justify-between sm:justify-end sm:ml-4 flex-shrink-0 space-x-2">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       alert.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200' :
                       alert.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200' :
@@ -474,16 +478,16 @@ function AdminDashboard() {
       </motion.div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Recent Activity */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="lg:col-span-2"
         >
-          <FloatingCard hover elevation="high" className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
-              <Activity className="w-6 h-6 mr-2 text-blue-600" />
+          <FloatingCard hover elevation="high" className="p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
+              <Activity className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
               Actividad Reciente
             </h2>
             <div className="space-y-2">
@@ -501,70 +505,70 @@ function AdminDashboard() {
           className="relative"
         >
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-          <FloatingCard hover elevation="high" className="relative p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
-              <ArrowUpRight className="w-6 h-6 mr-2 text-green-600" />
+          <FloatingCard hover elevation="high" className="relative p-4 sm:p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center">
+              <ArrowUpRight className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-green-600" />
               Acciones Rápidas
             </h2>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2 sm:gap-3">
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/admin/calendar')}
-                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-900/30 dark:to-cyan-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-cyan-200/50 dark:border-cyan-700/50 overflow-hidden"
+                className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-900/30 dark:to-cyan-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-cyan-200/50 dark:border-cyan-700/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 to-cyan-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <Calendar className="w-5 h-5 text-cyan-600 dark:text-cyan-400 mr-3 relative z-10" />
-                <span className="text-gray-900 dark:text-white font-medium relative z-10">Sistema de Calendario</span>
-                <ArrowUpRight className="w-4 h-4 ml-auto text-cyan-600 dark:text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Sistema de Calendario</span>
+                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-cyan-600 dark:text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/admin/appointments')}
-                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-blue-200/50 dark:border-blue-700/50 overflow-hidden"
+                className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-blue-200/50 dark:border-blue-700/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 relative z-10" />
-                <span className="text-gray-900 dark:text-white font-medium relative z-10">Ver Citas del Día</span>
-                <ArrowUpRight className="w-4 h-4 ml-auto text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Ver Citas del Día</span>
+                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/admin/clients')}
-                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-indigo-200/50 dark:border-indigo-700/50 overflow-hidden"
+                className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-indigo-200/50 dark:border-indigo-700/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/10 to-indigo-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mr-3 relative z-10" />
-                <span className="text-gray-900 dark:text-white font-medium relative z-10">Gestionar Clientes</span>
-                <ArrowUpRight className="w-4 h-4 ml-auto text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 dark:text-indigo-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Gestionar Clientes</span>
+                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/admin/properties')}
-                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-green-200/50 dark:border-green-700/50 overflow-hidden"
+                className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-green-200/50 dark:border-green-700/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-green-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <Home className="w-5 h-5 text-green-600 dark:text-green-400 mr-3 relative z-10" />
-                <span className="text-gray-900 dark:text-white font-medium relative z-10">Agregar Propiedad</span>
-                <ArrowUpRight className="w-4 h-4 ml-auto text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                <Home className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Agregar Propiedad</span>
+                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/admin/service-inquiries')}
-                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-emerald-200/50 dark:border-emerald-700/50 overflow-hidden"
+                className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-emerald-200/50 dark:border-emerald-700/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <MessageSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mr-3 relative z-10" />
-                <span className="text-gray-900 dark:text-white font-medium relative z-10">Consultas de Servicio</span>
-                <ArrowUpRight className="w-4 h-4 ml-auto text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Consultas de Servicio</span>
+                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
               </motion.button>
 
               {isAdmin && (
@@ -572,12 +576,12 @@ function AdminDashboard() {
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsUserManagementModalOpen(true)}
-                  className="group relative w-full flex items-center p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-red-200/50 dark:border-red-700/50 overflow-hidden"
+                  className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-red-200/50 dark:border-red-700/50 overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-red-400/10 to-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <Shield className="w-5 h-5 text-red-600 dark:text-red-400 mr-3 relative z-10" />
-                  <span className="text-gray-900 dark:text-white font-medium relative z-10">Gestionar Usuarios</span>
-                  <ArrowUpRight className="w-4 h-4 ml-auto text-red-600 dark:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                  <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Gestionar Usuarios</span>
+                  <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-red-600 dark:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
                 </motion.button>
               )}
 
@@ -585,24 +589,24 @@ function AdminDashboard() {
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/admin/advisors')}
-                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-purple-200/50 dark:border-purple-700/50 overflow-hidden"
+                className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-purple-200/50 dark:border-purple-700/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <Users className="w-5 h-5 text-purple-600 dark:text-purple-400 mr-3 relative z-10" />
-                <span className="text-gray-900 dark:text-white font-medium relative z-10">Gestionar Asesores</span>
-                <ArrowUpRight className="w-4 h-4 ml-auto text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Gestionar Asesores</span>
+                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsReportsModalOpen(true)}
-                className="group relative w-full flex items-center p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-orange-200/50 dark:border-orange-700/50 overflow-hidden"
+                className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 rounded-xl hover:shadow-lg transition-all duration-300 border border-orange-200/50 dark:border-orange-700/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-orange-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <BarChart3 className="w-5 h-5 text-orange-600 dark:text-orange-400 mr-3 relative z-10" />
-                <span className="text-gray-900 dark:text-white font-medium relative z-10">Ver Reportes</span>
-                <ArrowUpRight className="w-4 h-4 ml-auto text-orange-600 dark:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10" />
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Ver Reportes</span>
+                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-orange-600 dark:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
               </motion.button>
             </div>
           </FloatingCard>

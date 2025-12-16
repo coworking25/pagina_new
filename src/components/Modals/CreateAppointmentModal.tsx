@@ -143,9 +143,9 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Crear Nueva Cita">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 p-3 sm:p-4">
         {/* Información del Cliente */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4">
           <div className="flex items-center space-x-2 mb-4">
             <User className="w-5 h-5 text-blue-600" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Información del Cliente</h3>
@@ -204,7 +204,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
         </div>
 
         {/* Información de la Cita */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4">
           <div className="flex items-center space-x-2 mb-4">
             <Calendar className="w-5 h-5 text-green-600" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Información de la Cita</h3>
@@ -323,7 +323,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
         </div>
 
         {/* Preferencias de Contacto */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4">
           <div className="flex items-center space-x-2 mb-4">
             <MessageSquare className="w-5 h-5 text-purple-600" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Preferencias de Contacto</h3>
@@ -361,7 +361,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
         </div>
 
         {/* Solicitudes Especiales */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4">
           <div className="flex items-center space-x-2 mb-4">
             <FileText className="w-5 h-5 text-orange-600" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Solicitudes Especiales</h3>
@@ -379,11 +379,11 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
         </div>
 
         {/* Botones */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             disabled={loading}
           >
             Cancelar
@@ -391,7 +391,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>

@@ -207,7 +207,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       <Card className="overflow-hidden group cursor-pointer">
         {/* Image Section - Clicable */}
         <div 
-          className="relative h-48 overflow-hidden cursor-pointer"
+          className="relative h-40 sm:h-44 lg:h-48 overflow-hidden cursor-pointer"
           onClick={handleImageClick}
         >
         <motion.img
@@ -398,108 +398,108 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       </div>
 
       {/* Content Section */}
-      <div className="p-6">
+      <div className="p-3 sm:p-4 lg:p-6">
         {/* Title and Code */}
-        <div className="mb-4">
+        <div className="mb-3 sm:mb-4">
           {/* Código de propiedad */}
           {property.code && (
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-mono font-semibold bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50 shadow-sm">
-                <Building className="w-3 h-3 mr-1" />
+            <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+              <span className="inline-flex items-center px-1.5 sm:px-2.5 py-0.5 rounded-md text-[10px] sm:text-xs font-mono font-semibold bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50 shadow-sm">
+                <Building className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                 {property.code}
               </span>
             </div>
           )}
           <h3 
-            className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-1.5 sm:mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             onClick={handleImageClick}
           >
             {property.title}
           </h3>
-          <div className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
-            <MapPin className="w-4 h-4 mr-1" />
-            <span>{property.location}</span>
+          <div className="flex items-center text-gray-600 dark:text-gray-400 text-xs sm:text-sm">
+            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <span className="truncate">{property.location}</span>
           </div>
         </div>
 
         {/* Price */}
-        <div className="mb-4">
+        <div className="mb-3 sm:mb-4">
           {property.availability_type === 'both' ? (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                  Venta: {property.sale_price ? formatPrice(property.sale_price) : 'No disponible'}
+            <div className="space-y-0.5 sm:space-y-1">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-blue-600 dark:text-blue-400">
+                  <span className="hidden sm:inline">Venta: </span>{property.sale_price ? formatPrice(property.sale_price) : 'N/D'}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                  Arriendo: {property.rent_price ? formatPrice(property.rent_price) : 'No disponible'}
+              <div className="flex items-center gap-1 sm:gap-2">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-green-600 dark:text-green-400">
+                  <span className="hidden sm:inline">Arriendo: </span>{property.rent_price ? formatPrice(property.rent_price) : 'N/D'}
                 </span>
-                <span className="text-gray-500 dark:text-gray-400 text-sm">/mes</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">/mes</span>
               </div>
             </div>
           ) : property.availability_type === 'sale' ? (
             <div>
-              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {property.sale_price ? formatPrice(property.sale_price) : formatPrice(property.price || 0)}
               </span>
             </div>
           ) : property.availability_type === 'rent' ? (
             <div>
-              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 dark:text-green-400">
                 {property.rent_price ? formatPrice(property.rent_price) : formatPrice(property.price || 0)}
               </span>
-              <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/mes</span>
+              <span className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm ml-1">/mes</span>
             </div>
           ) : (
             <div>
-              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600 dark:text-green-400">
                 {formatPrice(property.price || 0)}
               </span>
               {currentStatus === 'rent' && (
-                <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">/mes</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm ml-1">/mes</span>
               )}
             </div>
           )}
         </div>
 
         {/* Property Details */}
-        <div className="flex items-center justify-between mb-4 text-sm text-gray-600 dark:text-gray-400">
-          <div className="flex items-center space-x-1">
-            <Building className="w-4 h-4" />
-            <span className="capitalize">
-              {property.type === 'apartment' ? 'Apartamento' :
-               property.type === 'apartaestudio' ? 'Apartaestudio' :
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center space-x-0.5 sm:space-x-1">
+            <Building className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="capitalize truncate max-w-[60px] sm:max-w-none">
+              {property.type === 'apartment' ? 'Apto' :
+               property.type === 'apartaestudio' ? 'Apto Est.' :
                property.type === 'house' ? 'Casa' :
-               property.type === 'office' ? 'Oficina' :
+               property.type === 'office' ? 'Ofic.' :
                property.type === 'commercial' ? 'Local' :
-               property.type || 'Propiedad'}
+               property.type || 'Prop.'}
             </span>
           </div>
-          <div className="flex items-center space-x-1">
-            <Bed className="w-4 h-4" />
+          <div className="flex items-center space-x-0.5 sm:space-x-1">
+            <Bed className="w-3 h-3 sm:w-4 sm:h-4" />
             <span>{property.bedrooms}</span>
           </div>
-          <div className="flex items-center space-x-1">
-            <Bath className="w-4 h-4" />
+          <div className="flex items-center space-x-0.5 sm:space-x-1">
+            <Bath className="w-3 h-3 sm:w-4 sm:h-4" />
             <span>{property.bathrooms}</span>
           </div>
-          <div className="flex items-center space-x-1">
-            <Square className="w-4 h-4" />
+          <div className="flex items-center space-x-0.5 sm:space-x-1">
+            <Square className="w-3 h-3 sm:w-4 sm:h-4" />
             <span>{property.area}m²</span>
           </div>
           {/* 🏘️ ESTRATO: Mostrar estrato socioeconómico de la propiedad (1-6) */}
           {property.estrato && (
-            <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 font-medium">
-              <Hash className="w-4 h-4" />
-              <span>Estrato {property.estrato}</span>
+            <div className="flex items-center space-x-0.5 sm:space-x-1 text-green-600 dark:text-green-400 font-medium">
+              <Hash className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span>E{property.estrato}</span>
             </div>
           )}
         </div>
 
         {/* Action Buttons */}
         <div 
-          className="grid grid-cols-3 gap-2" 
+          className="grid grid-cols-3 gap-1.5 sm:gap-2" 
           onClick={(e) => e.stopPropagation()}
         >
           <Button
@@ -507,7 +507,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             size="sm"
             icon={Eye}
             onClick={() => onViewDetails(property)}
-            className="text-xs hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
+            className="text-[10px] sm:text-xs hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300 px-1.5 sm:px-3"
           >
             Ver
           </Button>
@@ -516,16 +516,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             size="sm"
             icon={MessageCircle}
             onClick={() => onContact(property)}
-            className="text-xs hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
+            className="text-[10px] sm:text-xs hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300 px-1.5 sm:px-3"
           >
-            Contacto
+            <span className="hidden sm:inline">Contacto</span>
+            <span className="sm:hidden">Chat</span>
           </Button>
           <Button
             variant="primary"
             size="sm"
             icon={Calendar}
             onClick={() => onSchedule(property)}
-            className="text-xs bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border-0 glow-green hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300"
+            className="text-[10px] sm:text-xs bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border-0 glow-green hover:scale-105 hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300 px-1.5 sm:px-3"
           >
             Cita
           </Button>

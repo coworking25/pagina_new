@@ -195,10 +195,10 @@ const AdminProfile: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mi Perfil</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+    <div className="max-w-4xl mx-auto p-3 sm:p-4 lg:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Mi Perfil</h1>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 sm:mt-2">
           Administra tu información personal y configuración de cuenta
         </p>
       </div>
@@ -229,11 +229,11 @@ const AdminProfile: React.FC = () => {
         </motion.div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Información del Perfil */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <Card className="p-4 sm:p-5 lg:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
               Información Personal
             </h2>
             {!isEditing && (
