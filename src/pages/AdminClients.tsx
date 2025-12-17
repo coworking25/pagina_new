@@ -31,6 +31,8 @@ import {
   Square as CheckboxIcon,
   Minus,
   Key,
+  Download,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   getClients, 
@@ -56,7 +58,7 @@ import {
   sanitizeNumericValue,
   sanitizePaymentConcepts
 } from '../lib/clientsApi';
-import { getProperties, updatePropertyStatus } from '../lib/supabase';
+import { getProperties, updatePropertyStatus, supabase } from '../lib/supabase';
 import Modal from '../components/UI/Modal';
 import { ChevronLeft, ChevronRight, MapPin as MapPinIcon } from 'lucide-react';
 import type { Client, Contract, Payment, ClientCommunication, ClientAlert, ClientPropertyRelation, ClientPropertySummary, ClientFormData } from '../types/clients';
@@ -208,6 +210,15 @@ function AdminClients() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   
+  // ✅ NUEVO: Filtros avanzados
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [dateFromFilter, setDateFromFilter] = useState('');
+  const [dateToFilter, setDateToFilter] = useState('');
+  const [advisorFilter, setAdvisorFilter] = useState('all');
+  const [cityFilter, setCityFilter] = useState('all');
+  const [availableAdvisors, setAvailableAdvisors] = useState<Array<{id: string, name: string}>>([]);
+  const [exportingData, setExportingData] = useState(false);
+  
   // Modal states
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -257,7 +268,31 @@ function AdminClients() {
   useEffect(() => {
     loadClients();
     loadAllProperties();
+    loadAvailableAdvisors();
   }, []);
+
+  // ✅ NUEVO: Cargar lista de asesores para filtros
+  const loadAvailableAdvisors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('advisors')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      
+      const advisorsList = (data || []).map(a => ({
+        id: a.id,
+        name: a.name
+      }));
+      
+      setAvailableAdvisors(advisorsList);
+    } catch (error) {
+      console.error('Error cargando asesores:', error);
+      setAvailableAdvisors([]);
+    }
+  };
 
   // Detectar si viene de una alerta y abrir automáticamente el modal correspondiente
   useEffect(() => {
@@ -389,7 +424,7 @@ function AdminClients() {
     }
   };
 
-  // Funciones de filtrado
+  // ✅ MEJORADO: Funciones de filtrado con filtros avanzados
   const filteredClients = clients.filter(client => {
     const matchesSearch = 
       client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -400,8 +435,98 @@ function AdminClients() {
     const matchesType = typeFilter === 'all' || client.client_type === typeFilter;
     const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
     
-    return matchesSearch && matchesType && matchesStatus;
+    // Filtros avanzados
+    const matchesAdvisor = advisorFilter === 'all' || client.assigned_advisor_id === advisorFilter;
+    const matchesCity = cityFilter === 'all' || (client.city && client.city.toLowerCase() === cityFilter.toLowerCase());
+    
+    // Filtro de fechas
+    let matchesDateRange = true;
+    if (dateFromFilter || dateToFilter) {
+      const clientDate = client.created_at ? new Date(client.created_at) : null;
+      if (clientDate) {
+        if (dateFromFilter) {
+          const fromDate = new Date(dateFromFilter);
+          matchesDateRange = matchesDateRange && clientDate >= fromDate;
+        }
+        if (dateToFilter) {
+          const toDate = new Date(dateToFilter);
+          toDate.setHours(23, 59, 59, 999); // Incluir todo el día
+          matchesDateRange = matchesDateRange && clientDate <= toDate;
+        }
+      } else {
+        matchesDateRange = false;
+      }
+    }
+    
+    return matchesSearch && matchesType && matchesStatus && matchesAdvisor && matchesCity && matchesDateRange;
   });
+
+  // ✅ NUEVO: Exportar clientes a CSV
+  const exportToCSV = () => {
+    try {
+      setExportingData(true);
+      
+      if (filteredClients.length === 0) {
+        alert('No hay datos para exportar');
+        return;
+      }
+      
+      // Crear encabezados
+      const headers = [
+        'Nombre Completo',
+        'Tipo',
+        'Email',
+        'Teléfono',
+        'Documento',
+        'Ciudad',
+        'Estado',
+        'Fecha Registro',
+        'Asesor Asignado'
+      ];
+      
+      // Crear filas
+      const rows = filteredClients.map(client => [
+        client.full_name || '',
+        client.client_type === 'tenant' ? 'Arrendatario' : 
+        client.client_type === 'landlord' ? 'Propietario' : 
+        client.client_type === 'buyer' ? 'Comprador' :
+        client.client_type === 'seller' ? 'Vendedor' :
+        client.client_type === 'interested' ? 'Interesado' : client.client_type || '',
+        client.email || '',
+        client.phone || '',
+        `${client.document_type || ''} ${client.document_number || ''}`,
+        client.city || '',
+        client.status === 'active' ? 'Activo' : 'Inactivo',
+        client.created_at ? new Date(client.created_at).toLocaleDateString() : '',
+        client.assigned_advisor_id || 'Sin asignar'
+      ]);
+      
+      // Crear CSV
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `\"${String(cell).replace(/\"/g, '\"\"')}\"`).join(','))
+      ].join('\n');
+      
+      // Descargar archivo
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showNotification(`✅ ${filteredClients.length} clientes exportados exitosamente`, 'success');
+    } catch (error) {
+      console.error('Error exportando CSV:', error);
+      showNotification('Error al exportar datos', 'error');
+    } finally {
+      setExportingData(false);
+    }
+  };
 
   // Hook de selecciÃ³n múltiple
   const multiSelect = useMultiSelect({
@@ -969,6 +1094,11 @@ const handleWizardSubmit = async (wizardData: any) => {
   try {
     // 1. Crear cliente base
     console.log('\n📝 PASO 1: Creando cliente base...');
+    
+    // ✅ MODIFICADO: Usar el asesor seleccionado manualmente en el formulario
+    const selectedAdvisorId = wizardData.assigned_advisor_id;
+    console.log('   → Asesor seleccionado manualmente:', selectedAdvisorId || 'No seleccionado');
+    
     const clientData: ClientFormData = {
       full_name: wizardData.full_name,
       document_type: wizardData.document_type,
@@ -984,6 +1114,7 @@ const handleWizardSubmit = async (wizardData: any) => {
       monthly_income: sanitizeNumericValue(wizardData.monthly_income),
       occupation: wizardData.occupation || undefined,
       company_name: wizardData.company_name || undefined,
+      assigned_advisor_id: selectedAdvisorId || undefined, // ✅ CORREGIDO: Usar asesor seleccionado manualmente
       notes: wizardData.notes || undefined
     };
 
@@ -1604,9 +1735,130 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
             <option value="suspended">Suspendidos</option>
             <option value="blocked">Bloqueados</option>
           </select>
+        </div>
 
-          {/* Checkbox Seleccionar Todo */}
-          <div className="flex items-center gap-2">
+        {/* ✅ NUEVO: Botones de acción */}
+        <div className="flex flex-wrap gap-2 mt-3">
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+            Filtros avanzados
+          </button>
+          
+          <button
+            onClick={exportToCSV}
+            disabled={exportingData || filteredClients.length === 0}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            {exportingData ? 'Exportando...' : `Exportar CSV (${filteredClients.length})`}
+          </button>
+        </div>
+
+        {/* ✅ NUEVO: Panel de filtros avanzados */}
+        {showAdvancedFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-4 pt-4 border-t dark:border-gray-700"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Fecha desde */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Fecha desde
+                </label>
+                <input
+                  type="date"
+                  value={dateFromFilter}
+                  onChange={(e) => setDateFromFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                />
+              </div>
+
+              {/* Fecha hasta */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Fecha hasta
+                </label>
+                <input
+                  type="date"
+                  value={dateToFilter}
+                  onChange={(e) => setDateToFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                />
+              </div>
+
+              {/* Asesor */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Asesor asignado
+                </label>
+                <select
+                  value={advisorFilter}
+                  onChange={(e) => setAdvisorFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                >
+                  <option value="all">Todos los asesores</option>
+                  {availableAdvisors.map(advisor => (
+                    <option key={advisor.id} value={advisor.id}>{advisor.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Ciudad */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Ciudad
+                </label>
+                <input
+                  type="text"
+                  value={cityFilter}
+                  onChange={(e) => setCityFilter(e.target.value)}
+                  placeholder="Todas las ciudades"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Botón limpiar filtros avanzados */}
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={() => {
+                  setDateFromFilter('');
+                  setDateToFilter('');
+                  setAdvisorFilter('all');
+                  setCityFilter('all');
+                }}
+                className="text-sm text-red-600 dark:text-red-400 hover:underline"
+              >
+                Limpiar filtros avanzados
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Indicador de filtros activos */}
+      {(dateFromFilter || dateToFilter || advisorFilter !== 'all' || cityFilter !== 'all') && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+          <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-300">
+            <AlertTriangle className="w-4 h-4" />
+            <span className="font-medium">Filtros avanzados activos:</span>
+            {dateFromFilter && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">Desde: {dateFromFilter}</span>}
+            {dateToFilter && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">Hasta: {dateToFilter}</span>}
+            {advisorFilter !== 'all' && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">Asesor filtrado</span>}
+            {cityFilter !== 'all' && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">Ciudad: {cityFilter}</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Checkbox Seleccionar Todo */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2">
             <button
               onClick={multiSelect.toggleSelectAll}
               className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -1633,7 +1885,6 @@ Por favor, revisa la consola del navegador (F12) para más detalles.`);
                 Limpiar
               </button>
             )}
-          </div>
         </div>
       </div>
 

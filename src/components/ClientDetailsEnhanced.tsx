@@ -159,101 +159,131 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   const [uploadingReceipt, setUploadingReceipt] = useState<string | null>(null);
 
-  // Cargar datos adicionales cuando se abre el modal
+  // ✅ NUEVO: Estados para lazy loading por tab
+  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set(['basic']));
+  const [loadingTab, setLoadingTab] = useState<string | null>(null);
+
+  // Cargar datos básicos cuando se abre el modal
   useEffect(() => {
     if (isOpen && client) {
-      loadClientData();
+      setLoadedTabs(new Set(['basic'])); // Reset tabs cargados
+      setActiveTab('basic'); // Volver a tab básico
     }
   }, [isOpen, client]);
 
-  const loadClientData = async () => {
-    if (!client) return;
+  // ✅ MEJORADO: Cargar datos solo del tab activo (lazy loading)
+  useEffect(() => {
+    if (isOpen && client && activeTab && !loadedTabs.has(activeTab)) {
+      loadTabData(activeTab);
+    }
+  }, [activeTab, isOpen, client]);
+
+  // ✅ NUEVO: Función para cargar datos de un tab específico
+  const loadTabData = async (tab: string) => {
+    if (!client || loadedTabs.has(tab)) return;
     
-    setLoading(true);
+    setLoadingTab(tab);
     try {
-      // Cargar credenciales del portal
-      const { data: credData } = await supabase
-        .from('client_portal_credentials')
-        .select('*')
-        .eq('client_id', client.id)
-        .maybeSingle();
-      
-      if (credData) {
-        setCredentials(credData);
+      switch(tab) {
+        case 'credentials':
+          // Cargar credenciales del portal
+          const { data: credData } = await supabase
+            .from('client_portal_credentials')
+            .select('*')
+            .eq('client_id', client.id)
+            .maybeSingle();
+          
+          if (credData) {
+            setCredentials(credData);
+          }
+          break;
+
+        case 'payment':
+          // Cargar configuración de pagos
+          const { data: paymentData } = await supabase
+            .from('client_payment_config')
+            .select('*')
+            .eq('client_id', client.id)
+            .maybeSingle();
+          
+          if (paymentData) {
+            setPaymentConfig(paymentData);
+          }
+          break;
+
+        case 'references':
+          // Cargar referencias
+          const { data: refsData } = await supabase
+            .from('client_references')
+            .select('*')
+            .eq('client_id', client.id);
+          
+          if (refsData) {
+            setReferences(refsData);
+          }
+          break;
+
+        case 'contract':
+          // Cargar información del contrato
+          const { data: contractData } = await supabase
+            .from('client_contract_info')
+            .select('*')
+            .eq('client_id', client.id)
+            .maybeSingle();
+          
+          if (contractData) {
+            setContractInfo(contractData);
+          }
+          break;
+
+        case 'properties':
+          // Cargar propiedades asignadas
+          const { data: propsData } = await supabase
+            .from('client_property_relations')
+            .select(`
+              *,
+              property:properties!inner(
+                id,
+                code,
+                title,
+                type,
+                location,
+                price,
+                cover_image,
+                bedrooms,
+                bathrooms,
+                area,
+                status
+              )
+            `)
+            .eq('client_id', client.id);
+          
+          if (propsData) {
+            setProperties(propsData as any);
+          }
+          break;
+
+        case 'payments':
+          // Cargar historial de pagos
+          const { data: paymentsData } = await supabase
+            .from('payments')
+            .select('*')
+            .eq('client_id', client.id)
+            .order('due_date', { ascending: false });
+          
+          if (paymentsData) {
+            setPayments(paymentsData);
+          }
+          break;
       }
 
-      // Cargar configuración de pagos
-      const { data: paymentData } = await supabase
-        .from('client_payment_config')
-        .select('*')
-        .eq('client_id', client.id)
-        .maybeSingle();
-      
-      if (paymentData) {
-        setPaymentConfig(paymentData);
-      }
-
-      // Cargar referencias
-      const { data: refsData } = await supabase
-        .from('client_references')
-        .select('*')
-        .eq('client_id', client.id);
-      
-      if (refsData) {
-        setReferences(refsData);
-      }
-
-      // Cargar información del contrato
-      const { data: contractData } = await supabase
-        .from('client_contract_info')
-        .select('*')
-        .eq('client_id', client.id)
-        .maybeSingle();
-      
-      if (contractData) {
-        setContractInfo(contractData);
-      }
-
-      // Cargar propiedades asignadas
-      const { data: propsData } = await supabase
-        .from('client_property_relations')
-        .select(`
-          *,
-          property:properties!inner(
-            id,
-            code,
-            title,
-            type,
-            location,
-            price,
-            cover_image,
-            bedrooms,
-            bathrooms,
-            area,
-            status
-          )
-        `)
-        .eq('client_id', client.id);
-      
-      if (propsData) {
-        setProperties(propsData as any);
-      }
-
-      // Cargar historial de pagos
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('client_id', client.id)
-        .order('due_date', { ascending: false });
-      
-      if (paymentsData) {
-        setPayments(paymentsData);
-      }
+      // Marcar tab como cargado
+      setLoadedTabs(prev => new Set([...prev, tab]));
 
     } catch (error) {
-      console.error('❌ Error cargando datos del cliente:', error);
+      console.error('❌ Error cargando datos del tab:', tab, error);
     } finally {
-      setLoading(false);
+      setLoadingTab(null);
     }
   };
 
@@ -464,55 +494,81 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
               </div>
             ) : (
               <>
-                {/* Tab: Información Básica */}
-                {activeTab === 'basic' && (
-                  <BasicInfoTab client={client} />
+                {/* ✅ NUEVO: Loading indicator para tabs con lazy loading */}
+                {loadingTab && (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600 dark:text-gray-400">Cargando información...</p>
+                    </div>
+                  </div>
                 )}
 
-                {/* Tab: Información Financiera */}
-                {activeTab === 'financial' && (
-                  <FinancialInfoTab client={client} />
-                )}
+                {!loadingTab && (
+                  <>
+                    {/* Tab: Información Básica */}
+                    {activeTab === 'basic' && (
+                      <BasicInfoTab client={client} />
+                    )}
 
-                {/* Tab: Credenciales */}
-                {activeTab === 'credentials' && (
-                  <CredentialsTab credentials={credentials} />
-                )}
+                    {/* Tab: Información Financiera */}
+                    {activeTab === 'financial' && (
+                      <FinancialInfoTab client={client} />
+                    )}
 
-                {/* Tab: Configuración de Pagos */}
-                {activeTab === 'payments' && (
-                  <PaymentsTab 
-                    paymentConfig={paymentConfig}
-                    calculateMonthlyTotal={calculateMonthlyTotal}
-                  />
-                )}
+                    {/* Tab: Credenciales */}
+                    {activeTab === 'credentials' && (
+                      loadedTabs.has('credentials') ? (
+                        <CredentialsTab credentials={credentials} />
+                      ) : null
+                    )}
 
-                {/* Tab: Referencias */}
-                {activeTab === 'references' && (
-                  <ReferencesTab references={references} />
-                )}
+                    {/* Tab: Configuración de Pagos */}
+                    {activeTab === 'payments' && (
+                      loadedTabs.has('payment') ? (
+                        <PaymentsTab 
+                          paymentConfig={paymentConfig}
+                          calculateMonthlyTotal={calculateMonthlyTotal}
+                        />
+                      ) : null
+                    )}
 
-                {/* Tab: Contrato */}
-                {activeTab === 'contract' && (
-                  <ContractTab 
-                    contractInfo={contractInfo} 
-                    onRegisterPayment={onRegisterPayment}
-                  />
-                )}
+                    {/* Tab: Referencias */}
+                    {activeTab === 'references' && (
+                      loadedTabs.has('references') ? (
+                        <ReferencesTab references={references} />
+                      ) : null
+                    )}
 
-                {/* Tab: Propiedades */}
-                {activeTab === 'properties' && (
-                  <PropertiesTab properties={properties} />
-                )}
+                    {/* Tab: Contrato */}
+                    {activeTab === 'contract' && (
+                      loadedTabs.has('contract') ? (
+                        <ContractTab 
+                          contractInfo={contractInfo} 
+                          onRegisterPayment={onRegisterPayment}
+                        />
+                      ) : null
+                    )}
 
-                {/* Tab: Historial de Pagos */}
-                {activeTab === 'history' && (
-                  <PaymentsHistoryTab 
-                    payments={payments}
-                    onUploadReceipt={handleUploadReceipt}
-                    onViewReceipt={handleViewReceipt}
-                    uploadingReceipt={uploadingReceipt}
-                  />
+                    {/* Tab: Propiedades */}
+                    {activeTab === 'properties' && (
+                      loadedTabs.has('properties') ? (
+                        <PropertiesTab properties={properties} />
+                      ) : null
+                    )}
+
+                    {/* Tab: Historial de Pagos */}
+                    {activeTab === 'history' && (
+                      loadedTabs.has('payments') ? (
+                        <PaymentsHistoryTab 
+                          payments={payments}
+                          onUploadReceipt={handleUploadReceipt}
+                          onViewReceipt={handleViewReceipt}
+                          uploadingReceipt={uploadingReceipt}
+                        />
+                      ) : null
+                    )}
+                  </>
                 )}
               </>
             )}

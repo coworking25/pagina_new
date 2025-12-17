@@ -1,16 +1,151 @@
 // Paso 1: Información Básica del Cliente
+import { useState, useEffect, useCallback } from 'react';
 import { User, Phone, Mail, MapPin, FileText, AlertTriangle, Home, ShoppingCart, Eye } from 'lucide-react';
 import type { ClientWizardData } from '../ClientWizard';
+import { supabase } from '../../lib/supabase';
 
 interface Step1Props {
   formData: ClientWizardData;
   onChange: (data: Partial<ClientWizardData>) => void;
 }
 
+interface SimilarClient {
+  full_name: string;
+  document_number: string;
+  phone: string;
+  client_type: string;
+  email?: string;
+}
+
 export default function Step1BasicInfo({ formData, onChange }: Step1Props) {
+  const [similarClients, setSimilarClients] = useState<SimilarClient[]>([]);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const [documentError, setDocumentError] = useState<string>('');
+  
+  // ✅ NUEVO: Cargar lista de asesores disponibles
+  const [availableAdvisors, setAvailableAdvisors] = useState<Array<{id: string, name: string}>>([]);
+  const [loadingAdvisors, setLoadingAdvisors] = useState(false);
+
+  // Cargar asesores al montar el componente
+  useEffect(() => {
+    loadAdvisors();
+  }, []);
+
+  const loadAdvisors = async () => {
+    try {
+      setLoadingAdvisors(true);
+      const { data, error } = await supabase
+        .from('advisors')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setAvailableAdvisors(data || []);
+    } catch (error) {
+      console.error('Error cargando asesores:', error);
+      setAvailableAdvisors([]);
+    } finally {
+      setLoadingAdvisors(false);
+    }
+  };
+
   const handleChange = (field: string, value: any) => {
     onChange({ [field]: value });
+    
+    // ✅ NUEVO: Limpiar error de documento al cambiar tipo
+    if (field === 'document_type') {
+      setDocumentError('');
+    }
   };
+
+  // ✅ NUEVO: Validar formato de documento según tipo
+  const validateDocument = (type: string, number: string): boolean => {
+    if (!number) {
+      setDocumentError('');
+      return true;
+    }
+
+    switch(type) {
+      case 'cedula':
+        // Cédula: 7-10 dígitos numéricos
+        if (!/^\d{7,10}$/.test(number)) {
+          setDocumentError('La cédula debe tener entre 7 y 10 dígitos');
+          return false;
+        }
+        break;
+      
+      case 'pasaporte':
+        // Pasaporte: 6-9 caracteres alfanuméricos
+        if (!/^[A-Z0-9]{6,9}$/i.test(number)) {
+          setDocumentError('El pasaporte debe tener entre 6 y 9 caracteres alfanuméricos');
+          return false;
+        }
+        break;
+      
+      case 'nit':
+        // NIT: 9-10 dígitos + guión + dígito verificador
+        if (!/^\d{9,10}-\d$/.test(number)) {
+          setDocumentError('El NIT debe tener el formato: 123456789-0');
+          return false;
+        }
+        break;
+    }
+
+    setDocumentError('');
+    return true;
+  };
+
+  // Validar documento al cambiar
+  const handleDocumentChange = (value: string) => {
+    handleChange('document_number', value);
+    validateDocument(formData.document_type, value);
+  };
+
+  // ✅ NUEVO: Verificar clientes similares (debounced)
+  const checkSimilarClients = useCallback(async (name: string) => {
+    if (!name || name.trim().length < 3) {
+      setSimilarClients([]);
+      setShowDuplicateWarning(false);
+      return;
+    }
+
+    try {
+      setCheckingDuplicates(true);
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .select('full_name, document_number, phone, client_type, email')
+        .ilike('full_name', `%${name.trim()}%`)
+        .limit(5);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setSimilarClients(data);
+        setShowDuplicateWarning(true);
+      } else {
+        setSimilarClients([]);
+        setShowDuplicateWarning(false);
+      }
+    } catch (error) {
+      console.error('Error buscando clientes similares:', error);
+    } finally {
+      setCheckingDuplicates(false);
+    }
+  }, []);
+
+  // Debounce para búsqueda de duplicados
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.full_name) {
+        checkSimilarClients(formData.full_name);
+      }
+    }, 800); // Esperar 800ms después de que el usuario deje de escribir
+
+    return () => clearTimeout(timer);
+  }, [formData.full_name, checkSimilarClients]);
 
   return (
     <div className="space-y-6">
@@ -198,7 +333,40 @@ export default function Step1BasicInfo({ formData, onChange }: Step1Props) {
               placeholder="Ej: Juan Diego Restrepo Bayer"
               className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+            {checkingDuplicates && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              </div>
+            )}
           </div>
+
+          {/* ✅ NUEVO: Advertencia de clientes similares */}
+          {showDuplicateWarning && similarClients.length > 0 && (
+            <div className="mt-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+                    ⚠️ Se encontraron {similarClients.length} cliente(s) con nombre similar
+                  </h4>
+                  <div className="space-y-2">
+                    {similarClients.map((client, idx) => (
+                      <div key={idx} className="text-xs bg-white dark:bg-gray-800 rounded p-2 border border-yellow-200 dark:border-yellow-700">
+                        <p className="font-medium text-gray-900 dark:text-white">{client.full_name}</p>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Doc: {client.document_number} • Tel: {client.phone} • Tipo: {client.client_type}
+                          {client.email && ` • Email: ${client.email}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
+                    Verifica que no sea un cliente duplicado antes de continuar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tipo de Documento */}
@@ -229,11 +397,32 @@ export default function Step1BasicInfo({ formData, onChange }: Step1Props) {
             <input
               type="text"
               value={formData.document_number}
-              onChange={(e) => handleChange('document_number', e.target.value)}
-              placeholder="1234567890"
-              className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => handleDocumentChange(e.target.value)}
+              placeholder={
+                formData.document_type === 'cedula' ? '1234567890' :
+                formData.document_type === 'pasaporte' ? 'AB123456' :
+                '900123456-7'
+              }
+              className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                documentError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
             />
           </div>
+          {/* ✅ NUEVO: Mostrar error de validación */}
+          {documentError && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+              <AlertTriangle className="w-4 h-4" />
+              {documentError}
+            </p>
+          )}
+          {/* Ayuda según el tipo de documento */}
+          {!documentError && formData.document_type && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {formData.document_type === 'cedula' && '7-10 dígitos numéricos'}
+              {formData.document_type === 'pasaporte' && '6-9 caracteres alfanuméricos'}
+              {formData.document_type === 'nit' && 'Formato: 123456789-0'}
+            </p>
+          )}
         </div>
 
         {/* Teléfono */}
@@ -353,6 +542,36 @@ export default function Step1BasicInfo({ formData, onChange }: Step1Props) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ✅ NUEVO: Asesor Asignado */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Asesor Asignado *
+        </label>
+        <select
+          value={formData.assigned_advisor_id || ''}
+          onChange={(e) => handleChange('assigned_advisor_id', e.target.value || null)}
+          className="block w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          disabled={loadingAdvisors}
+        >
+          <option value="">Seleccionar asesor...</option>
+          {availableAdvisors.map(advisor => (
+            <option key={advisor.id} value={advisor.id}>
+              {advisor.name}
+            </option>
+          ))}
+        </select>
+        {loadingAdvisors && (
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Cargando asesores...
+          </p>
+        )}
+        {!loadingAdvisors && availableAdvisors.length === 0 && (
+          <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+            No hay asesores disponibles
+          </p>
+        )}
       </div>
 
       {/* Estado del Cliente */}

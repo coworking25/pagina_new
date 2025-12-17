@@ -39,6 +39,7 @@ export interface ClientWizardData {
   client_status?: 'active' | 'inactive' | 'suspended'; // Alias para compatibilidad
   emergency_contact_name: string;
   emergency_contact_phone: string;
+  assigned_advisor_id?: string | null; // ✅ NUEVO: ID del asesor asignado
   
   // Paso 2: Información Financiera
   monthly_income: string;
@@ -176,6 +177,7 @@ export default function ClientWizard({
     status: 'active',
     emergency_contact_name: '',
     emergency_contact_phone: '',
+    assigned_advisor_id: null, // ✅ NUEVO
     
     // Paso 2
     monthly_income: '',
@@ -446,6 +448,7 @@ export default function ClientWizard({
         if (!formData.full_name.trim()) errors.push('El nombre completo es requerido');
         if (!formData.document_number.trim()) errors.push('El número de documento es requerido');
         if (!formData.phone.trim()) errors.push('El teléfono es requerido');
+        if (!formData.assigned_advisor_id) errors.push('Debes seleccionar un asesor asignado'); // ✅ NUEVO
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
           errors.push('El email no es válido');
         }

@@ -502,6 +502,120 @@ export class EmailService {
       </html>
     `;
   }
+
+  /**
+   * Enviar email de bienvenida con credenciales del portal
+   */
+  async sendWelcomeEmailWithCredentials(
+    clientName: string,
+    email: string,
+    temporaryPassword: string
+  ): Promise<EmailResult> {
+    const portalUrl = window.location.origin + '/cliente/login';
+    
+    const html = `
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Bienvenido al Portal de Clientes</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .credentials { background: white; padding: 20px; margin: 20px 0; border-left: 4px solid #667eea; border-radius: 5px; }
+          .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
+          .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }
+          code { background: #f0f0f0; padding: 5px 10px; border-radius: 3px; font-family: monospace; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>¡Bienvenido al Portal de Clientes!</h1>
+          </div>
+          <div class="content">
+            <h2>Hola ${clientName},</h2>
+            <p>Nos complace informarte que tu cuenta en el Portal de Clientes ha sido creada exitosamente.</p>
+            
+            <div class="credentials">
+              <h3>📧 Tus Credenciales de Acceso</h3>
+              <p><strong>Usuario (Email):</strong> ${email}</p>
+              <p><strong>Contraseña Temporal:</strong> <code>${temporaryPassword}</code></p>
+            </div>
+            
+            <div class="warning">
+              <strong>⚠️ Importante:</strong> Por tu seguridad, te recomendamos cambiar tu contraseña en tu primer inicio de sesión.
+            </div>
+            
+            <p>Desde el portal podrás:</p>
+            <ul>
+              <li>✅ Consultar tus contratos activos</li>
+              <li>✅ Ver el estado de tus pagos</li>
+              <li>✅ Descargar extractos y facturas</li>
+              <li>✅ Gestionar tus documentos</li>
+              <li>✅ Ver tus propiedades asignadas</li>
+              <li>✅ Comunicarte con nosotros</li>
+            </ul>
+            
+            <div style="text-align: center;">
+              <a href="${portalUrl}" class="button">Ingresar al Portal</a>
+            </div>
+            
+            <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.</p>
+            
+            <p>¡Bienvenido a bordo!</p>
+            <p><strong>Equipo de Coworking</strong></p>
+          </div>
+          <div class="footer">
+            <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
+            <p>&copy; ${new Date().getFullYear()} Coworking. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const text = `
+Hola ${clientName},
+
+¡Bienvenido al Portal de Clientes de Coworking!
+
+TUS CREDENCIALES DE ACCESO:
+Usuario (Email): ${email}
+Contraseña Temporal: ${temporaryPassword}
+
+⚠️ IMPORTANTE: Por tu seguridad, te recomendamos cambiar tu contraseña en tu primer inicio de sesión.
+
+Desde el portal podrás:
+- Consultar tus contratos activos
+- Ver el estado de tus pagos
+- Descargar extractos y facturas
+- Gestionar tus documentos
+- Ver tus propiedades asignadas
+- Comunicarte con nosotros
+
+Ingresa al portal aquí: ${portalUrl}
+
+Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.
+
+¡Bienvenido a bordo!
+Equipo de Coworking
+
+---
+Este es un correo automático, por favor no respondas a este mensaje.
+© ${new Date().getFullYear()} Coworking. Todos los derechos reservados.
+    `;
+    
+    return this.sendEmail({
+      to: email,
+      subject: '🎉 Bienvenido al Portal de Clientes - Coworking',
+      html,
+      text
+    });
+  }
 }
 
 // Exportar instancia singleton

@@ -1026,10 +1026,46 @@ export async function createPortalCredentials(
 
     console.log('✅ Credenciales del portal creadas exitosamente en client_credentials');
 
-    // TODO: Si sendWelcomeEmail es true, enviar email con credenciales
+    // ✅ CORREGIDO: Enviar email de bienvenida si se solicita
     if (sendWelcomeEmail) {
-      console.log('📧 Email de bienvenida pendiente de envío a:', email);
-      // Aquí integrar servicio de email (SendGrid, Resend, etc.)
+      console.log('📧 Enviando email de bienvenida a:', email);
+      
+      try {
+        // Obtener nombre del cliente
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('full_name')
+          .eq('id', clientId)
+          .single();
+        
+        const clientName = clientData?.full_name || 'Cliente';
+        
+        // Enviar email con credenciales
+        const emailResult = await emailService.sendWelcomeEmailWithCredentials(
+          clientName,
+          email,
+          password // Contraseña temporal en texto plano
+        );
+        
+        if (emailResult.success) {
+          console.log('✅ Email de bienvenida enviado exitosamente');
+          
+          // Actualizar flag de email enviado
+          await supabase
+            .from('client_credentials')
+            .update({ 
+              welcome_email_sent: true,
+              welcome_email_sent_at: new Date().toISOString()
+            })
+            .eq('client_id', clientId);
+            
+        } else {
+          console.warn('⚠️ No se pudo enviar email de bienvenida:', emailResult.error);
+        }
+      } catch (emailError) {
+        console.error('❌ Error enviando email de bienvenida:', emailError);
+        // No lanzar error para no bloquear la creación de credenciales
+      }
     }
 
     return data;
