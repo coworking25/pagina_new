@@ -28,6 +28,8 @@ import Card from '../../components/UI/Card';
 import AlertsSection from '../../components/client-portal/AlertsSection';
 import CommunicationsSection from '../../components/client-portal/CommunicationsSection';
 import AnalyticsSection from '../../components/client-portal/AnalyticsSection';
+import PaymentCalendarView from '../../components/client-details/PaymentCalendarView';
+import { getPaymentSchedulesByClient } from '../../lib/paymentsApi';
 
 const ClientDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -35,6 +37,7 @@ const ClientDashboard: React.FC = () => {
   const [alerts, setAlerts] = useState<ClientAlert[]>([]);
   const [communications, setCommunications] = useState<ClientCommunication[]>([]);
   const [payments, setPayments] = useState<ClientPayment[]>([]);
+  const [paymentSchedules, setPaymentSchedules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -46,12 +49,17 @@ const ClientDashboard: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Cargar dashboard summary, alertas, comunicaciones y pagos en paralelo
-      const [summaryResponse, alertsResponse, communicationsResponse, paymentsData] = await Promise.all([
+      // Obtener client_id del almacenamiento local
+      const session = JSON.parse(localStorage.getItem('client_portal_session') || '{}');
+      const clientId = session.client_id;
+      
+      // Cargar dashboard summary, alertas, comunicaciones, pagos y calendario en paralelo
+      const [summaryResponse, alertsResponse, communicationsResponse, paymentsData, schedulesData] = await Promise.all([
         getClientDashboardSummary(),
         getClientAlerts(),
         getClientCommunications(),
-        getClientPayments()
+        getClientPayments(),
+        clientId ? getPaymentSchedulesByClient(clientId) : Promise.resolve([])
       ]);
       
       if (summaryResponse.success && summaryResponse.data) {
@@ -71,6 +79,12 @@ const ClientDashboard: React.FC = () => {
       // Los pagos vienen directamente como array
       if (paymentsData && Array.isArray(paymentsData)) {
         setPayments(paymentsData);
+      }
+
+      // Guardar pagos programados
+      if (schedulesData && Array.isArray(schedulesData)) {
+        setPaymentSchedules(schedulesData);
+        console.log('📅 Pagos programados cargados:', schedulesData.length);
       }
       
     } catch (err) {
@@ -238,6 +252,33 @@ const ClientDashboard: React.FC = () => {
           onArchive={handleArchiveCommunication}
           onSendMessage={handleSendMessage}
         />
+      )}
+
+      {/* Calendario de Pagos */}
+      {paymentSchedules.length > 0 && (
+        <Card>
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Calendario de Pagos
+                </h2>
+              </div>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {paymentSchedules.length} pago(s) programado(s)
+              </span>
+            </div>
+            <PaymentCalendarView
+              schedules={paymentSchedules}
+              onViewPayment={(payment) => {
+                console.log('Ver pago:', payment);
+                // Aquí puedes abrir un modal con más detalles
+              }}
+              readOnly={true} // Cliente solo visualiza
+            />
+          </div>
+        </Card>
       )}
 
       {/* Analytics */}

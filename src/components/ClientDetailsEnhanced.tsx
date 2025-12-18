@@ -33,11 +33,14 @@ import {
   Briefcase,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  Receipt
 } from 'lucide-react';
 
 import type { ClientWithDetails } from '../types/clients';
 import { supabase } from '../lib/supabase';
+import ClientPaymentSchedule from './client-details/ClientPaymentSchedule';
+import ClientPaymentReceipts from './client-details/ClientPaymentReceipts';
 
 // =====================================================
 // INTERFACES
@@ -294,6 +297,8 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
     { id: 'financial', label: 'Información Financiera', icon: DollarSign },
     { id: 'credentials', label: 'Credenciales', icon: Key },
     { id: 'payments', label: 'Configuración de Pagos', icon: CreditCard },
+    { id: 'schedule', label: 'Calendario de Pagos', icon: Calendar },
+    { id: 'receipts', label: 'Recibos de Pago', icon: Receipt },
     { id: 'references', label: 'Referencias', icon: Users, count: references.length },
     { id: 'contract', label: 'Contrato', icon: Shield },
     { id: 'properties', label: 'Propiedades', icon: Home, count: properties.length },
@@ -548,6 +553,21 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
                           onRegisterPayment={onRegisterPayment}
                         />
                       ) : null
+                    )}
+
+                    {/* Tab: Calendario de Pagos */}
+                    {activeTab === 'schedule' && (
+                      <ClientPaymentSchedule 
+                        clientId={client.id}
+                        properties={properties}
+                      />
+                    )}
+
+                    {/* Tab: Recibos de Pago */}
+                    {activeTab === 'receipts' && (
+                      <ClientPaymentReceipts 
+                        clientId={client.id}
+                      />
                     )}
 
                     {/* Tab: Propiedades */}

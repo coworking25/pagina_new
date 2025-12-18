@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, Filter, Download, Search, CheckCircle, Clock, XCircle, AlertCircle, Calendar, X } from 'lucide-react';
+import { DollarSign, Filter, Download, Search, CheckCircle, Clock, XCircle, AlertCircle, Calendar, X, TrendingUp, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getClientPayments } from '../../lib/client-portal/clientPortalApi';
 import type { ClientPayment } from '../../types/clientPortal';
-import PaymentCalendar from '../../components/client-portal/PaymentCalendar';
+import PaymentCalendarView from '../../components/client-details/PaymentCalendarView';
+import { getPaymentSchedulesByClient, getPaymentSummaryByClient } from '../../lib/paymentsApi';
 
 type PaymentStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type TimeFilter = 'all' | 'month' | 'quarter' | 'year';
@@ -13,6 +14,8 @@ type TimeFilter = 'all' | 'month' | 'quarter' | 'year';
 const ClientPayments: React.FC = () => {
   const [payments, setPayments] = useState<ClientPayment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<ClientPayment[]>([]);
+  const [paymentSchedules, setPaymentSchedules] = useState<any[]>([]);
+  const [paymentSummary, setPaymentSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -33,6 +36,7 @@ const ClientPayments: React.FC = () => {
 
   useEffect(() => {
     loadPayments();
+    loadPaymentSchedules();
   }, []);
 
   useEffect(() => {
@@ -55,12 +59,44 @@ const ClientPayments: React.FC = () => {
     }
   };
 
+  const loadPaymentSchedules = async () => {
+    try {
+      const session = JSON.parse(localStorage.getItem('client_portal_session') || '{}');
+      const clientId = session.client_id;
+      
+      if (!clientId) {
+        console.warn('No client_id found in session');
+        return;
+      }
+
+      console.log('🔄 Cargando calendario de pagos para cliente:', clientId);
+      
+      const [schedules, summary] = await Promise.all([
+        getPaymentSchedulesByClient(clientId),
+        getPaymentSummaryByClient(clientId)
+      ]);
+
+      console.log('✅ Calendario cargado:', schedules.length, 'pagos programados');
+      console.log('📊 Resumen:', summary);
+
+      setPaymentSchedules(schedules);
+      setPaymentSummary(summary);
+    } catch (err) {
+      console.error('❌ Error loading payment schedules:', err);
+    }
+  };
+
   const applyFilters = () => {
     let filtered = [...payments];
 
-    // Filtro por estado
+    // Filtro por estado (mapear statusFilter a payment_status de client_payments)
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(p => p.status === statusFilter);
+      filtered = filtered.filter(p => {
+        const paymentStatus = (p as any).payment_status || p.status;
+        // Mapear completed -> paid para compatibilidad
+        const normalizedStatus = paymentStatus === 'completed' ? 'paid' : paymentStatus;
+        return normalizedStatus === statusFilter;
+      });
     }
 
     // Filtro por tiempo
@@ -105,13 +141,15 @@ const ClientPayments: React.FC = () => {
   };
 
   const calculateStats = () => {
-    const paid = payments.filter(p => p.status === 'paid');
-    const pending = payments.filter(p => p.status === 'pending');
-    const overdue = payments.filter(p => p.status === 'overdue');
+    // NOTA: client_payments usa payment_status (no status), así que mapeamos correctamente
+    const paid = payments.filter(p => (p as any).payment_status === 'completed' || p.status === 'paid');
+    const pending = payments.filter(p => (p as any).payment_status === 'pending' || p.status === 'pending');
+    const overdue = payments.filter(p => (p as any).payment_status === 'overdue' || p.status === 'overdue');
 
-    const totalReceived = paid.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-    const totalPending = pending.reduce((sum, p) => sum + p.amount, 0);
-    const totalOverdue = overdue.reduce((sum, p) => sum + p.amount, 0);
+    // client_payments solo tiene "amount" (no amount_paid), así que usamos amount directamente para completed
+    const totalReceived = paid.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalPending = pending.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalOverdue = overdue.reduce((sum, p) => sum + (p.amount || 0), 0);
     const averageAmount = paid.length > 0 ? totalReceived / paid.length : 0;
 
     setStats({
@@ -244,7 +282,109 @@ const ClientPayments: React.FC = () => {
         </div>
       </div>
 
-      {/* Estadísticas */}
+      {/* Resumen de Calendario de Pagos */}
+      {paymentSummary && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {paymentSummary.totalCount || 0}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Total Programado</p>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+              ${(paymentSummary.totalAmount || 0).toLocaleString()}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              ${(paymentSummary.paidAmount || 0).toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Pagado</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+              ${(paymentSummary.pendingAmount || 0).toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Pendiente</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+              {paymentSummary.overdueCount || 0}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Vencidos</p>
+            {paymentSummary.overdueAmount > 0 && (
+              <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                ${paymentSummary.overdueAmount.toLocaleString()}
+              </div>
+            )}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {paymentSummary.upcomingCount || 0}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Próximos 30 días</p>
+            {paymentSummary.upcomingPayments && paymentSummary.upcomingPayments.length > 0 && (
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                {new Date(paymentSummary.upcomingPayments[0].due_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
+
+      {/* Estadísticas de Historial */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -498,7 +638,21 @@ const ClientPayments: React.FC = () => {
               </div>
 
               {/* Calendario */}
-              <PaymentCalendar payments={payments} />
+              {paymentSchedules.length > 0 ? (
+                <PaymentCalendarView
+                  schedules={paymentSchedules}
+                  onViewPayment={(payment) => {
+                    console.log('Ver detalle de pago:', payment);
+                    // Aquí puedes agregar un modal de detalle si lo necesitas
+                  }}
+                  readOnly={true}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">No hay pagos programados</p>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}

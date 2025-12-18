@@ -759,68 +759,59 @@ export async function getClientPayments(): Promise<ClientPayment[]> {
       throw new Error('No autenticado');
     }
 
-    // Obtener contratos donde el cliente es inquilino (client_id)
-    const { data: contracts, error: contractsError } = await supabase
-      .from('contracts')
-      .select('id, contract_number, client_id')
-      .eq('client_id', clientId);
+    console.log('🔄 Cargando pagos del historial para cliente:', clientId);
 
-    if (contractsError) {
-      console.error('Error obteniendo contratos:', contractsError);
-      throw contractsError;
-    }
-
-    if (!contracts || contracts.length === 0) {
-      return [];
-    }
-
-    const contractIds = contracts.map(c => c.id);
-
-    // Obtener todos los pagos de esos contratos
+    // Obtener pagos del historial (client_payments)
     const { data: payments, error: paymentsError } = await supabase
-      .from('payments')
+      .from('client_payments')
       .select('*')
-      .in('contract_id', contractIds)
-      .order('due_date', { ascending: false });
+      .eq('client_id', clientId)
+      .order('payment_date', { ascending: false });
 
     if (paymentsError) {
-      console.error('Error obteniendo pagos:', paymentsError);
+      console.error('❌ Error obteniendo client_payments:', paymentsError);
       throw paymentsError;
     }
 
     if (!payments || payments.length === 0) {
+      console.log('⚠️ No se encontraron pagos en el historial');
       return [];
     }
 
-    // Enriquecer pagos con información de contratos e inquilinos
-    const enrichedPayments = await Promise.all(
-      payments.map(async (payment) => {
-        const contract = contracts.find(c => c.id === payment.contract_id);
-        let tenant_name = '';
-        let contract_number = contract?.contract_number || '';
+    console.log('✅ Pagos cargados:', payments.length);
 
-        if (contract) {
-          // Obtener nombre del inquilino
-          const { data: tenantData } = await supabase
-            .from('clients')
-            .select('full_name')
-            .eq('id', contract.client_id)
-            .single();
+    // Mapear client_payments al formato ClientPayment esperado
+    // client_payments usa payment_status (no status), así que mapeamos:
+    const mappedPayments = payments.map(payment => {
+      // Mapear payment_status → status para compatibilidad
+      let status: 'paid' | 'pending' | 'overdue' = 'pending';
+      if (payment.payment_status === 'completed') {
+        status = 'paid';
+      } else if (payment.payment_status === 'pending') {
+        status = 'pending';
+      } else if (payment.payment_status === 'overdue') {
+        status = 'overdue';
+      }
 
-          if (tenantData) {
-            tenant_name = tenantData.full_name;
-          }
-        }
+      return {
+        id: payment.id,
+        client_id: payment.client_id,
+        amount: payment.amount,
+        payment_date: payment.payment_date,
+        due_date: payment.payment_date, // client_payments no tiene due_date, usar payment_date
+        status: status,
+        payment_method: payment.payment_method,
+        payment_status: payment.payment_status, // Mantener original
+        transaction_reference: payment.reference_number,
+        description: payment.description,
+        receipt_id: payment.receipt_id,
+        amount_paid: payment.amount, // En client_payments, amount es lo pagado
+        created_at: payment.created_at,
+        updated_at: payment.updated_at
+      } as ClientPayment;
+    });
 
-        return {
-          ...payment,
-          tenant_name,
-          contract_number
-        } as ClientPayment;
-      })
-    );
-
-    return enrichedPayments;
+    return mappedPayments;
   } catch (error) {
     console.error('Error en getClientPayments:', error);
     throw error;
