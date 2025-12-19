@@ -49,6 +49,7 @@ const ClientLayout = lazy(() => import('./components/client-portal/ClientLayout'
 const ClientDashboard = lazy(() => import('./pages/client-portal/ClientDashboard'));
 const ClientChangePassword = lazy(() => import('./pages/client-portal/ClientChangePassword'));
 const ClientPayments = lazy(() => import('./pages/client-portal/ClientPayments'));
+const ClientContracts = lazy(() => import('./pages/client-portal/ClientContracts'));
 const ClientProperties = lazy(() => import('./pages/client-portal/ClientProperties'));
 const ClientDocuments = lazy(() => import('./pages/client-portal/ClientDocuments'));
 const ClientExtractos = lazy(() => import('./pages/client-portal/ClientExtractos'));
@@ -123,7 +124,7 @@ const AppLayout = () => {
               <Route path="/cliente/*" element={<ClientLayout />}>
                 <Route path="dashboard" element={<ClientDashboard />} />
                 <Route path="cambiar-password" element={<ClientChangePassword />} />
-                <Route path="contratos" element={<ClientProperties />} />
+                <Route path="contratos" element={<ClientContracts />} />
                 <Route path="pagos" element={<ClientPayments />} />
                 <Route path="extractos" element={<ClientExtractos />} />
                 <Route path="documentos" element={<ClientDocuments />} />
