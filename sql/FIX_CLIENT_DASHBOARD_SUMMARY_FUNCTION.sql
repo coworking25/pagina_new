@@ -31,25 +31,25 @@ BEGIN
   FROM contracts 
   WHERE client_id = p_client_id AND status = 'active';
 
-  -- Pagos pendientes (de payment_schedules o client_payments)
+  -- Pagos pendientes (de payment_schedules)
   SELECT COUNT(*)::INTEGER INTO v_pending_payments
   FROM payment_schedules
   WHERE client_id = p_client_id 
-    AND payment_status IN ('pending', 'partial');
+    AND status IN ('pending', 'partial');
 
   -- Pagos vencidos (de payment_schedules)
   SELECT COUNT(*)::INTEGER INTO v_overdue_payments
   FROM payment_schedules
   WHERE client_id = p_client_id 
-    AND payment_status IN ('pending', 'partial', 'overdue')
+    AND status IN ('pending', 'partial', 'overdue')
     AND due_date < CURRENT_DATE;
 
   -- Próximo pago: fecha y monto
-  SELECT due_date, amount_due 
+  SELECT due_date, amount 
   INTO v_next_payment_date, v_next_payment_amount
   FROM payment_schedules
   WHERE client_id = p_client_id 
-    AND payment_status IN ('pending', 'partial')
+    AND status IN ('pending', 'partial')
   ORDER BY due_date ASC
   LIMIT 1;
 
@@ -73,17 +73,15 @@ BEGIN
     json_agg(
       json_build_object(
         'id', id,
-        'contract_id', contract_id,
-        'property_id', property_id,
         'amount', amount,
         'amount_paid', amount,
-        'payment_type', payment_type,
+        'payment_type', 'completed',
         'payment_date', payment_date,
-        'due_date', due_date,
+        'due_date', payment_date,
         'status', 'paid',
         'payment_method', payment_method,
         'reference_number', reference_number,
-        'notes', notes
+        'notes', description
       )
     ),
     '[]'::json
@@ -102,15 +100,14 @@ BEGIN
     json_agg(
       json_build_object(
         'id', id,
-        'contract_id', contract_id,
         'property_id', property_id,
-        'amount', amount_due,
-        'amount_paid', COALESCE(amount_paid, 0),
-        'payment_type', payment_type,
+        'amount', amount,
+        'amount_paid', COALESCE(paid_amount, 0),
+        'payment_type', payment_concept,
         'due_date', due_date,
         'status', CASE 
           WHEN due_date < CURRENT_DATE THEN 'overdue'
-          WHEN payment_status = 'partial' THEN 'partial'
+          WHEN status = 'partial' THEN 'partial'
           ELSE 'pending'
         END,
         'notes', notes
@@ -120,7 +117,7 @@ BEGIN
   ) INTO v_upcoming_payments
   FROM payment_schedules
   WHERE client_id = p_client_id 
-    AND payment_status IN ('pending', 'partial', 'overdue')
+    AND status IN ('pending', 'partial', 'overdue')
   LIMIT 5;
 
   -- Construir y devolver JSON
