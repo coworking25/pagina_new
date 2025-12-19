@@ -203,48 +203,168 @@ const ClientExtractos: React.FC = () => {
 
   const generateExtract = async (extract: PaymentExtract) => {
     try {
-      // Crear un extracto simple en formato PDF o texto
-      const extractData = {
-        property: extract.property_title,
-        propertyCode: extract.property_code,
-        paymentDate: format(new Date(extract.payment_date), 'dd/MM/yyyy', { locale: es }),
-        amount: formatCurrency(extract.amount),
-        type: getPaymentTypeLabel(extract.payment_type),
-        status: getStatusLabel(extract.status),
-        generatedAt: format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })
-      };
+      // Importar jsPDF dinámicamente
+      const { jsPDF } = await import('jspdf');
+      
+      // Crear nuevo documento PDF
+      const doc = new jsPDF();
+      
+      // Configuración
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      let y = 20;
 
-      // Crear contenido del extracto
-      const content = `
-EXTRACTO DE PAGO
-================
+      // ENCABEZADO - Título principal
+      doc.setFillColor(34, 197, 94); // Verde
+      doc.rect(0, 0, pageWidth, 35, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EXTRACTO DE PAGO', pageWidth / 2, 20, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Inmobiliaria - Sistema de Gestión', pageWidth / 2, 28, { align: 'center' });
 
-Propiedad: ${extractData.property}
-Código: ${extractData.propertyCode}
-Fecha de Pago: ${extractData.paymentDate}
-Monto: ${extractData.amount}
-Tipo: ${extractData.type}
-Estado: ${extractData.status}
+      // Resetear color de texto
+      doc.setTextColor(0, 0, 0);
+      y = 50;
 
-Generado el: ${extractData.generatedAt}
+      // INFORMACIÓN DEL CLIENTE
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Información del Pago', margin, y);
+      y += 10;
 
-Inmobiliaria - Sistema de Gestión
-      `.trim();
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      // Propiedad
+      doc.setFont('helvetica', 'bold');
+      doc.text('Propiedad:', margin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(extract.property_title, margin + 35, y);
+      y += 7;
 
-      // Crear blob y descargar
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `extracto-${extract.property_code}-${extract.id}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Código
+      doc.setFont('helvetica', 'bold');
+      doc.text('Código:', margin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(extract.property_code, margin + 35, y);
+      y += 7;
+
+      // Fecha de pago
+      doc.setFont('helvetica', 'bold');
+      doc.text('Fecha de Pago:', margin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(format(new Date(extract.payment_date), 'dd/MM/yyyy', { locale: es }), margin + 35, y);
+      y += 7;
+
+      // Tipo de pago
+      doc.setFont('helvetica', 'bold');
+      doc.text('Tipo:', margin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(getPaymentTypeLabel(extract.payment_type), margin + 35, y);
+      y += 7;
+
+      // Estado
+      doc.setFont('helvetica', 'bold');
+      doc.text('Estado:', margin, y);
+      doc.setFont('helvetica', 'normal');
+      const statusText = getStatusLabel(extract.status);
+      doc.text(statusText, margin + 35, y);
+      y += 15;
+
+      // DESGLOSE FINANCIERO
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Desglose Financiero', margin, y);
+      y += 10;
+
+      // Tabla de desglose
+      doc.setFillColor(240, 240, 240);
+      doc.rect(margin, y - 5, pageWidth - 2 * margin, 8, 'F');
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Concepto', margin + 2, y);
+      doc.text('Monto', pageWidth - margin - 40, y);
+      y += 10;
+
+      doc.setFont('helvetica', 'normal');
+      
+      // Monto principal
+      doc.text('Monto del Pago:', margin + 2, y);
+      doc.text(formatCurrency(extract.amount), pageWidth - margin - 40, y);
+      y += 7;
+
+      // Si hay desglose, mostrarlo
+      if (extract.gross_amount && extract.gross_amount > 0) {
+        doc.setTextColor(100, 100, 100);
+        doc.text('Monto Bruto:', margin + 2, y);
+        doc.text(formatCurrency(extract.gross_amount), pageWidth - margin - 40, y);
+        y += 7;
+
+        if (extract.admin_deduction && extract.admin_deduction > 0) {
+          doc.setTextColor(255, 140, 0);
+          doc.text('- Administración:', margin + 2, y);
+          doc.text(`-${formatCurrency(extract.admin_deduction)}`, pageWidth - margin - 40, y);
+          y += 7;
+        }
+
+        if (extract.agency_commission && extract.agency_commission > 0) {
+          doc.setTextColor(147, 51, 234);
+          doc.text('- Comisión Agencia:', margin + 2, y);
+          doc.text(`-${formatCurrency(extract.agency_commission)}`, pageWidth - margin - 40, y);
+          y += 7;
+        }
+
+        if (extract.net_amount && extract.net_amount > 0) {
+          doc.setTextColor(34, 197, 94);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Monto Neto:', margin + 2, y);
+          doc.text(formatCurrency(extract.net_amount), pageWidth - margin - 40, y);
+          y += 10;
+        }
+      }
+
+      // Resetear color
+      doc.setTextColor(0, 0, 0);
+      y += 10;
+
+      // NOTA INFORMATIVA
+      doc.setFillColor(253, 224, 71); // Amarillo claro
+      doc.rect(margin, y, pageWidth - 2 * margin, 20, 'F');
+      y += 7;
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.text('💡 Este extracto es un comprobante oficial del pago realizado.', margin + 2, y);
+      y += 5;
+      doc.text('   Conserve este documento para sus registros.', margin + 2, y);
+      y += 15;
+
+      // PIE DE PÁGINA
+      y = doc.internal.pageSize.getHeight() - 30;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      
+      const generatedText = `Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}`;
+      doc.text(generatedText, pageWidth / 2, y, { align: 'center' });
+      y += 5;
+      doc.text('Inmobiliaria - Sistema de Gestión de Propiedades', pageWidth / 2, y, { align: 'center' });
+      y += 5;
+      doc.text('Este documento es válido sin firma ni sello', pageWidth / 2, y, { align: 'center' });
+
+      // Descargar PDF
+      const fileName = `Extracto_${extract.property_code}_${format(new Date(extract.payment_date), 'yyyy-MM-dd')}.pdf`;
+      doc.save(fileName);
 
     } catch (error) {
-      console.error('Error generating extract:', error);
-      alert('Error al generar el extracto. Por favor, intenta de nuevo.');
+      console.error('Error generating PDF extract:', error);
+      alert('Error al generar el extracto PDF. Por favor, intenta de nuevo.');
     }
   };
 
@@ -255,51 +375,185 @@ Inmobiliaria - Sistema de Gestión
         return;
       }
 
+      // Importar jsPDF dinámicamente
+      const { jsPDF } = await import('jspdf');
+      
+      // Crear nuevo documento PDF
+      const doc = new jsPDF();
+      
+      // Configuración
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      let y = 20;
+
+      // Calcular totales
       const totalAmount = filteredExtracts.reduce((sum, extract) => sum + extract.amount, 0);
+      const completedPayments = filteredExtracts.filter(e => e.status === 'completed').length;
+      const pendingPayments = filteredExtracts.filter(e => e.status === 'pending').length;
+
+      // ENCABEZADO
+      doc.setFillColor(34, 197, 94); // Verde
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(26);
+      doc.setFont('helvetica', 'bold');
+      doc.text('EXTRACTO COMPLETO', pageWidth / 2, 18, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Historial de Pagos', pageWidth / 2, 28, { align: 'center' });
+      
+      doc.setFontSize(9);
       const period = dateFrom && dateTo
-        ? `del ${format(new Date(dateFrom), 'dd/MM/yyyy', { locale: es })} al ${format(new Date(dateTo), 'dd/MM/yyyy', { locale: es })}`
-        : 'completo';
+        ? `Período: ${format(new Date(dateFrom), 'dd/MM/yyyy')} - ${format(new Date(dateTo), 'dd/MM/yyyy')}`
+        : 'Todos los pagos registrados';
+      doc.text(period, pageWidth / 2, 35, { align: 'center' });
 
-      let content = `
-EXTRACTO COMPLETO DE PAGOS
-==========================
+      // Resetear color
+      doc.setTextColor(0, 0, 0);
+      y = 55;
 
-Período: ${period}
-Total de Pagos: ${filteredExtracts.length}
-Monto Total: ${formatCurrency(totalAmount)}
-Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}
+      // RESUMEN EJECUTIVO
+      doc.setFillColor(240, 240, 240);
+      doc.rect(margin, y, pageWidth - 2 * margin, 30, 'F');
+      
+      y += 8;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resumen Ejecutivo', margin + 5, y);
+      
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Total de Pagos: ${filteredExtracts.length}`, margin + 5, y);
+      doc.text(`Completados: ${completedPayments}`, margin + 70, y);
+      doc.text(`Pendientes: ${pendingPayments}`, margin + 130, y);
+      
+      y += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(`Monto Total: ${formatCurrency(totalAmount)}`, margin + 5, y);
+      
+      y += 15;
 
-DETALLE DE PAGOS:
-=================
+      // TABLA DE PAGOS
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detalle de Pagos', margin, y);
+      y += 8;
 
-`;
+      // Encabezados de tabla
+      doc.setFillColor(34, 197, 94);
+      doc.setTextColor(255, 255, 255);
+      doc.rect(margin, y - 5, pageWidth - 2 * margin, 8, 'F');
+      
+      doc.setFontSize(9);
+      doc.text('#', margin + 2, y);
+      doc.text('Fecha', margin + 10, y);
+      doc.text('Propiedad', margin + 35, y);
+      doc.text('Monto', pageWidth - margin - 40, y);
+      doc.text('Estado', pageWidth - margin - 15, y);
+      
+      y += 10;
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
 
+      // Filas de pagos
       filteredExtracts.forEach((extract, index) => {
-        content += `
-${index + 1}. ${extract.property_title} (${extract.property_code})
-   Fecha: ${format(new Date(extract.payment_date), 'dd/MM/yyyy', { locale: es })}
-   Monto: ${formatCurrency(extract.amount)}
-   Tipo: ${getPaymentTypeLabel(extract.payment_type)}
-   Estado: ${getStatusLabel(extract.status)}
-   ---
-`;
+        // Verificar si necesitamos nueva página
+        if (y > pageHeight - 30) {
+          doc.addPage();
+          y = 20;
+          
+          // Repetir encabezados
+          doc.setFillColor(34, 197, 94);
+          doc.setTextColor(255, 255, 255);
+          doc.rect(margin, y - 5, pageWidth - 2 * margin, 8, 'F');
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.text('#', margin + 2, y);
+          doc.text('Fecha', margin + 10, y);
+          doc.text('Propiedad', margin + 35, y);
+          doc.text('Monto', pageWidth - margin - 40, y);
+          doc.text('Estado', pageWidth - margin - 15, y);
+          y += 10;
+          doc.setTextColor(0, 0, 0);
+          doc.setFont('helvetica', 'normal');
+        }
+
+        // Fila alternada
+        if (index % 2 === 0) {
+          doc.setFillColor(250, 250, 250);
+          doc.rect(margin, y - 5, pageWidth - 2 * margin, 12, 'F');
+        }
+
+        doc.setFontSize(8);
+        doc.text(`${index + 1}`, margin + 2, y);
+        doc.text(format(new Date(extract.payment_date), 'dd/MM/yy'), margin + 10, y);
+        
+        // Truncar nombre de propiedad si es muy largo
+        const propertyName = extract.property_title.length > 25 
+          ? extract.property_title.substring(0, 25) + '...' 
+          : extract.property_title;
+        doc.text(propertyName, margin + 35, y);
+        
+        doc.text(formatCurrency(extract.amount), pageWidth - margin - 40, y);
+        
+        // Color según estado
+        const status = getStatusLabel(extract.status);
+        if (extract.status === 'completed') {
+          doc.setTextColor(34, 197, 94); // Verde
+        } else if (extract.status === 'pending') {
+          doc.setTextColor(234, 179, 8); // Amarillo
+        } else {
+          doc.setTextColor(239, 68, 68); // Rojo
+        }
+        doc.text(status.substring(0, 8), pageWidth - margin - 15, y);
+        doc.setTextColor(0, 0, 0);
+        
+        y += 6;
+        
+        // Tipo y código en segunda línea (más pequeño)
+        doc.setFontSize(7);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`${extract.property_code} - ${getPaymentTypeLabel(extract.payment_type)}`, margin + 35, y);
+        doc.setTextColor(0, 0, 0);
+        
+        y += 8;
       });
 
-      content += `
+      // NOTA FINAL
+      y += 10;
+      if (y > pageHeight - 50) {
+        doc.addPage();
+        y = 20;
+      }
 
-Inmobiliaria - Sistema de Gestión
-      `.trim();
+      doc.setFillColor(253, 224, 71);
+      doc.rect(margin, y, pageWidth - 2 * margin, 15, 'F');
+      y += 7;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.text('💡 Este extracto contiene el historial completo de pagos según los filtros aplicados.', margin + 2, y);
+      y += 5;
+      doc.text('   Para mayor información, contacte con su asesor o administración.', margin + 2, y);
 
-      // Crear blob y descargar
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `extracto-completo-${format(new Date(), 'yyyy-MM-dd', { locale: es })}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // PIE DE PÁGINA en la última página
+      y = pageHeight - 25;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es })}`, pageWidth / 2, y, { align: 'center' });
+      y += 5;
+      doc.text('Inmobiliaria - Sistema de Gestión de Propiedades', pageWidth / 2, y, { align: 'center' });
+      y += 5;
+      doc.text(`Total de páginas: ${doc.getNumberOfPages()}`, pageWidth / 2, y, { align: 'center' });
+
+      // Descargar
+      const fileName = `Extracto_Completo_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      doc.save(fileName);
 
     } catch (error) {
       console.error('Error generating full extract:', error);
