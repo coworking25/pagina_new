@@ -4,7 +4,6 @@ import { FileText, Download, Calendar, AlertCircle, Search, TrendingDown, Trendi
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '../../lib/supabase';
-import { getAuthenticatedClientId } from '../../lib/client-portal/clientAuth';
 
 interface PaymentExtract {
   id: string;
@@ -50,8 +49,10 @@ const ClientExtractos: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Obtener el ID del cliente autenticado desde la sesión del portal
-      const clientId = getAuthenticatedClientId();
+      // Obtener client_id del almacenamiento local (mismo patrón que ClientDashboard)
+      const session = JSON.parse(localStorage.getItem('client_portal_session') || '{}');
+      const clientId = session.client_id;
+      
       if (!clientId) {
         throw new Error('Usuario no autenticado');
       }
