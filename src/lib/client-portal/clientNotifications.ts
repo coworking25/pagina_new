@@ -349,7 +349,7 @@ export function getRelativeTime(dateString: string): string {
  */
 export function playNotificationSound(): void {
   try {
-    const audio = new Audio('/notification.mp3');
+    const audio = new Audio('/iphone-notificacion.mp3');
     audio.volume = 0.5;
     audio.play().catch(() => {
       // Ignorar errores si el sonido no está disponible
