@@ -34,7 +34,7 @@ export interface AdminNotification {
   message: string;
   related_appointment_id?: string | null;
   related_client_id?: string | null;
-  related_property_id?: string | null;
+  related_property_id?: number | null;
   related_payment_id?: string | null;
   related_contract_id?: string | null;
   is_read: boolean;
@@ -193,7 +193,7 @@ export async function createNotification(
   relatedIds?: {
     appointmentId?: string;
     clientId?: string;
-    propertyId?: string;
+    propertyId?: number;
     paymentId?: string;
     contractId?: string;
   },

@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS admin_notifications CASCADE;
 
 CREATE TABLE admin_notifications (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL CHECK (type IN (
         'new_appointment',
         'appointment_cancelled',
@@ -28,7 +28,7 @@ CREATE TABLE admin_notifications (
     message TEXT NOT NULL,
     related_appointment_id UUID REFERENCES appointments(id) ON DELETE CASCADE,
     related_client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
-    related_property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+    related_property_id BIGINT REFERENCES properties(id) ON DELETE CASCADE,
     related_payment_id UUID REFERENCES payments(id) ON DELETE CASCADE,
     related_contract_id UUID REFERENCES contracts(id) ON DELETE CASCADE,
     is_read BOOLEAN DEFAULT FALSE,
@@ -80,7 +80,7 @@ CREATE OR REPLACE FUNCTION create_admin_notification(
     p_message TEXT,
     p_related_appointment_id UUID DEFAULT NULL,
     p_related_client_id UUID DEFAULT NULL,
-    p_related_property_id UUID DEFAULT NULL,
+    p_related_property_id BIGINT DEFAULT NULL,
     p_related_payment_id UUID DEFAULT NULL,
     p_related_contract_id UUID DEFAULT NULL,
     p_priority VARCHAR DEFAULT 'normal'
@@ -191,7 +191,7 @@ DECLARE
 BEGIN
     -- Iterar sobre todos los usuarios con role 'admin'
     FOR v_admin_record IN 
-        SELECT id FROM profiles WHERE role = 'admin'
+        SELECT id FROM user_profiles WHERE role = 'admin'
     LOOP
         PERFORM create_admin_notification(
             v_admin_record.id,
@@ -235,7 +235,7 @@ BEGIN
     
     -- Crear notificación para todos los admins
     FOR v_admin_record IN 
-        SELECT id FROM profiles WHERE role = 'admin'
+        SELECT id FROM user_profiles WHERE role = 'admin'
     LOOP
         PERFORM create_admin_notification(
             v_admin_record.id,
@@ -281,7 +281,7 @@ BEGIN
         WHERE id = NEW.client_id;
         
         FOR v_admin_record IN 
-            SELECT id FROM profiles WHERE role = 'admin'
+            SELECT id FROM system_users WHERE role = 'admin'
         LOOP
             PERFORM create_admin_notification(
                 v_admin_record.id,
@@ -329,7 +329,7 @@ BEGIN
         WHERE id = NEW.client_id;
         
         FOR v_admin_record IN 
-            SELECT id FROM profiles WHERE role = 'admin'
+            SELECT id FROM system_users WHERE role = 'admin'
         LOOP
             PERFORM create_admin_notification(
                 v_admin_record.id,
@@ -368,7 +368,7 @@ DECLARE
     v_admin_record RECORD;
 BEGIN
     FOR v_admin_record IN 
-        SELECT id FROM profiles WHERE role = 'admin'
+        SELECT id FROM system_users WHERE role = 'admin'
     LOOP
         PERFORM create_admin_notification(
             v_admin_record.id,

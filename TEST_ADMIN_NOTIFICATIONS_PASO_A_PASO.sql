@@ -9,7 +9,7 @@
 
 -- Encuentra tu user_id de administrador
 SELECT id, email, full_name, role
-FROM profiles
+FROM user_profiles
 WHERE role = 'admin'
 ORDER BY created_at DESC;
 
