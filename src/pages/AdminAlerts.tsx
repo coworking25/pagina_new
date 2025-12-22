@@ -20,6 +20,7 @@ import {
   isAdminAlertExpiringSoon,
   getAlertTypeName
 } from '../lib/adminAlerts';
+import AdminNotificationPermission from '../components/AdminNotificationPermission';
 
 const AdminAlerts: React.FC = () => {
   const { user } = useAuth();
@@ -135,6 +136,9 @@ const AdminAlerts: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Componente de permisos de notificaciones push */}
+      <AdminNotificationPermission />
+
       {/* Header con gradiente */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}

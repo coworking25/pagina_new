@@ -28,6 +28,7 @@ import {
   type AlertSeverity
 } from '../../lib/client-portal/clientAlerts';
 import { getSession } from '../../lib/client-portal/clientAuth';
+import ClientNotificationPermission from '../../components/client-portal/ClientNotificationPermission';
 
 const ClientAlerts: React.FC = () => {
   const navigate = useNavigate();
@@ -150,6 +151,9 @@ const ClientAlerts: React.FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Componente de permisos de notificaciones push */}
+      <ClientNotificationPermission />
+
       {/* Header */}
       <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl p-6 sm:p-8 text-white shadow-lg">
         <div className="flex items-center gap-3 mb-3">
