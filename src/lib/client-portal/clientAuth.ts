@@ -75,6 +75,17 @@ export function getAuthenticatedClientId(): string | null {
   return session?.client_id || null;
 }
 
+/**
+ * Actualizar el campo must_change_password en la sesión
+ */
+export function updateSessionPasswordStatus(mustChangePassword: boolean): void {
+  const session = getSession();
+  if (session) {
+    session.must_change_password = mustChangePassword;
+    saveSession(session);
+  }
+}
+
 // ============================================
 // AUTENTICACIÓN
 // ============================================

@@ -16,13 +16,14 @@ import {
 } from 'lucide-react';
 import { getSession, clientLogout } from '../../lib/client-portal/clientAuth';
 import type { ClientSession } from '../../types/clientPortal';
+import NotificationCenter, { NotificationBadge } from './NotificationCenter';
 
 const ClientLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [session, setSession] = useState<ClientSession | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState(0);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
 
   // Verificar sesión al cargar
   useEffect(() => {
@@ -124,14 +125,10 @@ const ClientLayout: React.FC = () => {
             {/* Actions */}
             <div className="flex items-center gap-3">
               {/* Notificaciones */}
-              <button className="relative p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Bell className="w-5 h-5" />
-                {notifications > 0 && (
-                  <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {notifications}
-                  </span>
-                )}
-              </button>
+              <NotificationBadge 
+                clientId={session.client_id}
+                onClick={() => setNotificationCenterOpen(!notificationCenterOpen)}
+              />
 
               {/* Configuración */}
               <button
@@ -295,6 +292,35 @@ const ClientLayout: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Notification Center Modal */}
+      <AnimatePresence>
+        {notificationCenterOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setNotificationCenterOpen(false)}
+              className="fixed inset-0 bg-black/50 z-50"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -20 }}
+              className="fixed top-20 right-4 z-50"
+            >
+              <NotificationCenter 
+                clientId={session.client_id}
+                onClose={() => setNotificationCenterOpen(false)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

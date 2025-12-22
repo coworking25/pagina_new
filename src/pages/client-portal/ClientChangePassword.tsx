@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield } from 'lucide-react';
-import { getSession, clearSession } from '../../lib/client-portal/clientAuth';
+import { getSession, clearSession, updateSessionPasswordStatus } from '../../lib/client-portal/clientAuth';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/UI/Button';
 
@@ -164,6 +164,9 @@ const ClientChangePassword: React.FC = () => {
         setIsLoading(false);
         return;
       }
+
+      // ✅ ACTUALIZAR SESIÓN EN LOCALSTORAGE
+      updateSessionPasswordStatus(false);
 
       setSuccess('¡Contraseña actualizada exitosamente!');
       
