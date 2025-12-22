@@ -14,7 +14,7 @@ import {
   Bell,
   Settings
 } from 'lucide-react';
-import { getSession, clientLogout } from '../../lib/client-portal/clientAuth';
+import { getSession, clientLogout, updateSessionPasswordStatus } from '../../lib/client-portal/clientAuth';
 import type { ClientSession } from '../../types/clientPortal';
 import NotificationCenter, { NotificationBadge } from './NotificationCenter';
 
@@ -24,6 +24,7 @@ const ClientLayout: React.FC = () => {
   const [session, setSession] = useState<ClientSession | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [showPasswordAlert, setShowPasswordAlert] = useState(false);
 
   // Verificar sesión al cargar
   useEffect(() => {
@@ -32,12 +33,28 @@ const ClientLayout: React.FC = () => {
       navigate('/login');
     } else {
       setSession(currentSession);
+      setShowPasswordAlert(currentSession.must_change_password || false);
     }
   }, [navigate]);
+
+  // Actualizar estado de la sesión cuando cambia la ruta (por si volvió de cambiar contraseña)
+  useEffect(() => {
+    const currentSession = getSession();
+    if (currentSession) {
+      setSession(currentSession);
+      setShowPasswordAlert(currentSession.must_change_password || false);
+    }
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     await clientLogout();
     navigate('/login');
+  };
+
+  const handleDismissPasswordAlert = () => {
+    setShowPasswordAlert(false);
+    // Opcionalmente actualizar en localStorage también
+    updateSessionPasswordStatus(false);
   };
 
   const menuItems = [
@@ -274,24 +291,41 @@ const ClientLayout: React.FC = () => {
       </main>
 
       {/* Alerta de cambio de contraseña */}
-      {session.must_change_password && (
-        <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-yellow-50 dark:bg-yellow-900/20 border-t-4 border-yellow-400 p-4 z-20">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center gap-3">
-              <Bell className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Atención:</strong> Debes cambiar tu contraseña temporal
-              </p>
+      <AnimatePresence>
+        {showPasswordAlert && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', damping: 20 }}
+            className="fixed bottom-0 left-0 right-0 lg:left-64 bg-yellow-50 dark:bg-yellow-900/20 border-t-4 border-yellow-400 p-4 z-20"
+          >
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5 text-yellow-600 dark:text-yellow-400 animate-pulse" />
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Atención:</strong> Debes cambiar tu contraseña temporal
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate('/cliente/perfil')}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                >
+                  Cambiar Ahora
+                </button>
+                <button
+                  onClick={handleDismissPasswordAlert}
+                  className="p-2 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 rounded-lg transition-colors"
+                  title="Cerrar aviso"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => navigate('/cliente/perfil')}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
-            >
-              Cambiar Ahora
-            </button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Notification Center Modal */}
       <AnimatePresence>
