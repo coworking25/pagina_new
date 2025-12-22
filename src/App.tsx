@@ -54,6 +54,7 @@ const ClientProperties = lazy(() => import('./pages/client-portal/ClientProperti
 const ClientDocuments = lazy(() => import('./pages/client-portal/ClientDocuments'));
 const ClientExtractos = lazy(() => import('./pages/client-portal/ClientExtractos'));
 const ClientProfile = lazy(() => import('./pages/client-portal/ClientProfile'));
+const ClientAlerts = lazy(() => import('./pages/client-portal/ClientAlerts'));
 
 // Componente para manejar el layout según la ruta
 const AppLayout = () => {
@@ -124,6 +125,7 @@ const AppLayout = () => {
               <Route path="/cliente/*" element={<ClientLayout />}>
                 <Route path="dashboard" element={<ClientDashboard />} />
                 <Route path="cambiar-password" element={<ClientChangePassword />} />
+                <Route path="alertas" element={<ClientAlerts />} />
                 <Route path="contratos" element={<ClientContracts />} />
                 <Route path="pagos" element={<ClientPayments />} />
                 <Route path="extractos" element={<ClientExtractos />} />

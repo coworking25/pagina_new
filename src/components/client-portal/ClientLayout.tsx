@@ -12,11 +12,13 @@ import {
   User,
   LogOut,
   Bell,
-  Settings
+  Settings,
+  AlertTriangle
 } from 'lucide-react';
 import { getSession, clientLogout, updateSessionPasswordStatus } from '../../lib/client-portal/clientAuth';
 import type { ClientSession } from '../../types/clientPortal';
 import NotificationCenter, { NotificationBadge } from './NotificationCenter';
+import { getAlertCounts } from '../../lib/client-portal/clientAlerts';
 
 const ClientLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ const ClientLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [showPasswordAlert, setShowPasswordAlert] = useState(false);
+  const [alertsCount, setAlertsCount] = useState(0);
 
   // Verificar sesión al cargar
   useEffect(() => {
@@ -34,6 +37,8 @@ const ClientLayout: React.FC = () => {
     } else {
       setSession(currentSession);
       setShowPasswordAlert(currentSession.must_change_password || false);
+      // Cargar contador de alertas
+      loadAlertsCount(currentSession.client_id);
     }
   }, [navigate]);
 
@@ -45,6 +50,27 @@ const ClientLayout: React.FC = () => {
       setShowPasswordAlert(currentSession.must_change_password || false);
     }
   }, [location.pathname]);
+
+  // Cargar contador de alertas
+  const loadAlertsCount = async (clientId: string) => {
+    try {
+      const counts = await getAlertCounts(clientId);
+      setAlertsCount(counts.unread);
+    } catch (error) {
+      console.error('Error cargando contador de alertas:', error);
+    }
+  };
+
+  // Actualizar contador cada 30 segundos
+  useEffect(() => {
+    if (!session?.client_id) return;
+
+    const interval = setInterval(() => {
+      loadAlertsCount(session.client_id);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [session?.client_id]);
 
   const handleLogout = async () => {
     await clientLogout();
@@ -63,6 +89,13 @@ const ClientLayout: React.FC = () => {
       icon: Home,
       label: 'Dashboard',
       description: 'Resumen general'
+    },
+    {
+      path: '/cliente/alertas',
+      icon: AlertTriangle,
+      label: 'Mis Alertas',
+      description: 'Alertas importantes',
+      badge: alertsCount > 0 ? alertsCount : undefined
     },
     {
       path: '/cliente/contratos',
@@ -179,7 +212,7 @@ const ClientLayout: React.FC = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                   active
                     ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -190,6 +223,11 @@ const ClientLayout: React.FC = () => {
                   <p className="font-medium">{item.label}</p>
                   <p className="text-xs opacity-75">{item.description}</p>
                 </div>
+                {item.badge && item.badge > 0 && (
+                  <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-yellow-500 text-white text-xs font-bold rounded-full">
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -246,7 +284,7 @@ const ClientLayout: React.FC = () => {
                         navigate(item.path);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                      className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                         active
                           ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -257,6 +295,11 @@ const ClientLayout: React.FC = () => {
                         <p className="font-medium">{item.label}</p>
                         <p className="text-xs opacity-75">{item.description}</p>
                       </div>
+                      {item.badge && item.badge > 0 && (
+                        <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-yellow-500 text-white text-xs font-bold rounded-full">
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
