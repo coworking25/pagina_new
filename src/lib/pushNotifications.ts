@@ -50,16 +50,28 @@ const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ||
  * Verificar si el navegador soporta notificaciones push
  */
 export function isPushNotificationSupported(): boolean {
-  return 'serviceWorker' in navigator && 
-         'PushManager' in window && 
-         'Notification' in window;
+  const hasServiceWorker = 'serviceWorker' in navigator;
+  const hasPushManager = 'PushManager' in window;
+  const hasNotification = 'Notification' in window;
+  
+  console.log('🔍 Verificando soporte Push:', {
+    serviceWorker: hasServiceWorker,
+    pushManager: hasPushManager,
+    notification: hasNotification,
+    supported: hasServiceWorker && hasPushManager && hasNotification
+  });
+  
+  return hasServiceWorker && hasPushManager && hasNotification;
 }
 
 /**
  * Obtener estado actual de permisos y suscripción
  */
 export async function getPushPermissionStatus(): Promise<PushPermissionStatus> {
+  console.log('🔄 Iniciando getPushPermissionStatus...');
+  
   if (!isPushNotificationSupported()) {
+    console.log('❌ Push no soportado');
     return {
       supported: false,
       permission: 'denied',
@@ -68,28 +80,53 @@ export async function getPushPermissionStatus(): Promise<PushPermissionStatus> {
     };
   }
 
+  console.log('✅ Push soportado, obteniendo permisos...');
   const permission = Notification.permission;
+  console.log('🔐 Permission actual:', permission);
+  
   let subscribed = false;
   let subscription: PushSubscriptionJSON | null = null;
 
   try {
-    const registration = await navigator.serviceWorker.ready;
+    // Intentar registrar el Service Worker si no está registrado
+    console.log('⏳ Verificando Service Worker...');
+    let registration = await navigator.serviceWorker.getRegistration();
+    
+    if (!registration) {
+      console.log('📝 Service Worker no encontrado, registrando...');
+      registration = await registerServiceWorker();
+      if (!registration) {
+        console.log('❌ No se pudo registrar Service Worker');
+        return {
+          supported: true,
+          permission,
+          subscribed: false,
+          subscription: null
+        };
+      }
+    }
+    
+    console.log('✅ Service Worker disponible');
     const pushSubscription = await registration.pushManager.getSubscription();
+    console.log('📋 Suscripción actual:', pushSubscription);
     
     if (pushSubscription) {
       subscribed = true;
       subscription = pushSubscription.toJSON();
     }
   } catch (error) {
-    console.error('Error obteniendo estado de suscripción:', error);
+    console.error('❌ Error obteniendo estado de suscripción:', error);
   }
 
-  return {
+  const result = {
     supported: true,
     permission,
     subscribed,
     subscription
   };
+  
+  console.log('📱 Resultado final:', result);
+  return result;
 }
 
 /**
@@ -102,6 +139,15 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   }
 
   try {
+    // Desregistrar cualquier Service Worker anterior
+    const existingRegistration = await navigator.serviceWorker.getRegistration();
+    if (existingRegistration) {
+      console.log('🔄 Desregistrando Service Worker antiguo...');
+      await existingRegistration.unregister();
+      console.log('✅ Service Worker antiguo desregistrado');
+    }
+
+    // Registrar nuevo Service Worker
     const registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/'
     });
@@ -182,9 +228,21 @@ export async function subscribeToPushNotifications(
     await navigator.serviceWorker.ready;
 
     // 4. Crear suscripción push
+    console.log('🔑 Usando clave VAPID:', VAPID_PUBLIC_KEY);
+    console.log('🔑 Longitud clave:', VAPID_PUBLIC_KEY.length);
+    
+    const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource;
+    console.log('🔑 Application Server Key convertida:', applicationServerKey);
+    
+    console.log('📱 Intentando suscribirse al push manager...');
     const pushSubscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource
+      applicationServerKey: applicationServerKey
+    }).catch((error) => {
+      console.error('❌ Error detallado en subscribe:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      throw error;
     });
 
     console.log('✅ Suscripción push creada:', pushSubscription);
@@ -198,13 +256,36 @@ export async function subscribeToPushNotifications(
       is_active: true
     };
 
-    const { data, error } = await supabase
+    // Primero verificar si ya existe una suscripción para este usuario
+    const { data: existing } = await supabase
       .from('push_subscriptions')
-      .upsert(subscriptionData, {
-        onConflict: 'user_id,user_type,subscription_data->endpoint'
-      })
-      .select()
+      .select('id')
+      .eq('user_id', userId)
+      .eq('user_type', userType)
       .single();
+
+    let data, error;
+    if (existing) {
+      // Actualizar suscripción existente
+      const result = await supabase
+        .from('push_subscriptions')
+        .update(subscriptionData)
+        .eq('user_id', userId)
+        .eq('user_type', userType)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      // Insertar nueva suscripción
+      const result = await supabase
+        .from('push_subscriptions')
+        .insert(subscriptionData)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       console.error('Error guardando suscripción:', error);
@@ -298,24 +379,51 @@ export async function sendPushNotification(
  * Enviar notificación de prueba
  */
 export async function sendTestNotification(): Promise<void> {
+  console.log('🧪 Iniciando notificación de prueba...');
+  
   if (!isPushNotificationSupported()) {
     throw new Error('Notificaciones no soportadas');
   }
 
+  console.log('🔐 Verificando permisos:', Notification.permission);
   if (Notification.permission !== 'granted') {
     throw new Error('Permiso no concedido');
   }
 
-  // Mostrar notificación local de prueba
-  const registration = await navigator.serviceWorker.ready;
-  
-  await registration.showNotification('🔔 Notificación de Prueba', {
+  // PRUEBA 1: Notificación nativa directa (no requiere Service Worker)
+  console.log('📢 Método 1: Notificación nativa directa...');
+  const notification = new Notification('🔔 Notificación de Prueba', {
     body: 'Las notificaciones están funcionando correctamente',
-    icon: '/logo-13962586_transparent (1).png',
-    badge: '/logo-13962586_transparent (1).png',
-    tag: 'test-notification',
+    tag: 'test-notification-direct',
     requireInteraction: false
   });
+  
+  notification.onclick = () => {
+    console.log('👆 Usuario hizo clic en la notificación');
+    window.focus();
+    notification.close();
+  };
+  
+  console.log('✅ Notificación directa enviada');
+  
+  // Esperar 2 segundos y probar con Service Worker también
+  setTimeout(async () => {
+    try {
+      console.log('📢 Método 2: Notificación via Service Worker...');
+      const registration = await navigator.serviceWorker.ready;
+      console.log('✅ Service Worker listo para mostrar notificación');
+      
+      await registration.showNotification('🔔 Notificación SW', {
+        body: 'Esta es la notificación via Service Worker',
+        tag: 'test-notification-sw',
+        requireInteraction: false
+      });
+      
+      console.log('✅ Notificación SW enviada exitosamente');
+    } catch (err) {
+      console.error('❌ Error en notificación SW:', err);
+    }
+  }, 2000);
 }
 
 // ============================================

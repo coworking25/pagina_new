@@ -187,8 +187,7 @@ self.addEventListener('pushsubscriptionchange', (event) => {
     self.registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(
-        // VAPID public key - será reemplazado por variable de entorno
-        'YOUR_VAPID_PUBLIC_KEY_HERE'
+        'BCISUs3qRuKK26aCVP7kO2eX6ITTPlE_aP51e48jS8lkuyCK-o3wUbaVPWYjLt7ijeJJm6oFK_XFV0IDtH8cLLA'
       )
     }).then((subscription) => {
       console.log('✅ Re-suscrito exitosamente');

@@ -37,9 +37,10 @@ const ClientNotificationPermission: React.FC = () => {
   const loadStatus = async () => {
     try {
       const currentStatus = await getPushPermissionStatus();
+      console.log('📱 Estado de notificaciones push:', currentStatus);
       setStatus(currentStatus);
     } catch (err) {
-      console.error('Error cargando estado:', err);
+      console.error('❌ Error cargando estado:', err);
     }
   };
 
@@ -109,9 +110,23 @@ const ClientNotificationPermission: React.FC = () => {
     }
   };
 
-  // Si no está soportado, no mostrar nada
+  // Si no está soportado, mostrar mensaje informativo
   if (!status.supported) {
-    return null;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6"
+      >
+        <div className="flex items-center space-x-3 text-gray-600">
+          <Info size={20} />
+          <p className="text-sm">
+            Tu navegador no soporta notificaciones push o estás usando HTTP. 
+            Las notificaciones push requieren HTTPS en producción.
+          </p>
+        </div>
+      </motion.div>
+    );
   }
 
   // Si ya está suscrito y no hay errores, mostrar versión compacta

@@ -15,10 +15,7 @@ CREATE TABLE push_subscriptions (
   user_agent TEXT,
   is_active BOOLEAN DEFAULT true NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  
-  -- Constraint único para evitar duplicados
-  CONSTRAINT unique_subscription UNIQUE (user_id, user_type, ((subscription_data->>'endpoint')))
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
 -- Crear índices
@@ -26,6 +23,10 @@ CREATE INDEX idx_push_subscriptions_user ON push_subscriptions(user_id, user_typ
 CREATE INDEX idx_push_subscriptions_active ON push_subscriptions(is_active) WHERE is_active = true;
 CREATE INDEX idx_push_subscriptions_endpoint ON push_subscriptions((subscription_data->>'endpoint'));
 CREATE INDEX idx_push_subscriptions_created ON push_subscriptions(created_at DESC);
+
+-- Índice único para evitar duplicados (usando expresión JSONB)
+CREATE UNIQUE INDEX idx_push_subscriptions_unique 
+  ON push_subscriptions(user_id, user_type, ((subscription_data->>'endpoint')));
 
 -- Comentarios
 COMMENT ON TABLE push_subscriptions IS 
