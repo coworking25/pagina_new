@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,12 +16,14 @@ import {
   Sun,
   Moon,
   HelpCircle,
-  User
+  User,
+  AlertTriangle
 } from 'lucide-react';
 import { useAdminBadges } from '../../contexts/AdminBadgeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import QuickActions from './QuickActions';
 import AdminNotificationCenter, { AdminNotificationBadge } from './AdminNotificationCenter';
+import { getAdminAlertCounts } from '../../lib/adminAlerts';
 
 interface MenuItem {
   id: string;
@@ -37,8 +39,32 @@ function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [alertsCount, setAlertsCount] = useState(0);
   const { badges } = useAdminBadges();
   const { user: currentUser } = useAuth();
+
+  // Cargar conteo de alertas
+  const loadAlertsCount = async (userId: string) => {
+    try {
+      const counts = await getAdminAlertCounts(userId);
+      setAlertsCount(counts.unread);
+    } catch (error) {
+      console.error('Error al cargar conteo de alertas:', error);
+    }
+  };
+
+  // Cargar conteo inicial y actualizar cada 30 segundos
+  useEffect(() => {
+    if (currentUser?.id) {
+      loadAlertsCount(currentUser.id);
+      
+      const interval = setInterval(() => {
+        loadAlertsCount(currentUser.id);
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentUser?.id]);
 
   const menuItems: MenuItem[] = [
     {
@@ -46,6 +72,13 @@ function AdminLayout() {
       label: 'Dashboard',
       icon: LayoutDashboard,
       path: '/admin/dashboard'
+    },
+    {
+      id: 'alerts',
+      label: 'Mis Alertas',
+      icon: AlertTriangle,
+      path: '/admin/alerts',
+      badge: alertsCount
     },
     {
       id: 'appointments',

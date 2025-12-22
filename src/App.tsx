@@ -34,6 +34,7 @@ const TestAppointmentPage = lazy(() => import('./pages/TestAppointmentPage'));
 // Code Splitting: Lazy loading de páginas admin
 const AdminLayout = lazy(() => import('./components/Layout/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminAlerts = lazy(() => import('./pages/AdminAlerts'));
 const AdminAppointments = lazy(() => import('./pages/AdminAppointments'));
 const AdminClients = lazy(() => import('./pages/AdminClients'));
 const AdminProperties = lazy(() => import('./pages/AdminProperties'));
@@ -109,6 +110,7 @@ const AppLayout = () => {
                 }
               >
                 <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="alerts" element={<AdminAlerts />} />
                 <Route path="appointments" element={<AdminAppointments />} />
                 <Route path="calendar" element={<AdminCalendar />} />
                 <Route path="clients" element={<AdminClients />} />
