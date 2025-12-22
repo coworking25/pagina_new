@@ -21,8 +21,7 @@ import {
 import { useAdminBadges } from '../../contexts/AdminBadgeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import QuickActions from './QuickActions';
-import { useNotificationContext } from '../../contexts/NotificationContext';
-import NotificationBell from './NotificationBell';
+import AdminNotificationCenter, { AdminNotificationBadge } from './AdminNotificationCenter';
 
 interface MenuItem {
   id: string;
@@ -37,8 +36,8 @@ function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const { badges } = useAdminBadges();
-  const { getUnreadCount, notifications, markAsRead, markAllAsRead } = useNotificationContext();
   const { user: currentUser } = useAuth();
 
   const menuItems: MenuItem[] = [
@@ -292,7 +291,12 @@ function AdminLayout() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <NotificationBell />
+              {currentUser?.id && (
+                <AdminNotificationBadge 
+                  userId={currentUser.id}
+                  onClick={() => setNotificationCenterOpen(!notificationCenterOpen)}
+                />
+              )}
             </div>
           </div>
         </motion.header>
@@ -312,6 +316,35 @@ function AdminLayout() {
 
       {/* Quick Actions Floating Button */}
       <QuickActions />
+
+      {/* Notification Center Modal */}
+      <AnimatePresence>
+        {notificationCenterOpen && currentUser?.id && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setNotificationCenterOpen(false)}
+              className="fixed inset-0 bg-black/50 z-50"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -20 }}
+              className="fixed top-20 right-4 z-50"
+            >
+              <AdminNotificationCenter 
+                userId={currentUser.id}
+                onClose={() => setNotificationCenterOpen(false)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
