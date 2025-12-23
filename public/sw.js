@@ -53,11 +53,30 @@ self.addEventListener('fetch', (event) => {
   // Solo cachear requests GET
   if (event.request.method !== 'GET') return;
   
+  // No cachear en localhost (modo desarrollo)
+  if (event.request.url.includes('localhost') || event.request.url.includes('127.0.0.1')) {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Retornar cache si existe, sino hacer fetch
-        return response || fetch(event.request);
+        if (response) {
+          return response;
+        }
+        
+        return fetch(event.request).catch((error) => {
+          console.log('❌ Fetch falló:', error);
+          // Retornar una respuesta de fallback si es necesario
+          return new Response('Offline - contenido no disponible', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({
+              'Content-Type': 'text/plain'
+            })
+          });
+        });
       })
   );
 });
