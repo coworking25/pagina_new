@@ -90,11 +90,11 @@ export async function getPushPermissionStatus(): Promise<PushPermissionStatus> {
   try {
     // Intentar registrar el Service Worker si no está registrado
     console.log('⏳ Verificando Service Worker...');
-    let registration = await navigator.serviceWorker.getRegistration();
+    let registration: ServiceWorkerRegistration | null | undefined = await navigator.serviceWorker.getRegistration();
     
     if (!registration) {
       console.log('📝 Service Worker no encontrado, registrando...');
-      registration = await registerServiceWorker();
+      registration = await registerServiceWorker(); // Puede ser null
       if (!registration) {
         console.log('❌ No se pudo registrar Service Worker');
         return {

@@ -16,7 +16,7 @@ import {
   subscribeToNotifications,
   getNotificationEmoji,
   getNotificationColor,
-  getNotificationBgColor,
+  // getNotificationBgColor, // Eliminado porque no se usa
   getRelativeTime,
   playNotificationSound,
   getNotificationRoute,

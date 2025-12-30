@@ -10,7 +10,7 @@ import {
   PaymentOverdueEmailTemplate,
   ContractExpiringEmailTemplate,
   WelcomeEmailTemplate
-} from './email-templates';
+} from './email-templates'; // Verifica que el archivo exista y esté bien escrito
 
 // Inicializar cliente de Resend
 const resend = new Resend(process.env.RESEND_API_KEY);

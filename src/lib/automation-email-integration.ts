@@ -82,7 +82,7 @@ export async function processAutomationRuleWithEmail(
         break;
 
       case 'welcome':
-        emailResult = await sendWelcomeEmailFromRule(client, triggerData);
+        emailResult = await sendWelcomeEmailFromRule(client);
         break;
 
       default:
@@ -183,7 +183,7 @@ async function sendContractExpiringEmailFromRule(client: any, triggerData: any) 
     to: client.email,
     clientName: client.full_name,
     propertyAddress: propertyAddress,
-    contractEndDate: formatDate(endDate),
+    endDate: formatDate(endDate),
     daysUntilExpiry: parseInt(daysUntilExpiry),
     advisorName: advisorName,
     advisorPhone: advisorPhone,
@@ -194,11 +194,13 @@ async function sendContractExpiringEmailFromRule(client: any, triggerData: any) 
 /**
  * Envía email de bienvenida
  */
-async function sendWelcomeEmailFromRule(client: any, triggerData: any) {
+async function sendWelcomeEmailFromRule(client: any) {
   return await sendWelcomeEmail({
     to: client.email,
     clientName: client.full_name,
-    loginUrl: `${window.location.origin}/login`
+    loginUrl: `${window.location.origin}/login`,
+    supportEmail: process.env.SUPPORT_EMAIL || 'cooworking.digital2025@gmail.com',
+    supportPhone: process.env.SUPPORT_PHONE || '+57 3028240488'
   });
 }
 
@@ -255,11 +257,11 @@ export async function processAutomationEmailQueue(): Promise<void> {
 
     // Procesar cada log
     for (const log of logs) {
-      const rule = log.automation_rules;
+      const rule = Array.isArray(log.automation_rules) ? log.automation_rules[0] : log.automation_rules;
       if (!rule) continue;
 
       // Verificar si la regla tiene send_email habilitado
-      if (!rule.actions?.send_email) {
+      if (rule.actions && !rule.actions.send_email) {
         // Marcar como procesado sin enviar
         await supabase
           .from('automation_logs')
