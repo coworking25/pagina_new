@@ -17,7 +17,8 @@ import {
   Activity,
   ExternalLink,
   X,
-  Shield
+  Shield,
+  History
 } from 'lucide-react';
 import { useNotificationContext } from '../contexts/NotificationContext';
 import { 
@@ -28,6 +29,8 @@ import {
 import FloatingCard from '../components/UI/FloatingCard';
 import ReportsModalExpanded from '../components/Modals/ReportsModalExpanded';
 import UserManagementModal from '../components/Modals/UserManagementModal';
+import AuditLogsViewer from '../components/Admin/AuditLogsViewer';
+import Modal from '../components/UI/Modal';
 import { useAuth } from '../contexts/AuthContext';
 import { usePersistedState } from '../hooks/usePersistedState';
 import { useAppState } from '../contexts/AppStateContext';
@@ -79,6 +82,7 @@ function AdminDashboard() {
     initialValue: false,
     expirationTime: 30 * 60 * 1000
   });
+  const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false); // Req 50
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { updateAppState } = useAppState();
@@ -608,6 +612,21 @@ function AdminDashboard() {
                 <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Ver Reportes</span>
                 <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-orange-600 dark:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
               </motion.button>
+
+              {/* Botón Logs de Auditoría (Req 50) */}
+              {isAdmin && (
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsAuditLogsOpen(true)}
+                  className="group relative w-full flex items-center p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl hover:shadow-lg transition-all duration-300 border border-gray-200/50 dark:border-gray-600/50 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-400/10 to-gray-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <History className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 mr-2 sm:mr-3 relative z-10 flex-shrink-0" />
+                  <span className="text-gray-900 dark:text-white font-medium relative z-10 text-sm sm:text-base truncate">Logs de Auditoría</span>
+                  <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 ml-auto text-gray-600 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 relative z-10 flex-shrink-0" />
+                </motion.button>
+              )}
             </div>
           </FloatingCard>
         </motion.div>
@@ -624,6 +643,18 @@ function AdminDashboard() {
         isOpen={isUserManagementModalOpen}
         onClose={() => setIsUserManagementModalOpen(false)}
       />
+
+      {/* Audit Logs Modal (Req 50) */}
+      <Modal
+        isOpen={isAuditLogsOpen}
+        onClose={() => setIsAuditLogsOpen(false)}
+        title="Logs de Auditoría del Sistema"
+        size="full"
+      >
+        <div className="h-[80vh]">
+          <AuditLogsViewer onClose={() => setIsAuditLogsOpen(false)} />
+        </div>
+      </Modal>
     </div>
   );
 }

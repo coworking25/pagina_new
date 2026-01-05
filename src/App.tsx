@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import WhatsAppChatbot from './components/UI/WhatsAppChatbot';
@@ -43,6 +44,7 @@ const AdminInquiries = lazy(() => import('./pages/AdminInquiries'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 const AdminProfile = lazy(() => import('./pages/AdminProfile'));
+const AdminAuditLogs = lazy(() => import('./pages/AuditLogs'));
 const AdminCalendar = lazy(() => import('./pages/AdminCalendar').then(module => ({ default: module.AdminCalendarPage })));
 
 // Code Splitting: Lazy loading de páginas de cliente
@@ -119,6 +121,7 @@ const AppLayout = () => {
                 <Route path="service-inquiries" element={<AdminInquiries />} />
                 <Route path="documents" element={<div>Documentos - En desarrollo</div>} />
                 <Route path="reports" element={<AdminReports />} />
+                <Route path="audit-logs" element={<AdminAuditLogs />} />
                 <Route path="profile" element={<AdminProfile />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
@@ -227,6 +230,7 @@ function App() {
             <AdminBadgeProvider>
               <Router>
                 <ScrollToTopOnRouteChange />
+                <Toaster position="top-right" />
                 <AppLayout />
               </Router>
             </AdminBadgeProvider>

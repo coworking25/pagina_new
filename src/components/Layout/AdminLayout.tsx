@@ -17,7 +17,8 @@ import {
   Moon,
   HelpCircle,
   User,
-  AlertTriangle
+  AlertTriangle,
+  Shield
 } from 'lucide-react';
 import { useAdminBadges } from '../../contexts/AdminBadgeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -123,6 +124,12 @@ function AdminLayout() {
       label: 'Reportes',
       icon: BarChart3,
       path: '/admin/reports'
+    },
+    {
+      id: 'audit-logs',
+      label: 'Auditoría',
+      icon: Shield,
+      path: '/admin/audit-logs'
     },
     {
       id: 'profile',

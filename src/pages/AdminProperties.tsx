@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { usePersistedState } from '../hooks/usePersistedState';
 import {
@@ -82,9 +82,10 @@ import {
   Film,
   CheckSquare,
   Square as CheckboxIcon,
-  Minus
+  Minus,
+  Tag
 } from 'lucide-react';
-import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties } from '../lib/supabase';
+import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties, getPropertyPriceHistory } from '../lib/supabase';
 import { bulkUploadPropertyImages } from '../lib/supabase-images';
 import { bulkUploadPropertyVideos, deletePropertyVideo } from '../lib/supabase-videos';
 import { Property, Advisor, PropertyVideo } from '../types';
@@ -96,6 +97,11 @@ import { CoverImageSelector } from '../components/CoverImageSelector';
 import VideoPlayer from '../components/VideoPlayer';
 import { useMultiSelect } from '../hooks/useMultiSelect';
 import { BulkActionBar, BulkActionIcons } from '../components/UI/BulkActionBar';
+import PropertyCSVImport from '../components/PropertyCSVImport';
+import PriceHistoryChart from '../components/Properties/PriceHistoryChart';
+import InternalNotes from '../components/Properties/InternalNotes';
+import AmenitiesManager from '../components/Properties/AmenitiesManager';
+import { getAmenities, Amenity } from '../lib/supabase';
 
 function AdminProperties() {
   console.log('🔍 AdminProperties: Iniciando componente');
@@ -113,6 +119,14 @@ function AdminProperties() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [featuredFilter, setFeaturedFilter] = useState(false); // Nuevo filtro para destacadas
+
+  // Filtros avanzados (Req 5)
+  const [bedroomsFilter, setBedroomsFilter] = useState<string>('');
+  const [bathroomsFilter, setBathroomsFilter] = useState<string>('');
+  const [minPriceFilter, setMinPriceFilter] = useState<string>('');
+  const [maxPriceFilter, setMaxPriceFilter] = useState<string>('');
+  const [locationFilter, setLocationFilter] = useState<string>('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   console.log('🔍 AdminProperties: Estados inicializados');
   
@@ -138,6 +152,9 @@ function AdminProperties() {
     initialValue: false,
     expirationTime: 30 * 60 * 1000
   });
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showAmenitiesManager, setShowAmenitiesManager] = useState(false); // Req 77
+
   const { state: selectedProperty, setState: setSelectedProperty } = usePersistedState({
     key: 'admin-properties-selected-property',
     initialValue: null as Property | null,
@@ -194,6 +211,7 @@ function AdminProperties() {
     cover_image: '',
     cover_video: '',
     featured: false,
+    tags: [] as string[], // Req 76: Tags
     // 💰 Configuración de administración (para arriendos)
     admin_included_in_rent: true,
     admin_paid_by: 'tenant' as 'tenant' | 'landlord' | 'split',
@@ -355,99 +373,142 @@ function AdminProperties() {
     });
   };
   
-  // Estados para amenidades predefinidas
+  // Estados para amenidades (Req 77)
+  const [amenitiesList, setAmenitiesList] = useState<any[]>([]);
+  const [loadingAmenities, setLoadingAmenities] = useState(false);
 
-  // Lista de amenidades predefinidas con iconos
-  const amenitiesList = [
+  // Mapa de iconos para amenidades dinámicas
+  const iconMap: Record<string, any> = {
+    Wifi, Tv, Zap, Car, Building, Users, HomeIcon, Shield, Cctv, Lock, UsersIcon,
+    Dumbbell, Waves, Baby, Activity, Gamepad2, Music, Flame, Trees, TreePine,
+    Building2, Sun, Flower, Fence, ArrowUp, WashingMachine, Sparkles, Briefcase,
+    Sofa, ChefHat, Refrigerator, Shirt, Droplets, Wind, Thermometer, Fan, Lightbulb,
+    FileText, Dog, Heart, ShoppingCart, ShoppingBag, GraduationCap, School, Bus,
+    Train, Plane, Utensils, Star, CrossIcon, Coffee, Mountain, Volume2
+  };
+
+  // Cargar amenidades desde DB
+  const loadAmenities = async () => {
+    setLoadingAmenities(true);
+    try {
+      const data = await getAmenities();
+      if (data && data.length > 0) {
+        // Mapear datos de DB al formato esperado por el componente
+        const mappedAmenities = data.map(a => ({
+          id: a.name, // Usamos el nombre como ID para compatibilidad con el array de strings de properties
+          name: a.name,
+          icon: iconMap[a.icon_name || 'Star'] || Star,
+          category: a.category
+        }));
+        setAmenitiesList(mappedAmenities);
+      } else {
+        // Fallback a lista hardcoded si no hay datos en DB
+        console.log('⚠️ No se encontraron amenidades en DB, usando lista por defecto');
+        setAmenitiesList(defaultAmenitiesList);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando amenidades:', error);
+      setAmenitiesList(defaultAmenitiesList);
+    } finally {
+      setLoadingAmenities(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAmenities();
+  }, []);
+
+  // Lista de amenidades por defecto (Fallback)
+  const defaultAmenitiesList = [
     // Conectividad y Tecnología
-    { id: 'wifi', name: 'WiFi', icon: Wifi, category: 'Tecnología' },
-    { id: 'cable_tv', name: 'TV por cable', icon: Tv, category: 'Tecnología' },
-    { id: 'internet_fiber', name: 'Internet fibra óptica', icon: Zap, category: 'Tecnología' },
+    { id: 'WiFi', name: 'WiFi', icon: Wifi, category: 'Tecnología' },
+    { id: 'TV por cable', name: 'TV por cable', icon: Tv, category: 'Tecnología' },
+    { id: 'Internet fibra óptica', name: 'Internet fibra óptica', icon: Zap, category: 'Tecnología' },
     
     // Estacionamiento y Transporte
-    { id: 'parking', name: 'Estacionamiento', icon: Car, category: 'Estacionamiento' },
-    { id: 'covered_parking', name: 'Parqueadero cubierto', icon: Building, category: 'Estacionamiento' },
-    { id: 'visitor_parking', name: 'Parqueadero visitantes', icon: Users, category: 'Estacionamiento' },
-    { id: 'garage', name: 'Garaje privado', icon: HomeIcon, category: 'Estacionamiento' },
+    { id: 'Estacionamiento', name: 'Estacionamiento', icon: Car, category: 'Estacionamiento' },
+    { id: 'Parqueadero cubierto', name: 'Parqueadero cubierto', icon: Building, category: 'Estacionamiento' },
+    { id: 'Parqueadero visitantes', name: 'Parqueadero visitantes', icon: Users, category: 'Estacionamiento' },
+    { id: 'Garaje privado', name: 'Garaje privado', icon: HomeIcon, category: 'Estacionamiento' },
     
     // Seguridad
-    { id: 'security', name: 'Seguridad 24h', icon: Shield, category: 'Seguridad' },
-    { id: 'cctv', name: 'Cámaras de seguridad', icon: Cctv, category: 'Seguridad' },
-    { id: 'access_control', name: 'Control de acceso', icon: Lock, category: 'Seguridad' },
-    { id: 'doorman', name: 'Portería', icon: UsersIcon, category: 'Seguridad' },
+    { id: 'Seguridad 24h', name: 'Seguridad 24h', icon: Shield, category: 'Seguridad' },
+    { id: 'Cámaras de seguridad', name: 'Cámaras de seguridad', icon: Cctv, category: 'Seguridad' },
+    { id: 'Control de acceso', name: 'Control de acceso', icon: Lock, category: 'Seguridad' },
+    { id: 'Portería', name: 'Portería', icon: UsersIcon, category: 'Seguridad' },
     
     // Recreación y Deportes
-    { id: 'gym', name: 'Gimnasio', icon: Dumbbell, category: 'Recreación' },
-    { id: 'pool', name: 'Piscina', icon: Waves, category: 'Recreación' },
-    { id: 'kids_pool', name: 'Piscina para niños', icon: Baby, category: 'Recreación' },
-    { id: 'tennis_court', name: 'Cancha de tenis', icon: Activity, category: 'Recreación' },
-    { id: 'soccer_field', name: 'Cancha de fútbol', icon: Gamepad2, category: 'Recreación' },
-    { id: 'basketball_court', name: 'Cancha de baloncesto', icon: Activity, category: 'Recreación' },
-    { id: 'playground', name: 'Zona de juegos infantiles', icon: Baby, category: 'Recreación' },
-    { id: 'kids_area', name: 'Área para niños', icon: Baby, category: 'Recreación' },
-    { id: 'game_room', name: 'Salón de juegos', icon: Gamepad2, category: 'Recreación' },
-    { id: 'party_room', name: 'Salón de fiestas', icon: Music, category: 'Recreación' },
-    { id: 'bbq_area', name: 'Zona de asados', icon: Flame, category: 'Recreación' },
+    { id: 'Gimnasio', name: 'Gimnasio', icon: Dumbbell, category: 'Recreación' },
+    { id: 'Piscina', name: 'Piscina', icon: Waves, category: 'Recreación' },
+    { id: 'Piscina para niños', name: 'Piscina para niños', icon: Baby, category: 'Recreación' },
+    { id: 'Cancha de tenis', name: 'Cancha de tenis', icon: Activity, category: 'Recreación' },
+    { id: 'Cancha de fútbol', name: 'Cancha de fútbol', icon: Gamepad2, category: 'Recreación' },
+    { id: 'Cancha de baloncesto', name: 'Cancha de baloncesto', icon: Activity, category: 'Recreación' },
+    { id: 'Zona de juegos infantiles', name: 'Zona de juegos infantiles', icon: Baby, category: 'Recreación' },
+    { id: 'Área para niños', name: 'Área para niños', icon: Baby, category: 'Recreación' },
+    { id: 'Salón de juegos', name: 'Salón de juegos', icon: Gamepad2, category: 'Recreación' },
+    { id: 'Salón de fiestas', name: 'Salón de fiestas', icon: Music, category: 'Recreación' },
+    { id: 'Zona de asados', name: 'Zona de asados', icon: Flame, category: 'Recreación' },
     
     // Zonas Verdes y Exteriores
-    { id: 'garden', name: 'Jardín', icon: Trees, category: 'Zonas Verdes' },
-    { id: 'green_areas', name: 'Zonas verdes', icon: TreePine, category: 'Zonas Verdes' },
-    { id: 'terrace', name: 'Terraza', icon: Building2, category: 'Zonas Verdes' },
-    { id: 'balcony', name: 'Balcón', icon: Sun, category: 'Zonas Verdes' },
-    { id: 'roof_garden', name: 'Jardín en azotea', icon: Flower, category: 'Zonas Verdes' },
-    { id: 'patio', name: 'Patio', icon: Fence, category: 'Zonas Verdes' },
+    { id: 'Jardín', name: 'Jardín', icon: Trees, category: 'Zonas Verdes' },
+    { id: 'Zonas verdes', name: 'Zonas verdes', icon: TreePine, category: 'Zonas Verdes' },
+    { id: 'Terraza', name: 'Terraza', icon: Building2, category: 'Zonas Verdes' },
+    { id: 'Balcón', name: 'Balcón', icon: Sun, category: 'Zonas Verdes' },
+    { id: 'Jardín en azotea', name: 'Jardín en azotea', icon: Flower, category: 'Zonas Verdes' },
+    { id: 'Patio', name: 'Patio', icon: Fence, category: 'Zonas Verdes' },
     
     // Servicios del Edificio
-    { id: 'elevator', name: 'Ascensor', icon: ArrowUp, category: 'Servicios' },
-    { id: 'laundry', name: 'Lavandería', icon: WashingMachine, category: 'Servicios' },
-    { id: 'cleaning', name: 'Servicio de limpieza', icon: Sparkles, category: 'Servicios' },
-    { id: 'maintenance', name: 'Mantenimiento', icon: Briefcase, category: 'Servicios' },
-    { id: 'concierge', name: 'Conserjería', icon: Users, category: 'Servicios' },
+    { id: 'Ascensor', name: 'Ascensor', icon: ArrowUp, category: 'Servicios' },
+    { id: 'Lavandería', name: 'Lavandería', icon: WashingMachine, category: 'Servicios' },
+    { id: 'Servicio de limpieza', name: 'Servicio de limpieza', icon: Sparkles, category: 'Servicios' },
+    { id: 'Mantenimiento', name: 'Mantenimiento', icon: Briefcase, category: 'Servicios' },
+    { id: 'Conserjería', name: 'Conserjería', icon: Users, category: 'Servicios' },
     
     // Electrodomésticos y Cocina
-    { id: 'furnished', name: 'Amoblado', icon: Sofa, category: 'Mobiliario' },
-    { id: 'kitchen_equipped', name: 'Cocina equipada', icon: ChefHat, category: 'Mobiliario' },
-    { id: 'refrigerator', name: 'Nevera', icon: Refrigerator, category: 'Mobiliario' },
-    { id: 'washer', name: 'Lavadora', icon: WashingMachine, category: 'Mobiliario' },
-    { id: 'dryer', name: 'Secadora', icon: Shirt, category: 'Mobiliario' },
-    { id: 'dishwasher', name: 'Lavavajillas', icon: Droplets, category: 'Mobiliario' },
+    { id: 'Amoblado', name: 'Amoblado', icon: Sofa, category: 'Mobiliario' },
+    { id: 'Cocina equipada', name: 'Cocina equipada', icon: ChefHat, category: 'Mobiliario' },
+    { id: 'Nevera', name: 'Nevera', icon: Refrigerator, category: 'Mobiliario' },
+    { id: 'Lavadora', name: 'Lavadora', icon: WashingMachine, category: 'Mobiliario' },
+    { id: 'Secadora', name: 'Secadora', icon: Shirt, category: 'Mobiliario' },
+    { id: 'Lavavajillas', name: 'Lavavajillas', icon: Droplets, category: 'Mobiliario' },
     
     // Clima y Confort
-    { id: 'aircon', name: 'Aire acondicionado', icon: Wind, category: 'Clima' },
-    { id: 'heating', name: 'Calefacción', icon: Thermometer, category: 'Clima' },
-    { id: 'ceiling_fan', name: 'Ventilador de techo', icon: Fan, category: 'Clima' },
-    { id: 'natural_light', name: 'Iluminación natural', icon: Lightbulb, category: 'Clima' },
+    { id: 'Aire acondicionado', name: 'Aire acondicionado', icon: Wind, category: 'Clima' },
+    { id: 'Calefacción', name: 'Calefacción', icon: Thermometer, category: 'Clima' },
+    { id: 'Ventilador de techo', name: 'Ventilador de techo', icon: Fan, category: 'Clima' },
+    { id: 'Iluminación natural', name: 'Iluminación natural', icon: Lightbulb, category: 'Clima' },
     
     // Servicios Públicos
-    { id: 'electricity', name: 'Electricidad incluida', icon: Zap, category: 'Servicios Públicos' },
-    { id: 'water', name: 'Agua incluida', icon: Droplets, category: 'Servicios Públicos' },
-    { id: 'gas', name: 'Gas incluido', icon: Flame, category: 'Servicios Públicos' },
-    { id: 'administration', name: 'Administración incluida', icon: FileText, category: 'Servicios Públicos' },
+    { id: 'Electricidad incluida', name: 'Electricidad incluida', icon: Zap, category: 'Servicios Públicos' },
+    { id: 'Agua incluida', name: 'Agua incluida', icon: Droplets, category: 'Servicios Públicos' },
+    { id: 'Gas incluido', name: 'Gas incluido', icon: Flame, category: 'Servicios Públicos' },
+    { id: 'Administración incluida', name: 'Administración incluida', icon: FileText, category: 'Servicios Públicos' },
     
     // Mascotas
-    { id: 'pet_friendly', name: 'Acepta mascotas', icon: Dog, category: 'Mascotas' },
-    { id: 'dog_area', name: 'Área para perros', icon: Dog, category: 'Mascotas' },
-    { id: 'pet_grooming', name: 'Guardería de mascotas', icon: Heart, category: 'Mascotas' },
+    { id: 'Acepta mascotas', name: 'Acepta mascotas', icon: Dog, category: 'Mascotas' },
+    { id: 'Área para perros', name: 'Área para perros', icon: Dog, category: 'Mascotas' },
+    { id: 'Guardería de mascotas', name: 'Guardería de mascotas', icon: Heart, category: 'Mascotas' },
     
     // Ubicación y Cercanías
-    { id: 'supermarket', name: 'Supermercado cercano', icon: ShoppingCart, category: 'Cercanías' },
-    { id: 'shopping_center', name: 'Centro comercial', icon: ShoppingBag, category: 'Cercanías' },
-    { id: 'schools', name: 'Colegios cercanos', icon: GraduationCap, category: 'Cercanías' },
-    { id: 'universities', name: 'Universidades', icon: School, category: 'Cercanías' },
-    { id: 'hospitals', name: 'Hospitales cercanos', icon: CrossIcon, category: 'Cercanías' },
-    { id: 'restaurants', name: 'Restaurantes', icon: Utensils, category: 'Cercanías' },
-    { id: 'cafes', name: 'Cafeterías', icon: Coffee, category: 'Cercanías' },
-    { id: 'public_transport', name: 'Transporte público', icon: Bus, category: 'Cercanías' },
-    { id: 'metro', name: 'Metro cercano', icon: Train, category: 'Cercanías' },
-    { id: 'airport', name: 'Aeropuerto cercano', icon: Plane, category: 'Cercanías' },
+    { id: 'Supermercado cercano', name: 'Supermercado cercano', icon: ShoppingCart, category: 'Cercanías' },
+    { id: 'Centro comercial', name: 'Centro comercial', icon: ShoppingBag, category: 'Cercanías' },
+    { id: 'Colegios cercanos', name: 'Colegios cercanos', icon: GraduationCap, category: 'Cercanías' },
+    { id: 'Universidades', name: 'Universidades', icon: School, category: 'Cercanías' },
+    { id: 'Hospitales cercanos', name: 'Hospitales cercanos', icon: CrossIcon, category: 'Cercanías' },
+    { id: 'Restaurantes', name: 'Restaurantes', icon: Utensils, category: 'Cercanías' },
+    { id: 'Cafeterías', name: 'Cafeterías', icon: Coffee, category: 'Cercanías' },
+    { id: 'Transporte público', name: 'Transporte público', icon: Bus, category: 'Cercanías' },
+    { id: 'Metro cercano', name: 'Metro cercano', icon: Train, category: 'Cercanías' },
+    { id: 'Aeropuerto cercano', name: 'Aeropuerto cercano', icon: Plane, category: 'Cercanías' },
     
     // Vistas y Características Especiales
-    { id: 'city_view', name: 'Vista a la ciudad', icon: Building2, category: 'Vistas' },
-    { id: 'mountain_view', name: 'Vista a las montañas', icon: Mountain, category: 'Vistas' },
-    { id: 'park_view', name: 'Vista al parque', icon: Trees, category: 'Vistas' },
-    { id: 'quiet_area', name: 'Zona tranquila', icon: Volume2, category: 'Características' },
-    { id: 'new_construction', name: 'Construcción nueva', icon: Sparkles, category: 'Características' },
-    { id: 'luxury_finishes', name: 'Acabados de lujo', icon: Star, category: 'Características' }
+    { id: 'Vista a la ciudad', name: 'Vista a la ciudad', icon: Building2, category: 'Vistas' },
+    { id: 'Vista a las montañas', name: 'Vista a las montañas', icon: Mountain, category: 'Vistas' },
+    { id: 'Vista al parque', name: 'Vista al parque', icon: Trees, category: 'Vistas' },
+    { id: 'Zona tranquila', name: 'Zona tranquila', icon: Volume2, category: 'Características' },
+    { id: 'Construcción nueva', name: 'Construcción nueva', icon: Sparkles, category: 'Características' },
+    { id: 'Acabados de lujo', name: 'Acabados de lujo', icon: Star, category: 'Características' }
   ];
 
   // Estado para amenidades personalizadas
@@ -509,6 +570,32 @@ function AdminProperties() {
       filtered = filtered.filter(p => p.type === typeFilter);
     }
 
+    // Filtros avanzados (Req 5)
+    if (bedroomsFilter) {
+      filtered = filtered.filter(p => p.bedrooms >= parseInt(bedroomsFilter));
+    }
+    if (bathroomsFilter) {
+      filtered = filtered.filter(p => p.bathrooms >= parseInt(bathroomsFilter));
+    }
+    if (locationFilter) {
+      const locLower = locationFilter.toLowerCase();
+      filtered = filtered.filter(p => p.location?.toLowerCase().includes(locLower));
+    }
+    if (minPriceFilter) {
+      const min = parseFloat(minPriceFilter);
+      filtered = filtered.filter(p => {
+        const price = p.sale_price || p.rent_price || p.price || 0;
+        return price >= min;
+      });
+    }
+    if (maxPriceFilter) {
+      const max = parseFloat(maxPriceFilter);
+      filtered = filtered.filter(p => {
+        const price = p.sale_price || p.rent_price || p.price || 0;
+        return price <= max;
+      });
+    }
+
     // Ordenamiento
     filtered.sort((a, b) => {
       const aVal = a[sortBy as keyof Property];
@@ -522,7 +609,7 @@ function AdminProperties() {
     });
 
     return filtered;
-  }, [allProperties, search, statusFilter, typeFilter, sortBy, sortOrder, featuredFilter]);
+  }, [allProperties, search, statusFilter, typeFilter, sortBy, sortOrder, featuredFilter, bedroomsFilter, bathroomsFilter, locationFilter, minPriceFilter, maxPriceFilter]);
 
   // Sincronizar filteredProperties con properties state
   useEffect(() => {
@@ -1073,6 +1160,8 @@ function AdminProperties() {
     red: 'border-red-500 bg-red-50 dark:bg-red-900/20'
   };
 
+  const [priceHistory, setPriceHistory] = useState<any[]>([]);
+
   // Funciones para manejar modales
   const handleViewProperty = async (property: Property) => {
     console.log('🔍 Abriendo detalles de propiedad:', property);
@@ -1095,10 +1184,15 @@ function AdminProperties() {
       // Cargar actividades recientes de la propiedad
       const activities = await getPropertyActivity(property.id);
       setPropertyActivities(activities || []);
+
+      // Cargar historial de precios (Req 74)
+      const history = await getPropertyPriceHistory(property.id);
+      setPriceHistory(history);
     } catch (error) {
       console.error('❌ Error cargando estadísticas:', error);
       setPropertyStats({ views: 0, inquiries: 0, appointments: 0 });
       setPropertyActivities([]);
+      setPriceHistory([]);
     } finally {
       setLoadingStats(false);
     }
@@ -1228,6 +1322,7 @@ function AdminProperties() {
       cover_image: property.cover_image || '',
       cover_video: property.cover_video || '',
       featured: property.featured || false,
+      tags: property.tags || [], // Req 76: Tags
       // 💰 Configuración de administración
       admin_included_in_rent: (property as any).admin_included_in_rent ?? true,
       admin_paid_by: (property as any).admin_paid_by || 'tenant',
@@ -1408,6 +1503,7 @@ function AdminProperties() {
         type: formData.type as 'apartment' | 'house' | 'office' | 'commercial',
         status: normalizeStatus(formData.status),
         amenities: selectedAmenities, // Usar amenidades seleccionadas
+        tags: formData.tags, // Req 76: Tags
         images: selectedProperty.images, // Usar imágenes actuales de la propiedad (con orden de portada)
         advisor_id: formData.advisor_id || undefined,
         featured: formData.featured || false, // Incluir estado destacado
@@ -1654,6 +1750,24 @@ function AdminProperties() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => setShowAmenitiesManager(true)}
+            className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md text-sm sm:text-base"
+          >
+            <Star className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+            Amenidades
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowImportModal(true)}
+            className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm hover:shadow-md text-sm sm:text-base"
+          >
+            <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+            Importar CSV
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleAddProperty}
             className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base"
           >
@@ -1884,6 +1998,91 @@ function AdminProperties() {
               </select>
             </div>
           </div>
+
+          {/* Advanced Filters Toggle */}
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+            >
+              {showAdvancedFilters ? 'Ocultar filtros avanzados' : 'Mostrar filtros avanzados'}
+              <Filter className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Advanced Filters Panel */}
+          <AnimatePresence>
+            {showAdvancedFilters && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  {/* Location */}
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Ciudad / Ubicación"
+                      value={locationFilter}
+                      onChange={(e) => setLocationFilter(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Bedrooms */}
+                  <div className="relative">
+                    <Bed className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      placeholder="Habitaciones (min)"
+                      value={bedroomsFilter}
+                      onChange={(e) => setBedroomsFilter(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Bathrooms */}
+                  <div className="relative">
+                    <Bath className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      placeholder="Baños (min)"
+                      value={bathroomsFilter}
+                      onChange={(e) => setBathroomsFilter(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Min Price */}
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      placeholder="Precio Mínimo"
+                      value={minPriceFilter}
+                      onChange={(e) => setMinPriceFilter(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Max Price */}
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      placeholder="Precio Máximo"
+                      value={maxPriceFilter}
+                      onChange={(e) => setMaxPriceFilter(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </FloatingCard>
       </motion.div>
 
@@ -3423,6 +3622,21 @@ function AdminProperties() {
                     </button>
                   </div>
 
+                  {/* Etiquetas (Tags) - Req 76 */}
+                  {selectedProperty.tags && selectedProperty.tags.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Etiquetas</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProperty.tags.map((tag, index) => (
+                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                            <Tag className="w-3 h-3 mr-1" />
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Información del Asesor */}
                   <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Asesor Asignado</h4>
@@ -3518,6 +3732,19 @@ function AdminProperties() {
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Historial de Precios (Req 74) */}
+                  {priceHistory.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Historial de Precios</h4>
+                      <PriceHistoryChart history={priceHistory} />
+                    </div>
+                  )}
+
+                  {/* Notas Internas (Req 71) */}
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <InternalNotes propertyId={selectedProperty.id} />
                   </div>
 
                   {/* Actividades Recientes */}
@@ -3925,6 +4152,63 @@ function AdminProperties() {
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 placeholder="Descripción detallada de la propiedad..."
               />
+            </div>
+
+            {/* Etiquetas (Tags) - Req 76 */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Tag className="w-4 h-4 inline mr-1" />
+                Etiquetas (Tags)
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {formData.tags?.map((tag, index) => (
+                  <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newTags = formData.tags?.filter((_, i) => i !== index);
+                        setFormData({ ...formData, tags: newTags });
+                      }}
+                      className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Agregar etiqueta (ej: Oportunidad, Remodelado)..."
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const val = e.currentTarget.value.trim();
+                      if (val && !formData.tags?.includes(val)) {
+                        setFormData({ ...formData, tags: [...(formData.tags || []), val] });
+                        e.currentTarget.value = '';
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                    const val = input.value.trim();
+                    if (val && !formData.tags?.includes(val)) {
+                      setFormData({ ...formData, tags: [...(formData.tags || []), val] });
+                      input.value = '';
+                    }
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Agregar
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Presiona Enter para agregar una etiqueta.</p>
             </div>
 
             {/* Amenidades - Modal de Edición */}
@@ -4339,6 +4623,37 @@ function AdminProperties() {
           property={selectedProperty}
         />
       )}
+
+      {/* Modal para Importar CSV */}
+      <Modal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        title="Importar Propiedades desde CSV"
+        size="lg"
+      >
+        <PropertyCSVImport 
+          onImportSuccess={() => {
+            setShowImportModal(false);
+            refreshProperties();
+          }}
+          onClose={() => setShowImportModal(false)}
+        />
+      </Modal>
+
+      {/* Modal para Gestionar Amenidades (Req 77) */}
+      <Modal
+        isOpen={showAmenitiesManager}
+        onClose={() => setShowAmenitiesManager(false)}
+        title="Gestión de Amenidades"
+        size="lg"
+      >
+        <AmenitiesManager 
+          onClose={() => {
+            setShowAmenitiesManager(false);
+            loadAmenities(); // Recargar amenidades al cerrar
+          }} 
+        />
+      </Modal>
 
       {/* Barra de Acciones Masivas */}
       <BulkActionBar

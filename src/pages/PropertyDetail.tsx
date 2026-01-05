@@ -20,7 +20,7 @@ import {
   Film
 } from 'lucide-react';
 import { Property } from '../types';
-import { getProperties } from '../lib/supabase';
+import { getProperties, incrementPropertyViews } from '../lib/supabase';
 import VideoPlayer from '../components/VideoPlayer';
 
 const PropertyDetail: React.FC = () => {
@@ -36,6 +36,13 @@ const PropertyDetail: React.FC = () => {
 
   useEffect(() => {
     loadProperty();
+    // Req 19: Registrar y aumentar contador de vistas
+    if (id) {
+      const numericId = parseInt(id);
+      if (!isNaN(numericId)) {
+        incrementPropertyViews(numericId);
+      }
+    }
   }, [id]);
 
   const loadProperty = async () => {

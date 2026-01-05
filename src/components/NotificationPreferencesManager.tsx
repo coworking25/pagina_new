@@ -14,7 +14,7 @@ import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Bell, Mail, MessageCircle, Smartphone, Monitor, Clock, Save, TestTube } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from 'react-hot-toast';
 
 interface NotificationPreferencesProps {
   userId: string;

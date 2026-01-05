@@ -1,7 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import ExcelJS from 'exceljs';
 import { Property, Advisor, PropertyAppointment } from '../types';
-import * as XLSX from 'xlsx';
 import { syncPropertyToAppointments, deleteSyncedAppointment } from './appointmentSync';
+import { EmailService } from './emailService';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -66,6 +67,14 @@ export interface PaginationOptions {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   search?: string;
+  // Filtros avanzados
+  location?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  type?: string;
+  status?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -128,7 +137,7 @@ async function paginateQuery<T>(
 }
 
 /**
- * Obtener propiedades con paginación
+ * Obtener propiedades con paginación y filtros avanzados
  */
 export async function getPropertiesPaginated(
   options: PaginationOptions,
@@ -147,9 +156,41 @@ export async function getPropertiesPaginated(
       query = query.or('status.eq.rent,status.eq.sale');
     }
 
-    // Aplicar búsqueda si existe
+    // Aplicar búsqueda por texto (título, descripción, código)
     if (options.search) {
-      query = query.or(`title.ilike.%${options.search}%,location.ilike.%${options.search}%,description.ilike.%${options.search}%`);
+      query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%,code.ilike.%${options.search}%`);
+    }
+
+    // Filtros específicos
+    if (options.location) {
+      query = query.ilike('location', `%${options.location}%`);
+    }
+    
+    if (options.bedrooms) {
+      query = query.gte('bedrooms', options.bedrooms);
+    }
+    
+    if (options.bathrooms) {
+      query = query.gte('bathrooms', options.bathrooms);
+    }
+    
+    if (options.type && options.type !== 'all') {
+      query = query.eq('type', options.type);
+    }
+    
+    if (options.status && options.status !== 'all') {
+      query = query.eq('status', options.status);
+    }
+
+    // Filtro de precio (maneja sale_price o rent_price dependiendo del contexto o ambos)
+    if (options.minPrice) {
+      // Esto es un poco complejo porque el precio puede estar en sale_price o rent_price
+      // Por simplicidad, asumiremos que buscamos en cualquiera de los dos si no se especifica tipo
+      query = query.or(`sale_price.gte.${options.minPrice},rent_price.gte.${options.minPrice}`);
+    }
+    
+    if (options.maxPrice) {
+      query = query.or(`sale_price.lte.${options.maxPrice},rent_price.lte.${options.maxPrice}`);
     }
 
     return await paginateQuery<Property>(query, options);
@@ -353,6 +394,52 @@ export async function savePropertyAppointmentSimple(appointmentData: {
       throw new Error(`La cita se guardó pero no se pudo sincronizar: ${syncError.message}`);
     }
     
+    // 📧 NOTIFICACIÓN AUTOMÁTICA AL ASESOR (Req 39)
+    try {
+      if (appointmentData.advisor_id) {
+        const advisor = await getAdvisorById(appointmentData.advisor_id);
+        if (advisor && advisor.email) {
+          const { data: prop } = await supabase
+            .from('properties')
+            .select('title, code')
+            .eq('id', appointmentData.property_id)
+            .single();
+            
+          const propertyTitle = prop?.title || 'Propiedad';
+          const propertyCode = prop?.code || '';
+          
+          const emailService = EmailService.getInstance();
+          await emailService.sendEmail({
+            to: advisor.email,
+            subject: `📅 Nueva Cita: ${propertyTitle}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2563eb;">Nueva Cita Asignada</h2>
+                <p>Hola <strong>${advisor.name}</strong>,</p>
+                <p>Se ha agendado una nueva cita para una de tus propiedades.</p>
+                
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: #1f2937;">Detalles de la Cita:</h3>
+                  <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 10px;"><strong>🏠 Propiedad:</strong> ${propertyTitle} <span style="color: #6b7280;">(${propertyCode})</span></li>
+                    <li style="margin-bottom: 10px;"><strong>👤 Cliente:</strong> ${appointmentData.client_name}</li>
+                    <li style="margin-bottom: 10px;"><strong>📅 Fecha:</strong> ${new Date(appointmentData.appointment_date).toLocaleString('es-CO')}</li>
+                    <li style="margin-bottom: 10px;"><strong>📋 Tipo:</strong> ${appointmentData.appointment_type}</li>
+                    <li style="margin-bottom: 10px;"><strong>📞 Contacto:</strong> ${appointmentData.client_phone || appointmentData.client_email}</li>
+                  </ul>
+                </div>
+                
+                <p>Por favor, revisa tu calendario para más detalles.</p>
+              </div>
+            `
+          });
+          console.log('📧 Notificación enviada al asesor:', advisor.email);
+        }
+      }
+    } catch (emailError) {
+      console.warn('⚠️ Error enviando notificación al asesor:', emailError);
+    }
+
     return savedAppointment;
   } catch (error) {
     console.error('❌ Error en savePropertyAppointmentSimple:', error);
@@ -2260,6 +2347,44 @@ export async function createServiceInquiry(inquiry: Omit<ServiceInquiry, 'id' | 
       console.error('❌ [SUPABASE] Hint:', error.hint);
       throw error;
     }
+
+    // 📧 NOTIFICACIÓN AUTOMÁTICA AL ASESOR (Req 39)
+    try {
+      if (data.assigned_advisor_id) {
+        const advisor = await getAdvisorById(data.assigned_advisor_id);
+        if (advisor && advisor.email) {
+          const emailService = EmailService.getInstance();
+          await emailService.sendEmail({
+            to: advisor.email,
+            subject: `🔔 Nueva Consulta de Servicio: ${data.service_type}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2563eb;">Nueva Consulta Asignada</h2>
+                <p>Hola <strong>${advisor.name}</strong>,</p>
+                <p>Se ha recibido una nueva consulta de servicio asignada a ti.</p>
+                
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: #1f2937;">Detalles de la Consulta:</h3>
+                  <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 10px;"><strong>🛠️ Servicio:</strong> ${data.service_type}</li>
+                    <li style="margin-bottom: 10px;"><strong>👤 Cliente:</strong> ${data.client_name}</li>
+                    <li style="margin-bottom: 10px;"><strong>📞 Teléfono:</strong> ${data.client_phone}</li>
+                    <li style="margin-bottom: 10px;"><strong>📧 Email:</strong> ${data.client_email || 'No proporcionado'}</li>
+                    <li style="margin-bottom: 10px;"><strong>🚨 Urgencia:</strong> ${data.urgency}</li>
+                  </ul>
+                  <p><strong>Detalles adicionales:</strong><br>${data.details || 'Ninguno'}</p>
+                </div>
+                
+                <p>Por favor, contacta al cliente lo antes posible.</p>
+              </div>
+            `
+          });
+          console.log('📧 Notificación enviada al asesor:', advisor.email);
+        }
+      }
+    } catch (emailError) {
+      console.warn('⚠️ Error enviando notificación al asesor:', emailError);
+    }
     
     return data;
     
@@ -3274,12 +3399,32 @@ export async function getPropertyStats(propertyId: number) {
 // Función para incrementar vistas de propiedad
 export async function incrementPropertyViews(propertyId: number, userInfo: any = {}) {
   try {
+    // Intentar usar RPC primero
     const { error } = await supabase.rpc('increment_property_views', {
       prop_id: propertyId,
       user_info: userInfo
     });
 
-    if (error) throw error;
+    if (error) {
+      // Fallback: actualización manual si el RPC falla
+      // console.warn('⚠️ RPC increment_property_views falló, usando fallback:', error.message);
+      
+      const { data: prop, error: readError } = await supabase
+        .from('properties')
+        .select('views')
+        .eq('id', propertyId)
+        .single();
+        
+      if (readError || !prop) return false;
+      
+      const { error: updateError } = await supabase
+        .from('properties')
+        .update({ views: (prop.views || 0) + 1 })
+        .eq('id', propertyId);
+        
+      if (updateError) throw updateError;
+    }
+    
     return true;
   } catch (error) {
     console.error('❌ Error incrementando vistas:', error);
@@ -3926,7 +4071,7 @@ export async function exportProperties(options: ExportOptions = { format: 'xlsx'
     }));
 
     // Generar archivo según formato
-    return generateExportFile(exportData, options.format);
+    return await generateExportFile(exportData, options.format);
 
   } catch (error) {
     console.error('❌ Error en exportProperties:', error);
@@ -3991,7 +4136,7 @@ export async function exportClients(options: ExportOptions = { format: 'xlsx' })
     }));
 
     // Generar archivo según formato
-    return generateExportFile(exportData, options.format);
+    return await generateExportFile(exportData, options.format);
 
   } catch (error) {
     console.error('❌ Error en exportClients:', error);
@@ -4079,7 +4224,7 @@ export async function exportContracts(options: ExportOptions = { format: 'xlsx' 
     }));
 
     // Generar archivo según formato
-    return generateExportFile(exportData, options.format);
+    return await generateExportFile(exportData, options.format);
 
   } catch (error) {
     console.error('❌ Error en exportContracts:', error);
@@ -4098,9 +4243,12 @@ export async function exportAllData(options: ExportOptions = { format: 'xlsx' })
     const stats = await getDashboardStats();
 
     // Crear libro de Excel con múltiples hojas
-    const workbook = XLSX.utils.book_new();
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Sistema Inmobiliario';
+    workbook.created = new Date();
 
     // Hoja de resumen
+    const summarySheet = workbook.addWorksheet('Resumen');
     const summaryData = [
       { 'Métrica': 'Total Propiedades', 'Valor': stats.properties.total },
       { 'Métrica': 'Propiedades en Venta', 'Valor': stats.properties.forSale },
@@ -4121,8 +4269,11 @@ export async function exportAllData(options: ExportOptions = { format: 'xlsx' })
       { 'Métrica': 'Consultas Este Mes', 'Valor': stats.inquiries.thisMonth }
     ];
 
-    const summarySheet = XLSX.utils.json_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen');
+    summarySheet.columns = [
+      { header: 'Métrica', key: 'Métrica', width: 30 },
+      { header: 'Valor', key: 'Valor', width: 15 }
+    ];
+    summarySheet.addRows(summaryData);
 
     // Obtener y agregar datos de propiedades
     const { data: properties } = await supabase
@@ -4146,8 +4297,11 @@ export async function exportAllData(options: ExportOptions = { format: 'xlsx' })
         'Fecha Creación': p.created_at ? new Date(p.created_at).toLocaleDateString('es-ES') : ''
       }));
 
-      const propertiesSheet = XLSX.utils.json_to_sheet(propertiesData);
-      XLSX.utils.book_append_sheet(workbook, propertiesSheet, 'Propiedades');
+      const propertiesSheet = workbook.addWorksheet('Propiedades');
+      if (propertiesData.length > 0) {
+        propertiesSheet.columns = Object.keys(propertiesData[0]).map(key => ({ header: key, key, width: 20 }));
+        propertiesSheet.addRows(propertiesData);
+      }
     }
 
     // Obtener y agregar datos de clientes
@@ -4167,8 +4321,11 @@ export async function exportAllData(options: ExportOptions = { format: 'xlsx' })
         'Fecha Creación': c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES') : ''
       }));
 
-      const clientsSheet = XLSX.utils.json_to_sheet(clientsData);
-      XLSX.utils.book_append_sheet(workbook, clientsSheet, 'Clientes');
+      const clientsSheet = workbook.addWorksheet('Clientes');
+      if (clientsData.length > 0) {
+        clientsSheet.columns = Object.keys(clientsData[0]).map(key => ({ header: key, key, width: 20 }));
+        clientsSheet.addRows(clientsData);
+      }
     }
 
     // Obtener y agregar datos de contratos
@@ -4195,14 +4352,16 @@ export async function exportAllData(options: ExportOptions = { format: 'xlsx' })
         'Fecha Creación': c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES') : ''
       }));
 
-      const contractsSheet = XLSX.utils.json_to_sheet(contractsData);
-      XLSX.utils.book_append_sheet(workbook, contractsSheet, 'Contratos');
+      const contractsSheet = workbook.addWorksheet('Contratos');
+      if (contractsData.length > 0) {
+        contractsSheet.columns = Object.keys(contractsData[0]).map(key => ({ header: key, key, width: 20 }));
+        contractsSheet.addRows(contractsData);
+      }
     }
 
     // Generar archivo Excel
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-
-    return excelBuffer;
+    const buffer = await workbook.xlsx.writeBuffer();
+    return new Uint8Array(buffer);
 
   } catch (error) {
     console.error('❌ Error en exportAllData:', error);
@@ -4213,7 +4372,7 @@ export async function exportAllData(options: ExportOptions = { format: 'xlsx' })
 /**
  * Función auxiliar para generar archivo de exportación
  */
-function generateExportFile(data: any[], format: 'xlsx' | 'csv' | 'json'): string | Uint8Array {
+async function generateExportFile(data: any[], format: 'xlsx' | 'csv' | 'json'): Promise<string | Uint8Array> {
   if (format === 'json') {
     return JSON.stringify(data, null, 2);
   }
@@ -4241,11 +4400,16 @@ function generateExportFile(data: any[], format: 'xlsx' | 'csv' | 'json'): strin
   }
 
   // Formato XLSX
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Datos');
+  
+  if (data.length > 0) {
+    worksheet.columns = Object.keys(data[0]).map(key => ({ header: key, key, width: 20 }));
+    worksheet.addRows(data);
+  }
 
-  return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as Uint8Array;
+  const buffer = await workbook.xlsx.writeBuffer();
+  return new Uint8Array(buffer);
 }
 
 // ==========================================
@@ -4462,3 +4626,276 @@ export function sendWhatsAppToClient(
     throw error;
   }
 }
+
+/**
+ * Liberar propiedad (Cierre de contrato y cambio de estado)
+ * Req 16: Liberar propiedad (cierre de contrato asociado).
+ */
+export async function releaseProperty(propertyId: number, notes?: string): Promise<boolean> {
+  try {
+    console.log(`🔓 Liberando propiedad ${propertyId}...`);
+
+    // 1. Actualizar estado de la propiedad a 'available'
+    const { error: propError } = await supabase
+      .from('properties')
+      .update({ status: 'available' })
+      .eq('id', propertyId);
+
+    if (propError) {
+      console.error('❌ Error actualizando estado de propiedad:', propError);
+      throw propError;
+    }
+
+    // 2. Buscar contratos activos asociados a esta propiedad
+    const { data: activeContracts, error: contractsError } = await supabase
+      .from('contracts')
+      .select('id, client_id')
+      .eq('property_id', propertyId)
+      .eq('status', 'active');
+
+    if (contractsError) {
+      console.warn('⚠️ Error buscando contratos activos:', contractsError);
+    } else if (activeContracts && activeContracts.length > 0) {
+      console.log(`📝 Encontrados ${activeContracts.length} contratos activos. Finalizando...`);
+      
+      // 3. Marcar contratos como 'completed'
+      const contractIds = activeContracts.map(c => c.id);
+      const { error: updateContractsError } = await supabase
+        .from('contracts')
+        .update({ 
+          status: 'completed',
+          end_date: new Date().toISOString().split('T')[0]
+        })
+        .in('id', contractIds);
+
+      if (updateContractsError) {
+        console.error('❌ Error finalizando contratos:', updateContractsError);
+      }
+
+      // 4. Actualizar relaciones cliente-propiedad a 'completed'
+      for (const contract of activeContracts) {
+        const { error: relError } = await supabase
+          .from('client_property_relations')
+          .update({ status: 'completed' })
+          .eq('client_id', contract.client_id)
+          .eq('property_id', propertyId)
+          .eq('relation_type', 'tenant')
+          .eq('status', 'active');
+
+        if (relError) {
+          console.warn(`⚠️ Error actualizando relación para cliente ${contract.client_id}:`, relError);
+        }
+      }
+    }
+
+    // 5. Registrar en historial de propiedad
+    try {
+      await supabase.from('property_history').insert({
+        property_id: propertyId,
+        action: 'release',
+        description: notes || 'Propiedad liberada manualmente',
+        created_at: new Date().toISOString()
+      });
+    } catch (histError) {
+      console.warn('⚠️ Error registrando historial:', histError);
+    }
+
+    console.log('✅ Propiedad liberada exitosamente');
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error en releaseProperty:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtener historial de precios de una propiedad
+ * Req 74: Gestión de precios históricos por propiedad
+ */
+export async function getPropertyPriceHistory(propertyId: number) {
+  try {
+    const { data, error } = await supabase
+      .from('property_price_history')
+      .select('*')
+      .eq('property_id', propertyId)
+      .order('changed_at', { ascending: false });
+
+    if (error) {
+      console.warn('⚠️ Error obteniendo historial de precios (puede que la tabla no exista aún):', error.message);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en getPropertyPriceHistory:', error);
+    return [];
+  }
+}
+
+// ==========================================
+// NOTAS INTERNAS (Req 71)
+// ==========================================
+
+export const getPropertyInternalNotes = async (propertyId: number) => {
+  try {
+    // Intentamos obtener las notas. Si la tabla no existe, fallará.
+    const { data, error } = await supabase
+      .from('property_internal_notes')
+      .select('*')
+      .eq('property_id', propertyId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('⚠️ Error obteniendo notas internas:', error.message);
+      return [];
+    }
+    
+    // Enriquecer con información del usuario si es posible (opcional)
+    // Por ahora devolvemos los datos crudos
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en getPropertyInternalNotes:', error);
+    return [];
+  }
+};
+
+export const createPropertyInternalNote = async (propertyId: number, content: string) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuario no autenticado');
+
+    const { data, error } = await supabase
+      .from('property_internal_notes')
+      .insert([
+        {
+          property_id: propertyId,
+          content,
+          created_by: user.id
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('❌ Error creando nota interna:', error);
+    throw error;
+  }
+};
+
+export const deletePropertyInternalNote = async (noteId: number) => {
+  try {
+    const { error } = await supabase
+      .from('property_internal_notes')
+      .delete()
+      .eq('id', noteId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('❌ Error eliminando nota interna:', error);
+    throw error;
+  }
+};
+
+// ==========================================
+// AMENIDADES (Req 77)
+// ==========================================
+
+export interface Amenity {
+  id: number;
+  name: string;
+  category: string;
+  icon_name?: string;
+}
+
+export const getAmenities = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('amenities')
+      .select('*')
+      .order('category', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.warn('⚠️ Error obteniendo amenidades (tabla puede no existir):', error.message);
+      return [];
+    }
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en getAmenities:', error);
+    return [];
+  }
+};
+
+export const createAmenity = async (amenity: Omit<Amenity, 'id'>) => {
+  try {
+    const { data, error } = await supabase
+      .from('amenities')
+      .insert([amenity])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('❌ Error creando amenidad:', error);
+    throw error;
+  }
+};
+
+export const deleteAmenity = async (id: number) => {
+  try {
+    const { error } = await supabase
+      .from('amenities')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('❌ Error eliminando amenidad:', error);
+    throw error;
+  }
+};
+
+// ==========================================
+// LOGS DE AUDITORÍA (Req 50)
+// ==========================================
+
+export interface AuditLog {
+  id: number;
+  table_name: string;
+  record_id: string;
+  action: 'INSERT' | 'UPDATE' | 'DELETE';
+  old_data: any;
+  new_data: any;
+  changed_by: string;
+  user_email: string;
+  changed_at: string;
+}
+
+export const getAuditLogs = async (limit = 100) => {
+  try {
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .order('changed_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('⚠️ Error obteniendo logs de auditoría:', error.message);
+      return [];
+    }
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en getAuditLogs:', error);
+    return [];
+  }
+};
+
+
+
+

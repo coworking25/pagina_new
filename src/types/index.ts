@@ -35,6 +35,7 @@ export interface Property {
   cover_image?: string;  // URL de la imagen de portada seleccionada
   cover_video?: string;  // URL del video destacado
   amenities: string[];
+  tags?: string[]; // Etiquetas personalizadas (Req 76)
   featured: boolean;
   description?: string;
   latitude?: number;
