@@ -86,7 +86,7 @@ const FloatingNewsBubbles: React.FC<FloatingNewsBubblesProps> = ({
   const [selectedNews, setSelectedNews] = useState<RealEstateNews | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isMobile = className.includes('mobile-news');
-  const [isExpanded, setIsExpanded] = useState(false); // SIEMPRE colapsado al inicio
+  const [isExpanded, setIsExpanded] = useState(true); // Expandido por defecto
 
   // Cargar noticias desde Supabase
   useEffect(() => {
@@ -162,14 +162,14 @@ const FloatingNewsBubbles: React.FC<FloatingNewsBubblesProps> = ({
               console.log('� Abriendo noticias');
               setIsExpanded(true);
             }}
-            className={`${isMobile ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700 shadow-2xl p-5 w-16 h-16 animate-pulse' : 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-xl p-4'} text-white rounded-full hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 z-[9999]`}
+            className={`${isMobile ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700 shadow-xl p-3 w-14 h-14' : 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-xl p-4'} text-white rounded-full hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 z-[9999]`}
             type="button"
             style={{ position: 'relative' }}
           >
-            <Newspaper className={`${isMobile ? 'w-8 h-8' : 'w-6 h-6'}`} />
+            <Newspaper className={`${isMobile ? 'w-6 h-6' : 'w-6 h-6'}`} />
             {!isMobile && <span className="font-bold">{news.length}</span>}
             {isMobile && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
                 {news.length}
               </span>
             )}
