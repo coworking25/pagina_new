@@ -2050,7 +2050,9 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
       // - availability_type='sale' → status='sale'
       // - availability_type='both' → status='available'
       // Incluir: available, sale, rent (excluir: sold, rented, reserved, maintenance, pending)
-      query = query.in('status', ['available', 'sale', 'rent']);
+      query = query
+        .in('status', ['available', 'sale', 'rent'])
+        .eq('is_hidden', false); // 👁️ Excluir propiedades ocultas de la web pública
     }
 
     const { data, error } = await query;
@@ -2137,6 +2139,7 @@ export async function getProperties(onlyAvailable: boolean = false): Promise<Pro
         latitude: prop.latitude,
         longitude: prop.longitude,
         advisor_id: prop.advisor_id,
+        is_hidden: prop.is_hidden || false, // 👁️ Estado de visibilidad
         created_at: prop.created_at,
         updated_at: prop.updated_at
       };
@@ -2158,6 +2161,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       .from('properties')
       .select('*')
       .eq('featured', true)
+      .eq('is_hidden', false) // 👁️ Solo mostrar propiedades no ocultas
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(6);
@@ -2173,6 +2177,7 @@ export async function getFeaturedProperties(): Promise<Property[]> {
       const { data: recentData, error: recentError } = await supabase
         .from('properties')
         .select('*')
+        .eq('is_hidden', false) // 👁️ Solo mostrar propiedades no ocultas
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(6);
@@ -3878,6 +3883,138 @@ export async function updatePropertyStatus(propertyId: number, newStatus: string
   } catch (error) {
     console.error('❌ Error en updatePropertyStatus:', error);
     throw error;
+  }
+}
+
+// 👁️ Función para ocultar/mostrar propiedades
+export async function togglePropertyVisibility(propertyId: number, isHidden: boolean) {
+  try {
+    console.log(`👁️ ${isHidden ? 'Ocultando' : 'Mostrando'} propiedad ${propertyId}`);
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .update({ 
+        is_hidden: isHidden,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', propertyId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error al cambiar visibilidad:', error);
+      throw error;
+    }
+
+    // Registrar actividad
+    await logPropertyActivity(propertyId, isHidden ? 'property_hidden' : 'property_shown', { 
+      is_hidden: isHidden,
+      action: isHidden ? 'Propiedad ocultada de la web pública' : 'Propiedad restaurada a la web pública'
+    });
+
+    console.log(`✅ Visibilidad actualizada para propiedad ${propertyId}`);
+    return data;
+  } catch (error) {
+    console.error('❌ Error en togglePropertyVisibility:', error);
+    throw error;
+  }
+}
+
+// 👁️ Función para obtener solo propiedades ocultas
+export async function getHiddenProperties(): Promise<Property[]> {
+  try {
+    console.log('👁️ Obteniendo propiedades ocultas');
+    
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('is_hidden', true)
+      .is('deleted_at', null)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error al obtener propiedades ocultas:', error);
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    // Mapear datos igual que en getProperties
+    const properties: Property[] = data.map(prop => {
+      let processedImages: string[] = [];
+      
+      if (prop.images && Array.isArray(prop.images)) {
+        processedImages = prop.images.map((img: string) => getPublicImageUrl(img));
+      } else if (typeof prop.images === 'string') {
+        try {
+          const parsed = JSON.parse(prop.images);
+          if (Array.isArray(parsed)) {
+            processedImages = parsed.map((img: string) => getPublicImageUrl(img));
+          } else {
+            processedImages = [getPublicImageUrl(prop.images)];
+          }
+        } catch {
+          processedImages = [getPublicImageUrl(prop.images)];
+        }
+      }
+      
+      if (processedImages.length === 0) {
+        processedImages = ['https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg'];
+      }
+
+      let processedVideos: any[] = [];
+      if (prop.videos && Array.isArray(prop.videos)) {
+        processedVideos = prop.videos;
+      } else if (typeof prop.videos === 'string') {
+        try {
+          const parsed = JSON.parse(prop.videos);
+          if (Array.isArray(parsed)) {
+            processedVideos = parsed;
+          }
+        } catch (e) {
+          console.warn('No se pudo parsear videos:', e);
+          processedVideos = [];
+        }
+      }
+
+      return {
+        id: prop.id,
+        code: prop.code,
+        title: prop.title,
+        location: prop.location,
+        price: prop.price,
+        availability_type: prop.availability_type,
+        sale_price: prop.sale_price,
+        rent_price: prop.rent_price,
+        bedrooms: prop.bedrooms,
+        bathrooms: prop.bathrooms,
+        area: prop.area,
+        estrato: prop.estrato,
+        type: prop.type as 'apartment' | 'house' | 'office' | 'commercial',
+        status: prop.status as 'sale' | 'rent' | 'both' | 'sold' | 'rented',
+        images: processedImages,
+        videos: processedVideos,
+        cover_image: prop.cover_image,
+        cover_video: prop.cover_video,
+        amenities: prop.amenities || [],
+        featured: prop.featured || false,
+        description: prop.description,
+        latitude: prop.latitude,
+        longitude: prop.longitude,
+        advisor_id: prop.advisor_id,
+        is_hidden: prop.is_hidden || false,
+        created_at: prop.created_at,
+        updated_at: prop.updated_at
+      };
+    });
+
+    console.log(`✅ ${properties.length} propiedades ocultas obtenidas`);
+    return properties;
+  } catch (error) {
+    console.error('❌ Error en getHiddenProperties:', error);
+    return [];
   }
 }
 

@@ -46,7 +46,9 @@ export interface Property {
   virtual_tour_url?: string;
   created_at?: string;
   updated_at?: string;
-  // 💰 Configuración de Administración (para arriendos)
+  // �️ Sistema de visibilidad
+  is_hidden?: boolean; // Indica si la propiedad está oculta de la web pública
+  // �💰 Configuración de Administración (para arriendos)
   admin_included_in_rent?: boolean;
   admin_paid_by?: 'tenant' | 'landlord' | 'split';
   admin_payment_method?: 'separate' | 'included';

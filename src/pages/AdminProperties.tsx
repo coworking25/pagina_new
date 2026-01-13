@@ -85,7 +85,7 @@ import {
   Minus,
   Tag
 } from 'lucide-react';
-import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, supabase, getProperties, getPropertyPriceHistory } from '../lib/supabase';
+import { createProperty, updateProperty, deleteProperty, deletePropertyImage, getAdvisorById, getAdvisors, getPropertyStats, getPropertyActivity, generatePropertyCode, getActiveTenantsForProperties, updatePropertyStatus, togglePropertyVisibility, getHiddenProperties, supabase, getProperties, getPropertyPriceHistory } from '../lib/supabase';
 import { bulkUploadPropertyImages } from '../lib/supabase-images';
 import { bulkUploadPropertyVideos, deletePropertyVideo } from '../lib/supabase-videos';
 import { Property, Advisor, PropertyVideo } from '../types';
@@ -119,6 +119,7 @@ function AdminProperties() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [featuredFilter, setFeaturedFilter] = useState(false); // Nuevo filtro para destacadas
+  const [showHidden, setShowHidden] = useState(false); // 👁️ Filtro para propiedades ocultas
 
   // Filtros avanzados (Req 5)
   const [bedroomsFilter, setBedroomsFilter] = useState<string>('');
@@ -526,6 +527,15 @@ function AdminProperties() {
 
     let filtered = [...allProperties];
 
+    // 👁️ Filtro por visibilidad (ocultas vs visibles)
+    if (showHidden) {
+      // Mostrar solo propiedades ocultas
+      filtered = filtered.filter(p => p.is_hidden === true);
+    } else {
+      // Mostrar solo propiedades visibles (no ocultas)
+      filtered = filtered.filter(p => !p.is_hidden);
+    }
+
     // Filtro por búsqueda
     if (search.trim()) {
       const searchLower = search.toLowerCase().trim();
@@ -609,7 +619,7 @@ function AdminProperties() {
     });
 
     return filtered;
-  }, [allProperties, search, statusFilter, typeFilter, sortBy, sortOrder, featuredFilter, bedroomsFilter, bathroomsFilter, locationFilter, minPriceFilter, maxPriceFilter]);
+  }, [allProperties, search, statusFilter, typeFilter, sortBy, sortOrder, featuredFilter, bedroomsFilter, bathroomsFilter, locationFilter, minPriceFilter, maxPriceFilter, showHidden]);
 
   // Sincronizar filteredProperties con properties state
   useEffect(() => {
@@ -1997,6 +2007,26 @@ function AdminProperties() {
                 <option value="commercial">Local</option>
               </select>
             </div>
+
+            {/* 👁️ Toggle Propiedades Ocultas */}
+            <div className="sm:col-span-2 lg:col-span-1">
+              <button
+                onClick={() => setShowHidden(!showHidden)}
+                className={`w-full h-full px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
+                  showHidden
+                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-2 border-orange-300 dark:border-orange-700 shadow-lg'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                <Eye className={`w-5 h-5 ${showHidden ? '' : 'opacity-50'}`} />
+                <span>{showHidden ? '📂 Propiedades Ocultas' : '👁️ Ver Ocultas'}</span>
+                {showHidden && (
+                  <span className="ml-auto bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 px-2 py-0.5 rounded-full text-xs font-bold">
+                    {allProperties.filter(p => p.is_hidden).length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Advanced Filters Toggle */}
@@ -2085,6 +2115,39 @@ function AdminProperties() {
           </AnimatePresence>
         </FloatingCard>
       </motion.div>
+
+      {/* 👁️ Banner informativo cuando se ven propiedades ocultas */}
+      {showHidden && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <div className="bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 border-l-4 border-orange-500 rounded-lg p-4 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <Eye className="w-6 h-6 text-orange-600 dark:text-orange-400 line-through" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-orange-900 dark:text-orange-100 mb-1">
+                  📂 Carpeta de Propiedades Ocultas
+                </h3>
+                <p className="text-xs text-orange-800 dark:text-orange-200">
+                  Estás viendo propiedades ocultas que <strong>no aparecen en la página web pública</strong>. 
+                  Para restaurar una propiedad a la web, haz clic en el botón de ojo en la tarjeta o en los detalles.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowHidden(false)}
+                className="flex-shrink-0 p-2 text-orange-600 hover:bg-orange-200 dark:hover:bg-orange-800/30 rounded-lg transition-colors"
+                title="Volver a propiedades visibles"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Properties Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -2194,6 +2257,16 @@ function AdminProperties() {
                   <div className="absolute top-4 right-4">
                     <div className="p-2 bg-yellow-500 rounded-full shadow-lg">
                       <Star className="w-4 h-4 text-white fill-current" />
+                    </div>
+                  </div>
+                )}
+
+                {/* 👁️ Hidden Badge */}
+                {property.is_hidden && (
+                  <div className="absolute top-4 left-4">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white rounded-lg shadow-lg text-xs font-bold">
+                      <Eye className="w-3 h-3 line-through" />
+                      <span>OCULTA</span>
                     </div>
                   </div>
                 )}
@@ -2316,6 +2389,30 @@ function AdminProperties() {
                     >
                       <Edit className="w-5 h-5" />
                     </motion.button>
+
+                    {/* 👁️ Botón Ocultar/Mostrar */}
+                    <motion.button
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await togglePropertyVisibility(property.id, !property.is_hidden);
+                          await refreshProperties();
+                        } catch (error) {
+                          console.error('Error:', error);
+                          alert('Error al cambiar visibilidad');
+                        }
+                      }}
+                      className={`p-2 rounded-lg transition-all duration-200 hover:shadow-md ${
+                        property.is_hidden
+                          ? 'text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30'
+                          : 'text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/30'
+                      }`}
+                      title={property.is_hidden ? 'Mostrar en web' : 'Ocultar de web'}
+                    >
+                      <Eye className={`w-5 h-5 ${property.is_hidden ? '' : 'line-through'}`} />
+                    </motion.button>
                     
                     <motion.button
                       whileHover={{ scale: 1.15 }}
@@ -2351,13 +2448,27 @@ function AdminProperties() {
 
       {properties.length === 0 && !isLoading && (
         <div className="text-center py-12">
-          <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            No hay propiedades encontradas
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            No se encontraron propiedades que coincidan con los filtros aplicados.
-          </p>
+          {showHidden ? (
+            <>
+              <Eye className="w-16 h-16 text-orange-400 mx-auto mb-4 line-through" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No hay propiedades ocultas
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                Actualmente no tienes propiedades ocultas de la vista pública.
+              </p>
+            </>
+          ) : (
+            <>
+              <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No hay propiedades encontradas
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                No se encontraron propiedades que coincidan con los filtros aplicados.
+              </p>
+            </>
+          )}
         </div>
       )}
 
@@ -3619,6 +3730,32 @@ function AdminProperties() {
                     >
                       <Edit className="h-5 w-5" />
                       <span>Editar Propiedad</span>
+                    </button>
+
+                    {/* 👁️ Ocultar/Mostrar Propiedad */}
+                    <button 
+                      onClick={async () => {
+                        const action = selectedProperty.is_hidden ? 'mostrar' : 'ocultar';
+                        if (!window.confirm(`¿Estás seguro de ${action} esta propiedad ${selectedProperty.is_hidden ? 'en' : 'de'} la web pública?`)) return;
+                        
+                        try {
+                          await togglePropertyVisibility(selectedProperty.id, !selectedProperty.is_hidden);
+                          await refreshProperties();
+                          setShowDetailsModal(false);
+                          alert(`Propiedad ${selectedProperty.is_hidden ? 'restaurada' : 'ocultada'} exitosamente`);
+                        } catch (error) {
+                          console.error('Error:', error);
+                          alert('Error al cambiar visibilidad de la propiedad');
+                        }
+                      }}
+                      className={`w-full flex items-center justify-center space-x-2 border px-4 py-3 rounded-lg transition-colors ${
+                        selectedProperty.is_hidden
+                          ? 'border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'
+                          : 'border-orange-300 dark:border-orange-600 text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                      }`}
+                    >
+                      <Eye className={`h-5 w-5 ${selectedProperty.is_hidden ? '' : 'line-through'}`} />
+                      <span>{selectedProperty.is_hidden ? 'Mostrar en Web' : 'Ocultar de Web'}</span>
                     </button>
                   </div>
 
