@@ -86,7 +86,7 @@ const FloatingNewsBubbles: React.FC<FloatingNewsBubblesProps> = ({
   const [selectedNews, setSelectedNews] = useState<RealEstateNews | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isMobile = className.includes('mobile-news');
-  const [isExpanded, setIsExpanded] = useState(!isMobile); // Colapsado por defecto en móvil
+  const [isExpanded, setIsExpanded] = useState(false); // SIEMPRE colapsado al inicio
 
   // Cargar noticias desde Supabase
   useEffect(() => {
@@ -155,22 +155,32 @@ const FloatingNewsBubbles: React.FC<FloatingNewsBubblesProps> = ({
     <>
       {/* Contenedor con toggle */}
       <div className={`relative ${className}`}>
-        {/* Botón flotante para móvil (cuando está colapsado) */}
-        {isMobile && !isExpanded && (
+        {/* Botón flotante cuando está colapsado */}
+        {!isExpanded && (
           <button
-            onClick={() => setIsExpanded(true)}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 p-4 flex items-center gap-2"
+            onClick={() => {
+              console.log('� Abriendo noticias');
+              setIsExpanded(true);
+            }}
+            className={`${isMobile ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700 shadow-2xl p-5 w-16 h-16 animate-pulse' : 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-xl p-4'} text-white rounded-full hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-2 z-[9999]`}
+            type="button"
+            style={{ position: 'relative' }}
           >
-            <Newspaper className="w-6 h-6" />
-            <span className="font-bold">{news.length}</span>
+            <Newspaper className={`${isMobile ? 'w-8 h-8' : 'w-6 h-6'}`} />
+            {!isMobile && <span className="font-bold">{news.length}</span>}
+            {isMobile && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                {news.length}
+              </span>
+            )}
           </button>
         )}
 
         {/* Panel expandido */}
         {isExpanded && (
-          <div className={`${isMobile ? 'fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-y-auto' : ''}`}>
-            {/* Header con título y botón toggle */}
-            <div className={`flex items-center justify-between ${isMobile ? 'p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10 shadow-sm' : 'mb-4 px-2'}`}>
+          <div className={`${isMobile ? 'fixed inset-0 z-[9999] flex flex-col' : ''}`}>
+            {/* Header con título y botón toggle - SIEMPRE VISIBLE EN MÓVIL */}
+            <div className={`${isMobile ? 'flex-shrink-0 p-4 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg' : 'mb-4 px-2'} flex items-center justify-between`}>
               <div className="flex items-center gap-2">
                 <Newspaper className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'} text-green-600`} />
                 <h3 className={`${isMobile ? 'text-base' : 'text-sm'} font-bold text-gray-900 dark:text-white`}>
@@ -181,24 +191,33 @@ const FloatingNewsBubbles: React.FC<FloatingNewsBubblesProps> = ({
                 </span>
               </div>
               <button
-                onClick={() => setIsExpanded(false)}
-                className={`${isMobile ? 'p-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30' : 'p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800'} rounded-lg transition-colors flex items-center gap-2`}
-                title="Cerrar noticias"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔴 Cerrando noticias', { isMobile });
+                  setIsExpanded(false);
+                }}
+                className={`${isMobile ? 'p-3 bg-red-500 hover:bg-red-600 active:bg-red-700 shadow-lg min-w-[100px]' : 'p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700'} rounded-lg transition-all flex items-center justify-center gap-2`}
+                title={isMobile ? 'Cerrar noticias' : 'Ocultar noticias'}
+                type="button"
               >
                 {isMobile ? (
                   <>
-                    <X className="w-6 h-6 text-red-600 dark:text-red-400" />
-                    <span className="text-sm font-medium text-red-600 dark:text-red-400">Cerrar</span>
+                    <X className="w-6 h-6 text-white" />
+                    <span className="text-sm font-bold text-white">Cerrar</span>
                   </>
                 ) : (
-                  <EyeOff className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <>
+                    <EyeOff className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Ocultar</span>
+                  </>
                 )}
               </button>
             </div>
 
-            {/* Lista de noticias */}
-            <div className={`relative overflow-y-auto ${isMobile ? 'p-4 pb-20' : 'max-h-[calc(100vh-200px)] pr-2'}`}>
-              <div className="space-y-3">
+            {/* Lista de noticias con scroll */}
+            <div className={`${isMobile ? 'flex-1 overflow-y-auto bg-white dark:bg-gray-900' : 'max-h-[calc(100vh-200px)] overflow-y-auto'} relative`}>
+              <div className={`${isMobile ? 'p-4 pb-20' : 'pr-2'} space-y-3`}>
               {news.map((newsItem, index) => {
                 const Icon = categoryIcons[newsItem.category];
                 const colors = categoryColors[newsItem.category];

@@ -39,12 +39,12 @@ const Home: React.FC = () => {
     return (
       <div className="min-h-screen relative">
         {/* Burbujas flotantes de noticias - Desktop */}
-        <div className="hidden lg:block fixed top-20 right-4 z-40 w-96 max-w-md">
+        <div className="hidden lg:block fixed top-20 right-4 z-[999] w-96 max-w-md">
           <FloatingNewsBubbles maxBubbles={8} />
         </div>
 
         {/* Noticias móvil/tablet - Botón flotante */}
-        <div className="lg:hidden fixed bottom-20 right-4 z-40">
+        <div className="lg:hidden fixed bottom-20 right-4 z-[999]">
           <FloatingNewsBubbles maxBubbles={6} className="mobile-news" />
         </div>
         
