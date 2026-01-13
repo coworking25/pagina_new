@@ -18,7 +18,8 @@ import {
   HelpCircle,
   User,
   AlertTriangle,
-  Shield
+  Shield,
+  Newspaper
 } from 'lucide-react';
 import { useAdminBadges } from '../../contexts/AdminBadgeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -118,6 +119,12 @@ function AdminLayout() {
       icon: HelpCircle,
       path: '/admin/service-inquiries',
       badge: badges.clients
+    },
+    {
+      id: 'news',
+      label: 'Noticias',
+      icon: Newspaper,
+      path: '/admin/news'
     },
     {
       id: 'reports',

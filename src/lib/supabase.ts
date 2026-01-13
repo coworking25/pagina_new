@@ -5033,6 +5033,239 @@ export const getAuditLogs = async (limit = 100) => {
   }
 };
 
+// ==========================================
+// NOTICIAS INMOBILIARIAS (Real Estate News)
+// ==========================================
+
+export interface RealEstateNews {
+  id: number;
+  title: string;
+  summary: string;
+  content: string;
+  category: 'market' | 'construction' | 'economy' | 'urbanism' | 'legal' | 'trends';
+  importance: number; // 1-5 scale
+  location: string;
+  source: string;
+  source_url?: string;
+  published_at: string;
+  expires_at?: string;
+  is_active: boolean;
+  views: number;
+  clicks: number;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
+/**
+ * Obtiene noticias inmobiliarias activas
+ * @param maxItems - Número máximo de noticias a retornar (por defecto 10)
+ * @returns Array de noticias activas ordenadas por importancia y fecha
+ */
+export const getActiveRealEstateNews = async (maxItems: number = 10): Promise<RealEstateNews[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('real_estate_news')
+      .select('*')
+      .eq('is_active', true)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order('importance', { ascending: false })
+      .order('published_at', { ascending: false })
+      .limit(maxItems);
+
+    if (error) {
+      console.error('❌ Error obteniendo noticias activas:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en getActiveRealEstateNews:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene todas las noticias (para panel de administración)
+ * @returns Array de todas las noticias ordenadas por fecha
+ */
+export const getAllRealEstateNews = async (): Promise<RealEstateNews[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('real_estate_news')
+      .select('*')
+      .order('published_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error obteniendo todas las noticias:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error en getAllRealEstateNews:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene una noticia específica por ID
+ */
+export const getRealEstateNewsById = async (id: number): Promise<RealEstateNews | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('real_estate_news')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('❌ Error obteniendo noticia:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('❌ Error en getRealEstateNewsById:', error);
+    return null;
+  }
+};
+
+/**
+ * Crea una nueva noticia inmobiliaria
+ */
+export const createRealEstateNews = async (
+  newsData: Omit<RealEstateNews, 'id' | 'views' | 'clicks' | 'created_at' | 'updated_at'>
+): Promise<RealEstateNews | null> => {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    
+    const { data, error } = await supabase
+      .from('real_estate_news')
+      .insert([{
+        ...newsData,
+        created_by: userData?.user?.id
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error creando noticia:', error);
+      throw error;
+    }
+
+    console.log('✅ Noticia creada exitosamente:', data.id);
+    return data;
+  } catch (error) {
+    console.error('❌ Error en createRealEstateNews:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualiza una noticia existente
+ */
+export const updateRealEstateNews = async (
+  id: number,
+  newsData: Partial<Omit<RealEstateNews, 'id' | 'views' | 'clicks' | 'created_at' | 'updated_at' | 'created_by'>>
+): Promise<RealEstateNews | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('real_estate_news')
+      .update(newsData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error actualizando noticia:', error);
+      throw error;
+    }
+
+    console.log('✅ Noticia actualizada exitosamente:', id);
+    return data;
+  } catch (error) {
+    console.error('❌ Error en updateRealEstateNews:', error);
+    throw error;
+  }
+};
+
+/**
+ * Elimina una noticia (soft delete - la marca como inactiva)
+ */
+export const deleteRealEstateNews = async (id: number): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('real_estate_news')
+      .update({ is_active: false })
+      .eq('id', id);
+
+    if (error) {
+      console.error('❌ Error eliminando noticia:', error);
+      throw error;
+    }
+
+    console.log('✅ Noticia eliminada (desactivada) exitosamente:', id);
+    return true;
+  } catch (error) {
+    console.error('❌ Error en deleteRealEstateNews:', error);
+    throw error;
+  }
+};
+
+/**
+ * Incrementa el contador de vistas de una noticia
+ */
+export const incrementNewsViews = async (id: number): Promise<void> => {
+  try {
+    const { error } = await supabase.rpc('increment_news_views', { news_id: id });
+
+    if (error) {
+      console.error('❌ Error incrementando vistas:', error);
+    }
+  } catch (error) {
+    console.error('❌ Error en incrementNewsViews:', error);
+  }
+};
+
+/**
+ * Incrementa el contador de clics de una noticia
+ */
+export const incrementNewsClicks = async (id: number): Promise<void> => {
+  try {
+    const { error } = await supabase.rpc('increment_news_clicks', { news_id: id });
+
+    if (error) {
+      console.error('❌ Error incrementando clics:', error);
+    }
+  } catch (error) {
+    console.error('❌ Error en incrementNewsClicks:', error);
+  }
+};
+
+/**
+ * Activa/desactiva una noticia
+ */
+export const toggleNewsStatus = async (id: number, isActive: boolean): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('real_estate_news')
+      .update({ is_active: isActive })
+      .eq('id', id);
+
+    if (error) {
+      console.error('❌ Error cambiando estado de noticia:', error);
+      throw error;
+    }
+
+    console.log(`✅ Noticia ${isActive ? 'activada' : 'desactivada'} exitosamente:`, id);
+    return true;
+  } catch (error) {
+    console.error('❌ Error en toggleNewsStatus:', error);
+    throw error;
+  }
+};
+
 
 
 

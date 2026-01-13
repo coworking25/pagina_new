@@ -44,6 +44,7 @@ const AdminInquiries = lazy(() => import('./pages/AdminInquiries'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 const AdminProfile = lazy(() => import('./pages/AdminProfile'));
+const AdminNews = lazy(() => import('./pages/AdminNews'));
 const AdminAuditLogs = lazy(() => import('./pages/AuditLogs'));
 const AdminCalendar = lazy(() => import('./pages/AdminCalendar').then(module => ({ default: module.AdminCalendarPage })));
 
@@ -119,6 +120,7 @@ const AppLayout = () => {
                 <Route path="properties" element={<AdminProperties />} />
                 <Route path="advisors" element={<AdminAdvisors />} />
                 <Route path="service-inquiries" element={<AdminInquiries />} />
+                <Route path="news" element={<AdminNews />} />
                 <Route path="documents" element={<div>Documentos - En desarrollo</div>} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="audit-logs" element={<AdminAuditLogs />} />

@@ -3,6 +3,7 @@ import Hero from '../components/Home/Hero';
 import CompanyPresentation from '../components/Home/CompanyPresentation';
 import FeaturedProperties from '../components/Home/FeaturedProperties';
 import Services from '../components/Home/Services';
+import FloatingNewsBubbles from '../components/FloatingNewsBubbles';
 
 const Home: React.FC = () => {
   useEffect(() => {
@@ -36,7 +37,17 @@ const Home: React.FC = () => {
 
   try {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen relative">
+        {/* Burbujas flotantes de noticias - Desktop */}
+        <div className="hidden lg:block fixed top-20 right-4 z-40 w-96 max-w-md">
+          <FloatingNewsBubbles maxBubbles={8} />
+        </div>
+
+        {/* Noticias móvil/tablet - Botón flotante */}
+        <div className="lg:hidden fixed bottom-20 right-4 z-40">
+          <FloatingNewsBubbles maxBubbles={6} className="mobile-news" />
+        </div>
+        
         <Hero />
         <CompanyPresentation />
         <FeaturedProperties />
