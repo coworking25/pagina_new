@@ -1,0 +1,61 @@
+===========================================
+INSTRUCCIONES DE DEPLOY - HOSTING
+===========================================
+
+PROBLEMA DETECTADO:
+- El navegador busca archivos antiguos (index-CbFMVame.js, index-lS3ZC1RX.css)
+- Los archivos nuevos son: index-BwXUQT95.js, index-MOsrciZk.css
+
+SOLUCIÓN:
+
+1. ELIMINAR archivos antiguos del hosting:
+   - Borra TODOS los archivos del directorio público (public_html, www, o htdocs)
+   
+2. SUBIR archivos nuevos desde la carpeta "dist":
+   ✓ dist/index.html (IMPORTANTE!)
+   ✓ dist/assets/ (toda la carpeta)
+   ✓ dist/logo-13962586_transparent (1).png
+   ✓ dist/LogoEnBlancoo.png
+   ✓ dist/manifest.json
+   ✓ dist/marcaDeAgua.png
+   ✓ dist/img/ (si existe)
+
+3. VERIFICAR en el hosting:
+   - Que index.html exista en la raíz
+   - Que la carpeta assets/ tenga estos archivos:
+     * index-BwXUQT95.js
+     * index-MOsrciZk.css
+     * (y todos los demás archivos .js y .css)
+
+4. LIMPIAR CACHÉ:
+   - En el hosting: Si usas Cloudflare, LiteSpeed, o similar → Purgar caché
+   - En tu navegador: Ctrl + Shift + Delete → Eliminar caché
+   - O abrir en modo incógnito: Ctrl + Shift + N
+
+5. PROBAR:
+   - Abrir https://coworkinginmobiliario.com.co
+   - Abrir consola del navegador (F12)
+   - Verificar que NO haya errores 404
+
+===========================================
+CHECKLIST DE VERIFICACIÓN:
+===========================================
+[ ] Archivos antiguos eliminados del hosting
+[ ] index.html subido a la raíz
+[ ] Carpeta assets/ completa subida
+[ ] Caché del hosting purgada
+[ ] Caché del navegador limpiada
+[ ] Página carga sin errores 404
+[ ] CSS se aplica correctamente
+[ ] JavaScript funciona correctamente
+
+===========================================
+NOTA IMPORTANTE:
+===========================================
+El archivo index.html DEBE estar en la RAÍZ de tu dominio:
+✓ coworkinginmobiliario.com.co/index.html
+✗ coworkinginmobiliario.com.co/dist/index.html
+
+Los assets deben estar en:
+✓ coworkinginmobiliario.com.co/assets/index-BwXUQT95.js
+✗ coworkinginmobiliario.com.co/dist/assets/index-BwXUQT95.js
