@@ -39,7 +39,7 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
   onClose
 }) => {
   const [formData, setFormData] = useState<FormData>({
-    property_id: null,
+    property_id: properties && properties.length > 0 ? properties[0].id : null,
     payment_concept: '',
     amount: 0,
     due_date: new Date().toISOString().split('T')[0],

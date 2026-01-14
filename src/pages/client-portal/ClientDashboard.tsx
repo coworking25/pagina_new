@@ -30,6 +30,7 @@ import CommunicationsSection from '../../components/client-portal/Communications
 import AnalyticsSection from '../../components/client-portal/AnalyticsSection';
 import PaymentCalendarView from '../../components/client-details/PaymentCalendarView';
 import { getPaymentSchedulesByClient } from '../../lib/paymentsApi';
+import { runDailyPaymentAlerts } from '../../lib/paymentAlertsService';
 
 const ClientDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -86,6 +87,11 @@ const ClientDashboard: React.FC = () => {
         setPaymentSchedules(schedulesData);
         console.log('📅 Pagos programados cargados:', schedulesData.length);
       }
+
+      // Ejecutar generación de alertas de pagos vencidos (una vez al cargar)
+      runDailyPaymentAlerts().catch(err => 
+        console.error('❌ Error ejecutando alertas automáticas:', err)
+      );
       
     } catch (err) {
       console.error('Error cargando dashboard:', err);

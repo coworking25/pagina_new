@@ -94,10 +94,10 @@ export const ClientEditForm: React.FC<ClientEditFormProps> = ({
 
       // 4. Historial de Pagos
       const { data: payHistory } = await supabase
-        .from('payment_history')
+        .from('payment_schedules')
         .select('*')
         .eq('client_id', client.id)
-        .order('payment_date', { ascending: false });
+        .order('due_date', { ascending: false });
       setPayments(payHistory || []);
 
     } catch (error) {

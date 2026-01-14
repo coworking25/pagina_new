@@ -25,6 +25,7 @@ interface PaymentSchedule {
   payment_concept: string;
   amount: number;
   due_date: string;
+  payment_date?: string | null;
   status: 'pending' | 'paid' | 'partial' | 'overdue' | 'cancelled';
   paid_amount?: number;
   payment_method?: string | null;
@@ -229,6 +230,11 @@ const PaymentCalendarView: React.FC<PaymentCalendarViewProps> = ({
               <div className="w-full space-y-0.5">
                 {payments.slice(0, 3).map((payment) => {
                   const daysOverdue = payment.status === 'overdue' ? getDaysOverdue(payment.due_date) : 0;
+                  const isPaidLate = payment.payment_date && payment.status === 'paid' ? (() => {
+                    const dueDate = new Date(payment.due_date);
+                    const paidDate = new Date(payment.payment_date);
+                    return Math.floor((paidDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                  })() : 0;
                   
                   return (
                     <div
@@ -238,7 +244,15 @@ const PaymentCalendarView: React.FC<PaymentCalendarViewProps> = ({
                         flex items-center justify-between gap-1
                         ${getStatusColor(payment.status)}
                       `}
-                      title={`${payment.payment_concept} - $${payment.amount.toLocaleString()}`}
+                      title={`${payment.payment_concept} - $${payment.amount.toLocaleString()}\n${
+                        payment.payment_date 
+                          ? `Pagado: ${new Date(payment.payment_date).toLocaleDateString('es-ES')}\n${
+                              isPaidLate > 0 ? `Con ${isPaidLate} día(s) de retraso` : 
+                              isPaidLate < 0 ? `Anticipado ${Math.abs(isPaidLate)} día(s)` : 
+                              'A tiempo'
+                            }`
+                          : `Vence: ${new Date(payment.due_date).toLocaleDateString('es-ES')}`
+                      }`}
                     >
                       <span className="truncate flex-1">
                         ${(payment.amount / 1000).toFixed(0)}k
@@ -246,6 +260,9 @@ const PaymentCalendarView: React.FC<PaymentCalendarViewProps> = ({
                       {getStatusIcon(payment.status)}
                       {daysOverdue > 0 && (
                         <span className="text-[8px] font-bold">-{daysOverdue}d</span>
+                      )}
+                      {payment.payment_date && isPaidLate > 0 && (
+                        <span className="text-[8px] font-bold">+{isPaidLate}d</span>
                       )}
                     </div>
                   );
@@ -404,6 +421,16 @@ const PaymentCalendarView: React.FC<PaymentCalendarViewProps> = ({
                             Pagado: ${payment.paid_amount.toLocaleString()}
                           </p>
                         )}
+                        {payment.payment_date && payment.status === 'paid' && (
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Pagado el {new Date(payment.payment_date).toLocaleDateString('es-ES', { 
+                              day: 'numeric', 
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        )}
                       </div>
 
                       {onViewPayment && (
@@ -423,14 +450,50 @@ const PaymentCalendarView: React.FC<PaymentCalendarViewProps> = ({
                       </p>
                     )}
 
+                    {/* Alerta de pago vencido */}
                     {daysOverdue > 0 && (
                       <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 text-red-600 mt-0.5" />
+                        <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-red-700 dark:text-red-400">
-                          <p className="font-medium">Pago vencido</p>
-                          <p>Este pago lleva {daysOverdue} día(s) de retraso</p>
+                          <p className="font-medium">⚠️ Pago vencido</p>
+                          <p>Este pago lleva <span className="font-bold">{daysOverdue} día(s)</span> de retraso</p>
+                          <p className="text-xs mt-1">
+                            Fecha de vencimiento: {new Date(payment.due_date).toLocaleDateString('es-ES')}
+                          </p>
                         </div>
                       </div>
+                    )}
+                    
+                    {/* Información de atraso en pago ya realizado */}
+                    {payment.payment_date && payment.status === 'paid' && (
+                      (() => {
+                        const dueDate = new Date(payment.due_date);
+                        const paidDate = new Date(payment.payment_date);
+                        const diffDays = Math.floor((paidDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays > 0) {
+                          return (
+                            <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded flex items-start gap-2">
+                              <Clock className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm text-orange-700 dark:text-orange-400">
+                                <p className="font-medium">Pagado con retraso</p>
+                                <p>Se pagó {diffDays} día(s) después de la fecha de vencimiento</p>
+                              </div>
+                            </div>
+                          );
+                        } else if (diffDays < 0) {
+                          return (
+                            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded flex items-start gap-2">
+                              <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm text-blue-700 dark:text-blue-400">
+                                <p className="font-medium">✓ Pagado anticipadamente</p>
+                                <p>Se pagó {Math.abs(diffDays)} día(s) antes de la fecha de vencimiento</p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()
                     )}
                   </div>
                 );
