@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Calendar, DollarSign, FileText, AlertCircle, RefreshCw } from 'lucide-react';
+import { X, Calendar, DollarSign, FileText, AlertCircle, RefreshCw, Upload, Image as ImageIcon } from 'lucide-react';
 
 interface PaymentScheduleFormProps {
   schedule?: any | null;
@@ -17,7 +17,9 @@ interface PaymentScheduleFormProps {
 
 interface FormData {
   property_id: number | null;
+  payment_type: 'renta' | 'servicios' | 'administracion' | 'mantenimiento' | 'otros';
   payment_concept: string;
+  custom_concept: string;
   amount: number;
   due_date: string;
   status: 'pending' | 'paid' | 'partial' | 'overdue' | 'cancelled';
@@ -26,6 +28,8 @@ interface FormData {
   payment_reference: string;
   description: string;
   notes: string;
+  receipt_image: File | null;
+  receipt_image_url: string;
   is_recurring: boolean;
   recurring_frequency: 'monthly' | 'quarterly' | 'yearly' | null;
   recurring_count: number;
@@ -40,7 +44,9 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<FormData>({
     property_id: properties && properties.length > 0 ? properties[0].id : null,
+    payment_type: 'renta',
     payment_concept: '',
+    custom_concept: '',
     amount: 0,
     due_date: new Date().toISOString().split('T')[0],
     status: 'pending',
@@ -49,6 +55,8 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
     payment_reference: '',
     description: '',
     notes: '',
+    receipt_image: null,
+    receipt_image_url: '',
     is_recurring: false,
     recurring_frequency: null,
     recurring_count: 1
@@ -56,12 +64,29 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (schedule) {
+      // Determinar el tipo de pago basado en el concepto
+      let paymentType: FormData['payment_type'] = 'otros';
+      const concept = schedule.payment_concept?.toLowerCase() || '';
+      
+      if (concept.includes('renta') || concept.includes('arriendo')) {
+        paymentType = 'renta';
+      } else if (concept.includes('servicio') || concept.includes('público')) {
+        paymentType = 'servicios';
+      } else if (concept.includes('administr')) {
+        paymentType = 'administracion';
+      } else if (concept.includes('mantenimiento')) {
+        paymentType = 'mantenimiento';
+      }
+
       setFormData({
         property_id: schedule.property_id || null,
+        payment_type: paymentType,
         payment_concept: schedule.payment_concept || '',
+        custom_concept: paymentType === 'otros' ? schedule.payment_concept || '' : '',
         amount: schedule.amount || 0,
         due_date: schedule.due_date ? schedule.due_date.split('T')[0] : new Date().toISOString().split('T')[0],
         status: schedule.status || 'pending',
@@ -70,6 +95,8 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
         payment_reference: schedule.payment_reference || '',
         description: schedule.description || '',
         notes: schedule.notes || '',
+        receipt_image: null,
+        receipt_image_url: schedule.receipt_image_url || '',
         is_recurring: schedule.is_recurring || false,
         recurring_frequency: schedule.recurring_frequency || null,
         recurring_count: 1
@@ -87,6 +114,21 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
       setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else if (name === 'property_id') {
       setFormData(prev => ({ ...prev, [name]: value ? parseInt(value) : null }));
+    } else if (name === 'payment_type') {
+      // Actualizar el concepto según el tipo
+      const paymentLabels = {
+        renta: 'Renta',
+        servicios: 'Servicios Públicos',
+        administracion: 'Administración',
+        mantenimiento: 'Mantenimiento',
+        otros: ''
+      };
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        payment_type: value as FormData['payment_type'],
+        payment_concept: paymentLabels[value as keyof typeof paymentLabels] || ''
+      }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -97,11 +139,55 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Solo se permiten imágenes (JPG, PNG, WEBP)');
+        return;
+      }
+
+      // Validar tamaño (máx 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no debe superar los 5MB');
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, receipt_image: file }));
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, receipt_image_url: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ 
+      ...prev, 
+      receipt_image: null, 
+      receipt_image_url: '' 
+    }));
+  };
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.payment_concept.trim()) {
-      newErrors.payment_concept = 'El concepto de pago es requerido';
+    // Determinar el concepto final
+    const finalConcept = formData.payment_type === 'otros' 
+      ? formData.custom_concept 
+      : formData.payment_concept;
+
+    if (!finalConcept.trim()) {
+      if (formData.payment_type === 'otros') {
+        newErrors.custom_concept = 'Debe especificar el concepto personalizado';
+      } else {
+        newErrors.payment_concept = 'El concepto de pago es requerido';
+      }
     }
 
     if (formData.amount <= 0) {
@@ -136,10 +222,16 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
     try {
       setLoading(true);
 
+      // Determinar el concepto final
+      const finalConcept = formData.payment_type === 'otros' 
+        ? formData.custom_concept 
+        : formData.payment_concept;
+
       // Preparar datos para enviar
       const dataToSave: any = {
         property_id: formData.property_id,
-        payment_concept: formData.payment_concept,
+        payment_concept: finalConcept,
+        payment_type: formData.payment_type,
         amount: formData.amount,
         due_date: formData.due_date,
         status: formData.status,
@@ -211,24 +303,71 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Tipo de Pago */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Concepto de Pago <span className="text-red-500">*</span>
+                    Tipo de Pago <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    name="payment_concept"
-                    value={formData.payment_concept}
+                  <select
+                    name="payment_type"
+                    value={formData.payment_type}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 ${
-                      errors.payment_concept ? 'border-red-500' : ''
-                    }`}
-                    placeholder="Ej: Renta Enero 2025, Servicios, Mantenimiento..."
-                  />
-                  {errors.payment_concept && (
-                    <p className="mt-1 text-sm text-red-500">{errors.payment_concept}</p>
-                  )}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                  >
+                    <option value="renta">Renta / Arriendo</option>
+                    <option value="servicios">Servicios Públicos</option>
+                    <option value="administracion">Administración</option>
+                    <option value="mantenimiento">Mantenimiento</option>
+                    <option value="otros">Otros (Especificar)</option>
+                  </select>
                 </div>
+
+                {/* Concepto Personalizado (solo si tipo = otros) */}
+                {formData.payment_type === 'otros' && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Especificar Concepto <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="custom_concept"
+                      value={formData.custom_concept}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 ${
+                        errors.custom_concept ? 'border-red-500' : ''
+                      }`}
+                      placeholder="Ej: Seguro, Impuestos, Reparación..."
+                    />
+                    {errors.custom_concept && (
+                      <p className="mt-1 text-sm text-red-500">{errors.custom_concept}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Concepto de Pago (solo mostrar si no es "otros") */}
+                {formData.payment_type !== 'otros' && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Concepto de Pago <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="payment_concept"
+                      value={formData.payment_concept}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 ${
+                        errors.payment_concept ? 'border-red-500' : ''
+                      }`}
+                      placeholder="Ej: Renta Enero 2026, Servicios Diciembre 2025..."
+                    />
+                    {errors.payment_concept && (
+                      <p className="mt-1 text-sm text-red-500">{errors.payment_concept}</p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Puede modificar el concepto generado automáticamente
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -304,12 +443,21 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
                   >
                     <option value="">Ninguna</option>
-                    {properties.map((prop) => (
-                      <option key={prop.id} value={prop.id}>
-                        {prop.code} - {prop.title}
-                      </option>
-                    ))}
+                    {properties && properties.length > 0 ? (
+                      properties.map((prop) => (
+                        <option key={prop.id} value={prop.id}>
+                          {prop.code} - {prop.title}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>No hay propiedades disponibles</option>
+                    )}
                   </select>
+                  {properties && properties.length === 0 && (
+                    <p className="mt-1 text-xs text-amber-600">
+                      ℹ️ No se encontraron propiedades asignadas a este cliente
+                    </p>
+                  )}
                 </div>
 
                 {formData.status === 'partial' && (
@@ -407,6 +555,62 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
                     placeholder="Notas privadas (no visibles para el cliente)..."
                   />
+                </div>
+
+                {/* Upload de recibo (opcional) */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Foto del Recibo (Opcional)
+                  </label>
+                  
+                  {!formData.receipt_image_url ? (
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+                      <input
+                        type="file"
+                        id="receipt_image"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="receipt_image"
+                        className="cursor-pointer flex flex-col items-center gap-2"
+                      >
+                        <Upload className="w-10 h-10 text-gray-400" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="text-blue-600 font-medium">Haz clic para subir</span> o arrastra la imagen
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          JPG, PNG o WEBP (máx. 5MB)
+                        </p>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="relative border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                      <img
+                        src={formData.receipt_image_url}
+                        alt="Vista previa del recibo"
+                        className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        title="Eliminar imagen"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                        <div className="flex items-center gap-2 text-white text-xs">
+                          <ImageIcon className="w-4 h-4" />
+                          <span>{formData.receipt_image?.name || 'Imagen del recibo'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    💡 Sube una foto del recibo o comprobante de pago para mayor control
+                  </p>
                 </div>
               </div>
             </div>

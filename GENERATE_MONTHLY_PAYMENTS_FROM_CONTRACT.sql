@@ -79,7 +79,9 @@ BEGIN
                 due_date,
                 status,
                 paid_amount,
-                notes
+                notes,
+                is_recurring,
+                recurrence_frequency
             ) VALUES (
                 v_contract.client_id,
                 v_contract.property_id,
@@ -92,7 +94,9 @@ BEGIN
                     ELSE 'pending'
                 END,
                 0,
-                'Pago generado automáticamente desde contrato'
+                'Pago generado automáticamente desde contrato',
+                true,
+                'monthly'
             );
 
             RETURN QUERY SELECT 
@@ -162,7 +166,9 @@ SELECT
     payment_concept,
     amount,
     due_date,
-    status
+    status,
+    is_recurring,
+    recurrence_frequency
 FROM payment_schedules
 WHERE client_id = '331a25ea-5f6c-4aa1-84d6-86d744c0c38e'
 ORDER BY due_date;
@@ -199,7 +205,9 @@ BEGIN
             due_date,
             status,
             paid_amount,
-            notes
+            notes,
+            is_recurring,
+            recurrence_frequency
         ) VALUES (
             '331a25ea-5f6c-4aa1-84d6-86d744c0c38e',
             'Renta ' || TO_CHAR(v_current_date, 'TMMonth YYYY'),
@@ -211,7 +219,9 @@ BEGIN
                 ELSE 'pending'
             END,
             0,
-            'Pago mensual generado automáticamente'
+            'Pago mensual generado automáticamente',
+            true,
+            'monthly'
         )
         ON CONFLICT DO NOTHING; -- Evitar duplicados
 
