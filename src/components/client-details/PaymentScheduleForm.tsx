@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Calendar, DollarSign, FileText, AlertCircle, RefreshCw, Upload, Image as ImageIcon } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface PaymentScheduleFormProps {
   schedule?: any | null;
@@ -174,6 +175,45 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
     }));
   };
 
+  const uploadReceiptImage = async (file: File, paymentId: string): Promise<string | null> => {
+    try {
+      setUploadingImage(true);
+
+      // Generar nombre único para el archivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${paymentId}_${Date.now()}.${fileExt}`;
+      const filePath = `receipts/${fileName}`;
+
+      // Subir archivo a Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('payment-receipts')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Error subiendo imagen:', error);
+        throw error;
+      }
+
+      // Obtener URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('payment-receipts')
+        .getPublicUrl(filePath);
+
+      console.log('✅ Imagen subida exitosamente:', publicUrl);
+      return publicUrl;
+
+    } catch (error) {
+      console.error('❌ Error en uploadReceiptImage:', error);
+      alert('Error al subir la imagen del recibo');
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -254,7 +294,27 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
         dataToSave.payment_reference = formData.payment_reference;
       }
 
-      await onSave(dataToSave);
+      // Guardar el pago primero para obtener el ID
+      const savedPayment = await onSave(dataToSave);
+      
+      // Si hay imagen y se guardó el pago exitosamente, subir la imagen
+      if (formData.receipt_image && savedPayment && savedPayment.id) {
+        const imageUrl = await uploadReceiptImage(formData.receipt_image, savedPayment.id);
+        
+        if (imageUrl) {
+          // Actualizar el pago con la URL de la imagen
+          await supabase
+            .from('payment_schedules')
+            .update({ receipt_image_url: imageUrl })
+            .eq('id', savedPayment.id);
+          
+          console.log('✅ Imagen del recibo actualizada en el pago');
+        }
+      }
+      
+      // Cerrar modal después de guardar todo
+      onClose();
+      
     } catch (error) {
       console.error('Error guardando pago:', error);
       alert('Error al guardar el pago');
@@ -691,16 +751,25 @@ const PaymentScheduleForm: React.FC<PaymentScheduleFormProps> = ({
               type="button"
               onClick={onClose}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              disabled={loading}
+              disabled={loading || uploadingImage}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              disabled={loading || uploadingImage}
             >
-              {loading ? 'Guardando...' : schedule ? 'Actualizar' : 'Crear Pago'}
+              {uploadingImage ? (
+                <>
+                  <Upload className="w-4 h-4 animate-pulse" />
+                  Subiendo imagen...
+                </>
+              ) : loading ? (
+                'Guardando...'
+              ) : (
+                schedule ? 'Actualizar' : 'Crear Pago'
+              )}
             </button>
           </div>
         </form>
