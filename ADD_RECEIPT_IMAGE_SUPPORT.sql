@@ -20,24 +20,13 @@ SELECT
 FROM storage.buckets
 WHERE id = 'payment-receipts';
 
--- 4. Crear políticas de acceso para el bucket (si no existen)
--- Permitir lectura pública
-INSERT INTO storage.policies (name, bucket_id, definition)
-VALUES (
-    'Public read access for payment receipts',
-    'payment-receipts',
-    '(bucket_id = ''payment-receipts'')'
-)
-ON CONFLICT (name, bucket_id) DO NOTHING;
+-- 4. Crear políticas de acceso para el bucket
+-- NOTA: Las políticas de Storage en Supabase se crean desde el Dashboard UI
+-- o usando la API de management. Por ahora, asegúrate de que el bucket 
+-- tenga configurado 'public' = true en el Dashboard de Supabase.
 
--- Permitir escritura para usuarios autenticados
-INSERT INTO storage.policies (name, bucket_id, definition)
-VALUES (
-    'Authenticated users can upload payment receipts',
-    'payment-receipts',
-    '((bucket_id = ''payment-receipts'') AND (auth.role() = ''authenticated''))'
-)
-ON CONFLICT (name, bucket_id) DO NOTHING;
+-- Alternativamente, si necesitas configurar políticas RLS:
+-- Ve a Storage → payment-receipts → Policies en el Dashboard de Supabase
 
 -- 5. Verificar estructura actualizada
 SELECT 
@@ -64,9 +53,10 @@ BEGIN
     RAISE NOTICE 'Bucket de Storage:';
     RAISE NOTICE '  - payment-receipts (público para lectura)';
     RAISE NOTICE '';
-    RAISE NOTICE 'Políticas de acceso:';
-    RAISE NOTICE '  - Lectura pública';
-    RAISE NOTICE '  - Escritura para usuarios autenticados';
+    RAISE NOTICE '⚠️  IMPORTANTE - Configurar en Dashboard:';
+    RAISE NOTICE '  1. Ve a Storage → payment-receipts en Supabase';
+    RAISE NOTICE '  2. Asegúrate que "Public bucket" esté activado';
+    RAISE NOTICE '  3. O crea políticas RLS desde el Dashboard';
     RAISE NOTICE '';
     RAISE NOTICE '📸 Los usuarios pueden subir imágenes desde el formulario';
     RAISE NOTICE '';
