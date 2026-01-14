@@ -91,7 +91,7 @@ interface Payment {
   contract_id?: string;
   amount: number;
   due_date: string;
-  paid_date?: string | null;
+  payment_date?: string | null; // Corregido: era paid_date
   status: 'pending' | 'paid' | 'overdue' | 'partial' | 'cancelled';
   payment_method?: string | null;
   payment_type: string;
@@ -342,47 +342,64 @@ export const ClientDetailsEnhanced: React.FC<ClientDetailsEnhancedProps> = ({
   const handleUploadReceipt = async (paymentId: string, file: File) => {
     setUploadingReceipt(paymentId);
     try {
+      console.log('📤 Subiendo comprobante para pago:', paymentId);
+      
       // 1. Subir archivo a Supabase Storage
       const fileName = `payment-receipts/${paymentId}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(fileName, file);
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('❌ Error subiendo archivo:', uploadError);
+        throw uploadError;
+      }
+      
+      console.log('✅ Archivo subido exitosamente:', fileName);
       
       // 2. Obtener URL pública
       const { data: urlData } = supabase.storage
         .from('documents')
         .getPublicUrl(fileName);
         
+      console.log('🔗 URL pública:', urlData.publicUrl);
+      
       // 3. Actualizar registro de pago
       const { error: updateError } = await supabase
         .from('payments')
         .update({
           receipt_url: urlData.publicUrl,
           receipt_file_name: file.name,
-          paid_date: new Date().toISOString(),
+          payment_date: new Date().toISOString().split('T')[0], // Fecha en formato YYYY-MM-DD
           status: 'paid'
         })
         .eq('id', paymentId);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Error actualizando pago:', updateError);
+        throw updateError;
+      }
+      
+      console.log('✅ Pago actualizado exitosamente');
       
       // 4. Recargar pagos
-      const { data: paymentsData } = await supabase
+      const { data: paymentsData, error: fetchError } = await supabase
         .from('payments')
         .select('*')
         .eq('client_id', client!.id)
         .order('due_date', { ascending: false });
       
-      if (paymentsData) {
+      if (fetchError) {
+        console.error('⚠️ Error recargando pagos:', fetchError);
+      } else if (paymentsData) {
         setPayments(paymentsData);
+        console.log('✅ Pagos recargados:', paymentsData.length);
       }
       
       alert('✅ Comprobante subido exitosamente');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error subiendo comprobante:', error);
-      alert('❌ Error subiendo comprobante');
+      alert(`❌ Error subiendo comprobante: ${error.message || 'Error desconocido'}`);
     } finally {
       setUploadingReceipt(null);
     }
@@ -1211,10 +1228,10 @@ const PaymentsHistoryTab: React.FC<{
               <Calendar className="w-4 h-4" />
               <span>Vencimiento: {new Date(payment.due_date).toLocaleDateString('es-ES')}</span>
             </div>
-            {payment.paid_date && (
+            {payment.payment_date && (
               <div className="flex items-center gap-2 text-gray-600">
                 <CheckCircle className="w-4 h-4" />
-                <span>Pagado: {new Date(payment.paid_date).toLocaleDateString('es-ES')}</span>
+                <span>Pagado: {new Date(payment.payment_date).toLocaleDateString('es-ES')}</span>
               </div>
             )}
             {payment.payment_method && (

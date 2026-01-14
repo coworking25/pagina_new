@@ -64,34 +64,45 @@ export interface UpdatePaymentScheduleInput {
  * Obtener todos los pagos programados
  */
 export async function getAllPaymentSchedules() {
-  const { data, error } = await supabase
-    .from('payment_schedules')
-    .select(`
-      *,
-      client:clients(id, full_name, email, phone),
-      property:properties(id, title, code)
-    `)
-    .order('due_date', { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from('payment_schedules')
+      .select('*')
+      .order('due_date', { ascending: true });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('❌ Error en getAllPaymentSchedules:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error cargando todos los pagos programados:', error);
+    return [];
+  }
 }
 
 /**
  * Obtener pagos programados por cliente
  */
 export async function getPaymentSchedulesByClient(clientId: string) {
-  const { data, error } = await supabase
-    .from('payment_schedules')
-    .select(`
-      *,
-      property:properties(id, title, code)
-    `)
-    .eq('client_id', clientId)
-    .order('due_date', { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from('payment_schedules')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('due_date', { ascending: true });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('❌ Error en getPaymentSchedulesByClient:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error cargando pagos programados:', error);
+    return [];
+  }
 }
 
 /**
@@ -133,44 +144,54 @@ export async function getPaymentSchedulesByStatus(status: string) {
  * Obtener pagos vencidos
  */
 export async function getOverduePayments() {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const { data, error } = await supabase
-    .from('payment_schedules')
-    .select(`
-      *,
-      client:clients(id, full_name, email, phone),
-      property:properties(id, title, code)
-    `)
-    .in('status', ['pending', 'partial'])
-    .lt('due_date', today)
-    .order('due_date', { ascending: true });
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('payment_schedules')
+      .select('*')
+      .in('status', ['pending', 'partial'])
+      .lt('due_date', today)
+      .order('due_date', { ascending: true });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('❌ Error en getOverduePayments:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error cargando pagos vencidos:', error);
+    return [];
+  }
 }
 
 /**
  * Obtener pagos del mes actual
  */
 export async function getCurrentMonthPayments() {
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-  
-  const { data, error } = await supabase
-    .from('payment_schedules')
-    .select(`
-      *,
-      client:clients(id, full_name, email, phone),
-      property:properties(id, title, code)
-    `)
-    .gte('due_date', firstDay)
-    .lte('due_date', lastDay)
-    .order('due_date', { ascending: true });
+  try {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('payment_schedules')
+      .select('*')
+      .gte('due_date', firstDay)
+      .lte('due_date', lastDay)
+      .order('due_date', { ascending: true });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('❌ Error en getCurrentMonthPayments:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error cargando pagos del mes actual:', error);
+    return [];
+  }
 }
 
 /**
@@ -196,43 +217,72 @@ export async function getPaymentScheduleById(id: string) {
  * Crear un pago programado
  */
 export async function createPaymentSchedule(input: CreatePaymentScheduleInput) {
-  const { data: userData } = await supabase.auth.getUser();
-  
-  const { data, error } = await supabase
-    .from('payment_schedules')
-    .insert({
-      ...input,
-      currency: input.currency || 'COP',
-      status: 'pending',
-      paid_amount: 0,
-      created_by: userData?.user?.id,
-      updated_by: userData?.user?.id
-    })
-    .select()
-    .single();
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    
+    const { data, error } = await supabase
+      .from('payment_schedules')
+      .insert({
+        client_id: input.client_id,
+        property_id: input.property_id || null,
+        payment_concept: input.payment_concept,
+        amount: input.amount,
+        currency: input.currency || 'COP',
+        due_date: input.due_date,
+        notes: input.notes || null,
+        is_recurring: input.is_recurring || false,
+        recurrence_frequency: input.recurrence_frequency || null,
+        status: 'pending',
+        paid_amount: 0,
+        // remaining_amount se calcula automáticamente (columna generada)
+        created_by: userData?.user?.id || null,
+        updated_by: userData?.user?.id || null
+      })
+      .select()
+      .single();
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('❌ Error creando pago programado:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error en createPaymentSchedule:', error);
+    throw error;
+  }
 }
 
 /**
  * Actualizar un pago programado
  */
 export async function updatePaymentSchedule(id: string, input: UpdatePaymentScheduleInput) {
-  const { data: userData } = await supabase.auth.getUser();
-  
-  const { data, error } = await supabase
-    .from('payment_schedules')
-    .update({
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    
+    // Preparar datos de actualización (sin remaining_amount - es columna generada)
+    const updateData: any = {
       ...input,
-      updated_by: userData?.user?.id
-    })
-    .eq('id', id)
-    .select()
-    .single();
+      updated_by: userData?.user?.id || null
+    };
+    
+    const { data, error } = await supabase
+      .from('payment_schedules')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('❌ Error actualizando pago programado:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error en updatePaymentSchedule:', error);
+    throw error;
+  }
 }
 
 /**

@@ -75,17 +75,23 @@ export async function getAllPaymentReceipts() {
  * Obtener recibos por cliente
  */
 export async function getReceiptsByClient(clientId: string) {
-  const { data, error } = await supabase
-    .from('payment_receipts')
-    .select(`
-      *,
-      schedule:payment_schedules(id, payment_concept, amount, due_date)
-    `)
-    .eq('client_id', clientId)
-    .order('payment_date', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('payment_receipts')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('payment_date', { ascending: false });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('❌ Error en getReceiptsByClient:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('❌ Error cargando recibos del cliente:', error);
+    return [];
+  }
 }
 
 /**

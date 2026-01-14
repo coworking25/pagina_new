@@ -30,9 +30,23 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // 🔍 DEBUG: Log del contrato cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && contract) {
+      console.log('🔍 DEBUG Modal Pagos Abierto:', {
+        contract_id: contract.id,
+        monthly_rent: contract.monthly_rent,
+        administration_fee: contract.administration_fee,
+        admin_paid_by: contract.admin_paid_by,
+        admin_payment_method: contract.admin_payment_method,
+        agency_commission_percentage: contract.agency_commission_percentage
+      });
+    }
+  }, [isOpen, contract]);
+
   // Form data
   const [formData, setFormData] = useState({
-    gross_amount: contract.monthly_rent || 0,
+    gross_amount: Number(contract.monthly_rent) || 0,
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: 'bank_transfer',
     transaction_reference: '',
@@ -41,26 +55,43 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
     notes: ''
   });
 
+  // Sincronizar gross_amount cuando cambie el contrato
+  useEffect(() => {
+    if (contract && contract.monthly_rent) {
+      setFormData(prev => ({
+        ...prev,
+        gross_amount: Number(contract.monthly_rent) || 0
+      }));
+    }
+  }, [contract]);
+
   // Breakdown calculation
   const [breakdown, setBreakdown] = useState<PaymentBreakdown | null>(null);
 
   // Calculate breakdown when gross_amount changes
   useEffect(() => {
     if (contract && formData.gross_amount > 0) {
-      const contractForCalc = {
-        id: contract.id,
-        monthly_rent: contract.monthly_rent || 0,
-        administration_fee: contract.administration_fee || 0,
-        admin_included_in_rent: contract.admin_included_in_rent || false,
-        admin_paid_by: contract.admin_paid_by || 'landlord',
-        admin_payment_method: contract.admin_payment_method || 'deducted',
-        admin_landlord_percentage: contract.admin_landlord_percentage || 0,
-        agency_commission_percentage: contract.agency_commission_percentage || 0,
-        agency_commission_fixed: contract.agency_commission_fixed || 0
-      };
-      
-      const calc = calculatePaymentBreakdown(contractForCalc, formData.gross_amount);
-      setBreakdown(calc);
+      try {
+        const contractForCalc = {
+          id: contract.id || '',
+          monthly_rent: Number(contract.monthly_rent) || 0,
+          administration_fee: Number(contract.administration_fee) || 0,
+          admin_included_in_rent: contract.admin_included_in_rent === true,
+          admin_paid_by: (contract.admin_paid_by || 'landlord') as 'tenant' | 'landlord' | 'split',
+          admin_payment_method: (contract.admin_payment_method || 'deducted') as 'direct' | 'deducted',
+          admin_landlord_percentage: Number(contract.admin_landlord_percentage) || 0,
+          agency_commission_percentage: Number(contract.agency_commission_percentage) || 0,
+          agency_commission_fixed: Number(contract.agency_commission_fixed) || 0
+        };
+        
+        const calc = calculatePaymentBreakdown(contractForCalc, formData.gross_amount);
+        setBreakdown(calc);
+      } catch (err) {
+        console.error('Error calculando breakdown:', err);
+        setBreakdown(null);
+      }
+    } else {
+      setBreakdown(null);
     }
   }, [formData.gross_amount, contract]);
 
@@ -82,6 +113,7 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError(null);
+    setSuccess(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,21 +122,39 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
     setError(null);
 
     try {
-      // Validate
+      // Validate contract ID
+      if (!contract || !contract.id) {
+        throw new Error('Contrato inválido o sin ID');
+      }
+
+      // Validate amount
       if (!formData.gross_amount || formData.gross_amount <= 0) {
         throw new Error('El monto bruto debe ser mayor a cero');
       }
 
+      // Validate payment date
       if (!formData.payment_date) {
         throw new Error('Debe seleccionar una fecha de pago');
       }
 
+      // Validate period dates
       if (!formData.period_start || !formData.period_end) {
         throw new Error('Debe especificar el período del pago');
       }
 
-      // Call PostgreSQL function to register payment
-      const { data, error: dbError } = await supabase.rpc('register_tenant_payment', {
+      // Validate period dates are valid
+      const periodStart = new Date(formData.period_start);
+      const periodEnd = new Date(formData.period_end);
+      if (periodStart >= periodEnd) {
+        throw new Error('La fecha de inicio del período debe ser anterior a la fecha de fin');
+      }
+
+      // Validate payment method
+      if (!formData.payment_method) {
+        throw new Error('Debe seleccionar un método de pago');
+      }
+
+      console.log('📤 Enviando datos de pago:', {
         p_contract_id: contract.id,
         p_gross_amount: formData.gross_amount,
         p_payment_date: formData.payment_date,
@@ -114,7 +164,21 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
         p_period_end: formData.period_end
       });
 
-      if (dbError) throw dbError;
+      // Call PostgreSQL function to register payment
+      const { data, error: dbError } = await supabase.rpc('register_tenant_payment', {
+        p_contract_id: contract.id,
+        p_gross_amount: Number(formData.gross_amount),
+        p_payment_date: formData.payment_date,
+        p_payment_method: formData.payment_method,
+        p_transaction_reference: formData.transaction_reference || null,
+        p_period_start: formData.period_start,
+        p_period_end: formData.period_end
+      });
+
+      if (dbError) {
+        console.error('❌ Error de base de datos:', dbError);
+        throw new Error(`Error en la base de datos: ${dbError.message}`);
+      }
 
       console.log('✅ Pago registrado exitosamente:', data);
       setSuccess(true);
@@ -128,7 +192,7 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
 
     } catch (err: any) {
       console.error('❌ Error registrando pago:', err);
-      setError(err.message || 'Error al registrar el pago');
+      setError(err.message || 'Error desconocido al registrar el pago');
     } finally {
       setLoading(false);
     }
@@ -136,7 +200,7 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
 
   const resetForm = () => {
     setFormData({
-      gross_amount: contract.monthly_rent || 0,
+      gross_amount: Number(contract.monthly_rent) || 0,
       payment_date: new Date().toISOString().split('T')[0],
       payment_method: 'bank_transfer',
       transaction_reference: '',
@@ -220,10 +284,21 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
                 <input
                   type="number"
                   value={formData.gross_amount}
-                  onChange={(e) => handleInputChange('gross_amount', Number(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : Number(e.target.value);
+                    if (value >= 0) {
+                      handleInputChange('gross_amount', value);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Asegurar que tenga un valor válido al salir del campo
+                    if (!e.target.value || Number(e.target.value) <= 0) {
+                      handleInputChange('gross_amount', contract.monthly_rent || 0);
+                    }
+                  }}
                   required
-                  min="0"
-                  step="0.01"
+                  min="1"
+                  step="1"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-semibold"
                   placeholder="1500000"
                 />
@@ -495,8 +570,11 @@ export const RegisterPaymentModal: React.FC<RegisterPaymentModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={loading || !breakdown}
+              disabled={loading || !breakdown || !formData.gross_amount || formData.gross_amount <= 0}
               className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-green-500/30 flex items-center font-semibold"
+              title={!breakdown ? 'Esperando cálculo de desglose' : 
+                     !formData.gross_amount || formData.gross_amount <= 0 ? 'Debe ingresar un monto válido' : 
+                     'Registrar pago'}
             >
               {loading ? (
                 <>

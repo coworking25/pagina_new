@@ -494,13 +494,14 @@ export async function getActiveAlerts(clientId?: string): Promise<ClientAlert[]>
     let query = supabase
       .from('client_alerts')
       .select('*')
-      .eq('status', 'active');
+      .eq('is_read', false)
+      .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString());
 
     if (clientId) {
       query = query.eq('client_id', clientId);
     }
 
-    const { data, error } = await query.order('priority', { ascending: false });
+    const { data, error } = await query.order('severity', { ascending: false });
 
     if (error) {
       console.error('❌ Error obteniendo alertas:', error);
